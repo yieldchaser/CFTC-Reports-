@@ -207,7 +207,7 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
     <div class="logo-icon">&#128202;</div>
     <div>
       <h1>CFTC Natural Gas Positioning</h1>
-      <p>Commitment of Traders &middot; <span id="hdr-instruments">19 Instruments</span> &middot; 5 Trader Categories</p>
+      <p>Commitment of Traders &middot; <span id="hdr-instruments">10 Instruments</span> &middot; 5 Trader Categories</p>
     </div>
   </div>
   <div class="header-meta">
@@ -369,20 +369,14 @@ let sortCol = 6, sortDir = -1;  // default sort by momentum
 const INSTRUMENT_KEYS = [
   'nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen','henry_hub_nyme',
   'hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice',
-  'hh_tailgate_basis','hh_tailgate_index','nat_gas_legacy','nat_gas_ld1_fixed',
-  'nat_gas_pen_ice','nat_gas_midcon','nat_gas_texok','nat_gas_ventura',
-  'nat_gas_ld1_texok','hh_penult_nasdaq'
+  'nat_gas_ld1_texok'
 ];
 const INSTRUMENT_LABELS = {
   nat_gas_nyme:'Nat Gas NYME', nat_gas_ld1:'Nat Gas LD1', nat_gas_ice_pen:'NAT GAS ICE PEN',
   henry_hub_nyme:'Henry Hub NYME', hh_last_day:'HH Last Day Fin',
   hh_penult_fin:'HH Penultimate Fin', hh_penult_nat_gas:'HH Penultimate Nat Gas',
   hh_index_ice:'HH Index ICE', hh_basis_ice:'HH Basis ICE',
-  hh_tailgate_basis:'HH Tailgate Basis', hh_tailgate_index:'HH Tailgate Index',
-  nat_gas_legacy:'Nat Gas Legacy', nat_gas_ld1_fixed:'NG LD1 Fixed ICE',
-  nat_gas_pen_ice:'NG Penult ICE', nat_gas_midcon:'NG Midcon Basis',
-  nat_gas_texok:'NG Texok Basis', nat_gas_ventura:'NG Ventura Basis',
-  nat_gas_ld1_texok:'NG LD1 Texok', hh_penult_nasdaq:'HH Penult Nasdaq',
+  nat_gas_ld1_texok:'NG LD1 Texok',
 };
 const TRADER_KEYS = ['managed_money','swap_dealers','producers','other_reportables','non_reportables'];
 const TRADER_LABELS = {
@@ -577,11 +571,9 @@ function redrawAll(){
 
 // ── Instrument Groups (Improvement 1) ────────────────────────
 const INST_GROUPS = [
-  {id:'g-nyme',  label:'NYME Futures',    keys:['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen']},
-  {id:'g-hh',    label:'Henry Hub Variants', keys:['henry_hub_nyme','hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice']},
-  {id:'g-tail',  label:'Tailgate & Legacy', keys:['hh_tailgate_basis','hh_tailgate_index','nat_gas_legacy']},
-  {id:'g-ice',   label:'ICE Fixed/Penult', keys:['nat_gas_ld1_fixed','nat_gas_pen_ice']},
-  {id:'g-reg',   label:'Regional Basis',  keys:['nat_gas_midcon','nat_gas_texok','nat_gas_ventura','nat_gas_ld1_texok','hh_penult_nasdaq']},
+  {id:'g-nyme', label:'NYME Futures',       keys:['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen']},
+  {id:'g-hh',   label:'Henry Hub Variants', keys:['henry_hub_nyme','hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice']},
+  {id:'g-reg',  label:'Regional Basis',     keys:['nat_gas_ld1_texok']},
 ];
 
 function renderSignalCards(){

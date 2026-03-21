@@ -47,18 +47,10 @@ INSTRUMENTS = {
     "hh_penult_nat_gas":   "HENRY HUB PENULTIMATE NAT GAS - NEW YORK MERCANTILE EXCHANGE",
     "hh_index_ice":        "HENRY HUB INDEX - ICE FUTURES ENERGY DIV",
     "hh_basis_ice":        "HENRY HUB BASIS - ICE FUTURES ENERGY DIV",
-    # New instruments from discovery (>= 50 rows)
-    "hh_tailgate_basis":   "HENRY HUB - TAILGATE LOUISIANA (BASIS) - ICE FUTURES ENERGY DIV",
-    "hh_tailgate_index":   "HENRY HUB - TAILGATE LOUISIANA (INDEX) - ICE FUTURES ENERGY DIV",
-    "nat_gas_legacy":      "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-    "nat_gas_ld1_fixed":   "NATURAL GAS HENRY LD1 FIXED - ICE FUTURES ENERGY DIV",
-    "nat_gas_pen_ice":     "NATURAL GAS PENULTIMATE ICE - ICE FUTURES ENERGY DIV",
-    "nat_gas_midcon":      "NATURAL GAS PIPELINE-MID-CONTINENT POOL PIN (BASIS) - ICE FUTURES ENERGY DIV",
-    "nat_gas_texok":       "NATURAL GAS PIPELINE-TEXOK (BASIS) - ICE FUTURES ENERGY DIV",
-    "nat_gas_ventura":     "NORTHERN NATURAL GAS - VENTURA (BASIS) - ICE FUTURES ENERGY DIV",
+    # Active regional
     "nat_gas_ld1_texok":   "NAT GAS LD1 for GDD -TEXOK - ICE FUTURES ENERGY DIV",
-    "hh_penult_nasdaq":    "HHUB NAT GAS PENULT FINL-10000 - NASDAQ FUTURES",
 }
+assert len(INSTRUMENTS) == 10, f"Expected 10, got {len(INSTRUMENTS)}"
 INSTRUMENT_LABELS = {
     "nat_gas_nyme":        "Nat Gas NYME",
     "nat_gas_ld1":         "Nat Gas LD1",
@@ -69,16 +61,7 @@ INSTRUMENT_LABELS = {
     "hh_penult_nat_gas":   "HH Penultimate Nat Gas",
     "hh_index_ice":        "HH Index ICE",
     "hh_basis_ice":        "HH Basis ICE",
-    "hh_tailgate_basis":   "HH Tailgate Basis",
-    "hh_tailgate_index":   "HH Tailgate Index",
-    "nat_gas_legacy":      "Nat Gas Legacy",
-    "nat_gas_ld1_fixed":   "NG LD1 Fixed ICE",
-    "nat_gas_pen_ice":     "NG Penult ICE",
-    "nat_gas_midcon":      "NG Midcon Basis",
-    "nat_gas_texok":       "NG Texok Basis",
-    "nat_gas_ventura":     "NG Ventura Basis",
     "nat_gas_ld1_texok":   "NG LD1 Texok",
-    "hh_penult_nasdaq":    "HH Penult Nasdaq",
 }
 
 # NOTE: exact CFTC column names
