@@ -1,0 +1,189 @@
+
+// === BEGIN CHUNK 4: Overview tab renderers ===
+
+// ── Signal Cards (Bug 2 fix: >= <= thresholds; Enhancement 6: composite score) ──
+function renderSignalCards(){
+  const g=document.getElementById('signal-cards-container');
+  g.innerHTML='';
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
+    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const scores=inst.composite_scores||[];
+    const score=scores.length?scores[scores.length-1]:0;
+    const mmNet=last(mm.net), mmZ=last(mm.z_score), mmPct=last(mm.pct_rank);
+    const mmCot=last(mm.cot_index?.w156);
+    const swNet=last(sw.net), prNet=last(pr.net);
+    const price=last(inst.price), priceWow=wowPct(inst.price);
+    const mmDelta=last(mm.change_net)??wow(mm.net);
+    const cotPct=mmCot!=null?Math.round(+mmCot):null;
+
+    // COT gauge colour
+    const cotC = cotPct==null?'#5c6b8a':cotPct>=80?'#22c55e':cotPct<=20?'#ef4444':'#f59e0b';
+    const sigLabel=getSignalLabel(score);
+    const sigCol=getSignalColour(score);
+
+    const card=document.createElement('div');
+    card.className=`signal-card ${scoreClass(score)}`;
+    card.onclick=()=>{switchTab('instrument');setActiveInst(key)};
+    card.innerHTML=`
+      <div class="card-title">${inst.label}<span class="score-pill" style="background:${sigCol}20;color:${sigCol};font-size:10px">${score>=0?'+':''}${score}</span></div>
+      <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)} <span class="${mmDelta>=0?'wow-up':'wow-dn'}">${mmDelta>=0?'▲':'▼'}${fmt(Math.abs(mmDelta))}</span></span></div>
+      <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+      <div class="card-row"><span class="card-key">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct!=null?cotPct+'%':'—'}</span></div>
+      <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct??0}%;background:${cotC}80"></div></div>
+      <div class="card-row" style="margin-top:5px"><span class="card-key">Swap Net</span><span class="card-val">${fmt(swNet)}</span></div>
+      <div class="card-row"><span class="card-key">Prod Net</span><span class="card-val">${fmt(prNet)}</span></div>
+      <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)} <span class="${priceWow>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
+      <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'—'}</span></div>
+      <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
+    g.appendChild(card);
+  }
+}
+
+// ── Heatmap (Bug 1 fix: CSS grid, explicit columns) ──────────
+function renderHeatmap(){
+  const NWEEKS=52;
+  const header=document.getElementById('heatmap-header-row');
+  const body=document.getElementById('heatmap-body');
+  header.innerHTML=''; body.innerHTML='';
+
+  // Date labels from nat_gas_nyme
+  const refDates=(CFTC_DATA.instruments['nat_gas_nyme']?.dates||[]).slice(-NWEEKS);
+  // First cell = blank spacer for row labels column
+  const spacer=document.createElement('div'); header.appendChild(spacer);
+  refDates.forEach((d,i)=>{
+    const el=document.createElement('div');
+    el.className='heatmap-date-lbl';
+    el.textContent=i%4===0?d.slice(5):'';
+    header.appendChild(el);
+  });
+
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
+    const mm=inst.managed_money||{};
+    const allDates=inst.dates||[], allZ=mm.z_score||[];
+    const row=document.createElement('div'); row.className='heatmap-row';
+    const lbl=document.createElement('div'); lbl.className='hm-row-label';
+    lbl.textContent=inst.label; row.appendChild(lbl);
+    for(let i=NWEEKS;i>0;i--){
+      const di=allDates.length-i;
+      const z=di>=0?allZ[di]:null;
+      const cell=document.createElement('div'); cell.className='hm-cell';
+      cell.style.background=zColour(z);
+      const dateStr=di>=0?allDates[di]:'–';
+      cell.onmouseenter=e=>showTip(e,`<b>${inst.label}</b><br>${dateStr}<br>Z-Score: ${z!=null?(+z).toFixed(2):'n/a'}`);
+      cell.onmouseleave=hideTip;
+      cell.onclick=()=>{switchTab('instrument');setActiveInst(key)};
+      row.appendChild(cell);
+    }
+    body.appendChild(row);
+  }
+}
+
+// ── Correlation Matrix ────────────────────────────────────────
+function renderCorrelationMatrix(){
+  const cm=CFTC_DATA.correlation_matrix; if(!cm) return;
+  const keys=cm.instruments||[], mat=cm.matrix||[];
+  const colLabels=document.getElementById('corr-col-labels');
+  const matBody=document.getElementById('corr-matrix-body');
+  colLabels.innerHTML=''; matBody.innerHTML='';
+  keys.forEach(k=>{
+    const el=document.createElement('div');
+    el.style.cssText='width:44px;font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;flex-shrink:0';
+    el.textContent=INSTRUMENT_LABELS[k]?.split(' ').slice(-1)[0]||k;
+    colLabels.appendChild(el);
+  });
+  mat.forEach((rowData,ri)=>{
+    const row=document.createElement('div'); row.className='corr-row';
+    const lbl=document.createElement('div'); lbl.className='corr-row-label';
+    lbl.textContent=INSTRUMENT_LABELS[keys[ri]]||keys[ri]; row.appendChild(lbl);
+    rowData.forEach((val,ci)=>{
+      const cell=document.createElement('div'); cell.className='corr-cell';
+      cell.style.background=corrColour(val);
+      cell.textContent=val!=null?(+val).toFixed(2):'';
+      cell.onmouseenter=e=>showTip(e,`<b>${INSTRUMENT_LABELS[keys[ri]]}</b> vs <b>${INSTRUMENT_LABELS[keys[ci]]}</b><br>Corr: ${val!=null?(+val).toFixed(3):'n/a'}`);
+      cell.onmouseleave=hideTip;
+      row.appendChild(cell);
+    });
+    matBody.appendChild(row);
+  });
+}
+
+// ── Concentration Chart ───────────────────────────────────────
+function renderConcentrationChart(){
+  const inst=CFTC_DATA.instruments['nat_gas_nyme']; if(!inst?.concentration) return;
+  const conc=inst.concentration;
+  const {dates,arrays}=applyDateFilter(inst.dates, conc.top4_long, conc.top4_short);
+  const [t4l,t4s]=arrays;
+  const canvas=document.getElementById('cv-concentration'); if(!canvas) return;
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
+    type:'line',
+    data:{labels:dates,datasets:[
+      {label:'Top-4 Long %', data:t4l, borderColor:'#4f8ef7', borderWidth:1.5, pointRadius:0, tension:.3, fill:false},
+      {label:'Top-4 Short %',data:t4s, borderColor:'#ef4444', borderWidth:1.5, pointRadius:0, tension:.3, fill:false},
+    ]},
+    options:{...CHART_BASE,responsive:true,maintainAspectRatio:false,
+      plugins:{...CHART_BASE.plugins,
+        annotation:{annotations:{line50:{type:'line',yMin:50,yMax:50,borderColor:'rgba(245,158,11,.5)',borderWidth:1,borderDash:[4,4]}}}
+      },
+      scales:{
+        x:{...CHART_BASE.scales.x},
+        y:{...CHART_BASE.scales.y,title:{display:true,text:'% of OI',color:'#5c6b8a',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ── Weekly table ──────────────────────────────────────────────
+let tableData=[];
+function renderWeeklyTable(){
+  tableData=[];
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
+    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const scores=inst.composite_scores||[];
+    tableData.push({
+      label:inst.label,key,
+      mmNet:last(mm.net), mmDelta:last(mm.change_net)??wow(mm.net),
+      mmZ:last(mm.z_score), mmCot:last(mm.cot_index?.w156),
+      score:scores.length?scores[scores.length-1]:0,
+      swNet:last(sw.net), swDelta:last(sw.change_net)??wow(sw.net),
+      prNet:last(pr.net), prDelta:last(pr.change_net)??wow(pr.net),
+      price:last(inst.price), priceWow:wowPct(inst.price)
+    });
+  }
+  sortAndBuildTable();
+}
+function sortAndBuildTable(){
+  const fields=['label','mmNet','mmDelta','mmZ','mmCot','score','swNet','swDelta','prNet','prDelta','price','priceWow'];
+  tableData.sort((a,b)=>{
+    const va=a[fields[sortCol]]??-Infinity, vb=b[fields[sortCol]]??-Infinity;
+    return sortCol===0?(va<vb?-1:va>vb?1:0)*sortDir:(va-vb)*sortDir;
+  });
+  const tbody=document.getElementById('weekly-tbody');
+  tbody.innerHTML=tableData.map(r=>`
+    <tr onclick="switchTab('instrument');setActiveInst('${r.key}')">
+      <td>${r.label}</td>
+      <td>${fmt(r.mmNet)}</td>
+      <td class="${(r.mmDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.mmDelta)}</td>
+      <td>${fmtZ(r.mmZ)}</td>
+      <td>${r.mmCot!=null?Math.round(r.mmCot)+'%':'—'}</td>
+      <td style="color:${getSignalColour(r.score)};font-weight:600">${r.score>=0?'+':''}${r.score}</td>
+      <td>${fmt(r.swNet)}</td>
+      <td class="${(r.swDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.swDelta)}</td>
+      <td>${fmt(r.prNet)}</td>
+      <td class="${(r.prDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.prDelta)}</td>
+      <td>$${fmt(r.price,2)}</td>
+      <td class="${(r.priceWow||0)>=0?'d-pos':'d-neg'}">${fmtPctChg(r.priceWow)}</td>
+    </tr>`).join('');
+  document.querySelectorAll('th[id^=th]').forEach(t=>t.style.color='');
+  const th=document.getElementById(`th${sortCol}`);
+  if(th) th.style.color='var(--accent)';
+}
+function sortTable(col){
+  if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=-1;}
+  sortAndBuildTable();
+}
+
+// === END CHUNK 4 ===

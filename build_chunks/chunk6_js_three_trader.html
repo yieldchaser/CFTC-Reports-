@@ -1,0 +1,122 @@
+
+// === BEGIN CHUNK 6: Three-Trader View + Crosshair ===
+
+// Bug 3 fix: normalise toggle
+function setNormalise(val){
+  normaliseByOI=val;
+  document.getElementById('btn-pct-oi').classList.toggle('active', val);
+  document.getElementById('btn-raw').classList.toggle('active', !val);
+  renderThreeTraderGrid();
+}
+
+function renderThreeTraderGrid(){
+  const grid=document.getElementById('three-trader-grid'); grid.innerHTML='';
+  // Destroy previously registered charts
+  ALL_CHARTS.forEach(c=>{try{c.destroy();}catch(e){}});
+  ALL_CHARTS.length=0;
+
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) return;
+    const panel=document.createElement('div'); panel.className='chart-panel';
+    const cid='cv-three-'+key;
+    panel.innerHTML=`
+      <div class="chart-header">
+        <div><div class="chart-title">${inst.label}</div><div class="chart-sub">MM · Swap · Producers + Price</div></div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>MM</div>
+          <div class="leg-item"><div class="leg-line" style="background:#f59e0b"></div>Swap</div>
+          <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div>Prod</div>
+        </div>
+      </div>
+      <div class="chart-container h240"><canvas id="${cid}"></canvas></div>`;
+    grid.appendChild(panel);
+
+    const canvas=document.getElementById(cid); if(!canvas) continue;
+    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const oi=inst.open_interest||[];
+
+    const {dates,arrays}=applyDateFilter(inst.dates, mm.net, sw.net, pr.net, inst.price, oi);
+    const [mmNet,swNet,prNet,price,oiArr]=arrays;
+    if(!dates?.length) continue;
+
+    let mmD=mmNet, swD=swNet, prD=prNet;
+    let yLabel='Net Pos', yLabel2='Price $';
+
+    if(normaliseByOI){
+      // Bug 3 fix: divide by OI so all traders are on same comparable scale
+      mmD=mmNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      swD=swNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      prD=prNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      yLabel='% of OI';
+    }
+
+    let datasets, scalesCfg;
+
+    if(normaliseByOI){
+      // Single y-axis: all on same scale
+      scalesCfg={
+        x:{...CHART_BASE.scales.x},
+        y:{position:'left',...CHART_BASE.scales.y,title:{display:true,text:yLabel,color:'#5c6b8a',font:{size:9}}},
+        y2:{position:'right',...CHART_BASE.scales.y,grid:{display:false},title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}},
+      };
+      datasets=[
+        {type:'line',label:'MM',   data:mmD, borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Swap', data:swD, borderColor:'#f59e0b',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Prod', data:prD, borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.4)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y2',borderDash:[3,3]},
+      ];
+    } else {
+      // Bug 3 fix: independent y-axes so large Producers don't crush MM/Swap
+      scalesCfg={
+        x:{...CHART_BASE.scales.x},
+        y: {position:'left', ...CHART_BASE.scales.y, title:{display:true,text:'MM Net',color:'#3b82f6',font:{size:9}}},
+        y1:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, display:false},
+        y2:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, display:false},
+        y3:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}},
+      };
+      datasets=[
+        {type:'line',label:'MM',   data:mmNet,borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Swap', data:swNet,borderColor:'#f59e0b',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1'},
+        {type:'line',label:'Prod', data:prNet,borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y2'},
+        {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.4)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y3',borderDash:[3,3]},
+      ];
+    }
+
+    const chart=new Chart(canvas.getContext('2d'),{
+      data:{labels:dates,datasets},
+      options:{...CHART_BASE,
+        plugins:{...CHART_BASE.plugins, legend:{display:true,labels:{color:'#9ba8c0',font:{size:10},boxWidth:10}}},
+        scales:scalesCfg,
+        onHover:(event,elements,chart)=>syncCross(chart,event.x)
+      }
+    });
+    ALL_CHARTS.push(chart);
+  }
+}
+
+// ── Synced crosshair across all charts ────────────────────────
+const syncCrosshairPlugin={
+  id:'syncCrosshair',
+  afterDraw(chart){
+    if(chart._crosshairX==null) return;
+    const ctx=chart.ctx, x=chart._crosshairX;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x,chart.chartArea.top);
+    ctx.lineTo(x,chart.chartArea.bottom);
+    ctx.strokeStyle='rgba(255,255,255,.25)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+Chart.register(syncCrosshairPlugin);
+
+function syncCross(activeChart, x){
+  ALL_CHARTS.forEach(c=>{
+    c._crosshairX=x;
+    c.update('none');
+  });
+}
+
+// === END CHUNK 6 ===

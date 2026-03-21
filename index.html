@@ -1,797 +1,1118 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>CFTC Natural Gas Positioning Dashboard</title>
-<meta name="description" content="Professional CFTC COT positioning dashboard for natural gas futures — Managed Money, Swap Dealers, Producers across 9 instruments."/>
+<meta name="description" content="Professional CFTC COT positioning dashboard â€” 9 Natural Gas instruments, 3 trader categories, composite signals."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
-  --bg:#06080f;--bg2:#0d1117;--bg3:#161b27;--bg4:#1e2535;
+  --bg:#06080f;--bg2:#0d1117;--bg3:#161b27;--bg4:#1e2535;--bg5:#242d42;
   --border:#253047;--border2:#2d3a55;
   --text:#e8eaf0;--text2:#9ba8c0;--text3:#5c6b8a;
   --accent:#4f8ef7;--accent2:#3a6fd8;
   --green:#22c55e;--red:#ef4444;--amber:#f59e0b;--purple:#a855f7;
-  --bull:#22c55e;--bear:#ef4444;--neutral:#9ba8c0;--diverg:#f59e0b;
   --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
   --r:8px;--r2:12px;--shadow:0 4px 24px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh;overflow-x:hidden}
-/* ── Layout ── */
-header{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+
+/* â”€â”€ Header â”€â”€ */
+header{background:linear-gradient(135deg,var(--bg2),var(--bg3));border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
 .logo{display:flex;align-items:center;gap:12px}
-.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo h1{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo h1{font-size:16px;font-weight:700;letter-spacing:-.3px}
 .logo p{font-size:11px;color:var(--text2);margin-top:1px}
 .header-meta{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .meta-item{text-align:right}
 .meta-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
-.meta-val{font-size:13px;font-weight:600;font-family:var(--mono)}
-/* ── Tabs ── */
-.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;overflow-x:auto}
-.tab-btn{padding:14px 20px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.meta-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)}
+
+/* â”€â”€ Tabs â”€â”€ */
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto}
+.tab-btn{padding:13px 18px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:var(--font)}
 .tab-btn:hover{color:var(--text)}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-/* ── Toolbar ── */
-.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+
+/* â”€â”€ Toolbar â”€â”€ */
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .toolbar label{font-size:12px;color:var(--text2)}
-select{background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);padding:6px 10px;font-size:12px;font-family:var(--font);cursor:pointer;outline:none}
+select{background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);padding:6px 10px;font-size:12px;font-family:var(--font);cursor:pointer;outline:none;transition:border-color .2s}
 select:focus{border-color:var(--accent)}
-/* ── Sections ── */
-.tab-panel{display:none;padding:20px 24px;gap:20px}
-.tab-panel.active{display:flex;flex-direction:column}
-/* ── Signal Cards ── */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.signal-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.signal-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s}
-.signal-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow)}
-.signal-card.bull{border-left:3px solid var(--green)}
-.signal-card.bear{border-left:3px solid var(--red)}
-.signal-card.diverg{border-left:3px solid var(--amber)}
-.signal-card.neutral{border-left:3px solid var(--border2)}
-.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-.card-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+#trader-wrap{display:flex;align-items:center;gap:8px}
+
+/* â”€â”€ Tab panels â”€â”€ */
+.tab-panel{display:none;padding:20px 24px;flex-direction:column;gap:16px}
+.tab-panel.active{display:flex}
+
+/* â”€â”€ Section title â”€â”€ */
+.section-title{font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* â”€â”€ Signal Cards â”€â”€ */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.signal-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:13px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.signal-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--border2)}
+.signal-card.score-3 {border-left:3px solid #16a34a}
+.signal-card.score-2 {border-left:3px solid #22c55e}
+.signal-card.score-1 {border-left:3px solid #86efac}
+.signal-card.score-0 {border-left:3px solid var(--border2)}
+.signal-card.score--1{border-left:3px solid #fca5a5}
+.signal-card.score--2{border-left:3px solid var(--red)}
+.signal-card.score--3{border-left:3px solid #991b1b}
+.card-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.card-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
 .card-key{font-size:11px;color:var(--text3)}
-.card-val{font-size:12px;font-weight:600;font-family:var(--mono)}
-.card-signal{margin-top:8px;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;display:inline-block}
-.card-signal.bull{background:rgba(34,197,94,.15);color:var(--green)}
-.card-signal.bear{background:rgba(239,68,68,.15);color:var(--red)}
-.card-signal.diverg{background:rgba(245,158,11,.15);color:var(--amber)}
-.card-signal.neutral{background:rgba(155,168,192,.1);color:var(--text2)}
-.wow-up{color:var(--green)}
-.wow-dn{color:var(--red)}
-/* ── Heatmap ── */
-.heatmap-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;overflow-x:auto}
-.heatmap-wrap h2{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text2)}
-.heatmap-grid{display:grid;gap:2px}
-.heatmap-row{display:flex;align-items:center;gap:2px}
-.hm-label{font-size:10px;color:var(--text2);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
-.hm-cell{width:14px;height:14px;border-radius:2px;cursor:pointer;transition:transform .1s;flex-shrink:0}
-.hm-cell:hover{transform:scale(1.4);z-index:10}
-.hm-dates{display:flex;gap:2px;margin-left:112px;overflow:hidden}
-.hm-date-lbl{font-size:9px;color:var(--text3);width:14px;text-align:center;transform:rotate(-45deg) translateX(-4px);white-space:nowrap}
-/* ── Weekly Table ── */
+.card-val{font-size:11px;font-weight:600;font-family:var(--mono)}
+.card-signal{margin-top:8px;padding:3px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;display:inline-block}
+.score-pill{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle}
+.cot-bar-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:4px;position:relative}
+.cot-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.wow-up{color:var(--green);font-size:10px}
+.wow-dn{color:var(--red);font-size:10px}
+
+/* â”€â”€ Heatmap â€” CRITICAL FIX for Bug 1 â”€â”€ */
+.heatmap-outer{overflow-x:auto;width:100%}
+.heatmap-header-row{display:grid;grid-template-columns:120px repeat(52,1fr);width:100%;min-width:800px;gap:2px;margin-bottom:2px}
+.heatmap-date-lbl{font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;padding-top:2px}
+.heatmap-body{display:flex;flex-direction:column;gap:2px;min-width:800px}
+.heatmap-row{display:grid;grid-template-columns:120px repeat(52,1fr);gap:2px;align-items:center}
+.hm-row-label{font-size:10px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+.hm-cell{height:16px;border-radius:2px;cursor:pointer;transition:transform .1s;min-width:0}
+.hm-cell:hover{transform:scale(1.5);z-index:20;position:relative}
+
+/* â”€â”€ Correlation Matrix â”€â”€ */
+.corr-matrix-wrap{overflow-x:auto}
+.corr-matrix{display:grid;gap:2px}
+.corr-row{display:flex;gap:2px;align-items:center}
+.corr-row-label{font-size:9px;color:var(--text2);font-family:var(--mono);width:100px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.corr-cell{width:44px;height:36px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:rgba(255,255,255,.8);transition:transform .1s;flex-shrink:0}
+.corr-cell:hover{transform:scale(1.1);z-index:10;position:relative}
+
+/* â”€â”€ Table â”€â”€ */
 .table-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
-.table-wrap h2{font-size:13px;font-weight:600;padding:14px 16px;border-bottom:1px solid var(--border);color:var(--text2)}
+.table-wrap h3{font-size:12px;font-weight:600;padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
 table{width:100%;border-collapse:collapse}
-th{padding:8px 10px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border);user-select:none}
+th{padding:7px 9px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border);user-select:none}
 th:first-child{text-align:left}
 th:hover{color:var(--text)}
-th .sort-arrow{margin-left:4px;opacity:.5}
-th.sorted .sort-arrow{opacity:1;color:var(--accent)}
-td{padding:8px 10px;text-align:right;font-size:12px;font-family:var(--mono);border-bottom:1px solid rgba(37,48,71,.5)}
-td:first-child{text-align:left;font-family:var(--font);font-size:12px;font-weight:500}
+td{padding:7px 9px;text-align:right;font-size:11px;font-family:var(--mono);border-bottom:1px solid rgba(37,48,71,.4)}
+td:first-child{text-align:left;font-family:var(--font);font-size:11px;font-weight:500}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(79,142,247,.04)}
-.delta-pos{color:var(--green)}
-.delta-neg{color:var(--red)}
-/* ── Charts ── */
-.chart-panel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-.chart-title{font-size:13px;font-weight:600}
-.chart-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
-.chart-legend{display:flex;gap:12px;flex-wrap:wrap}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
-.legend-dot{width:10px;height:10px;border-radius:50%}
-.legend-line{width:20px;height:2px;border-radius:1px}
-.chart-container{position:relative;height:260px}
-.chart-container.tall{height:320px}
-.instruments-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px}
-.three-trader-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px}
-/* ── Inst selector ── */
-.inst-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.inst-btn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .2s}
-.inst-btn.active,.inst-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
-/* ── Percentile bars ── */
-.pct-bars{display:flex;flex-direction:column;gap:10px;padding:8px 0}
+tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
+.d-pos{color:var(--green)}
+.d-neg{color:var(--red)}
+
+/* â”€â”€ Chart panels â”€â”€ */
+.chart-panel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;position:relative}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.chart-title{font-size:12px;font-weight:600}
+.chart-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.chart-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.icon-btn{background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:4px 7px;color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s}
+.icon-btn:hover{background:var(--bg5);color:var(--text)}
+.chart-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
+.leg-dot{width:9px;height:9px;border-radius:50%}
+.leg-line{width:18px;height:2px;border-radius:1px}
+.chart-container{position:relative}
+.chart-container.h240{height:240px}
+.chart-container.h200{height:200px}
+.chart-container.h180{height:180px}
+.no-data{color:var(--text3);text-align:center;padding:40px;font-size:12px}
+
+/* â”€â”€ Instrument pills â”€â”€ */
+.pill-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
+.pill.active,.pill:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* â”€â”€ Instrument charts layout â”€â”€ */
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+
+/* â”€â”€ Three trader grid â”€â”€ */
+.three-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:14px}
+.normalise-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.toggle-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .2s}
+.toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* â”€â”€ Percentile bars â”€â”€ */
+.pct-bars{display:flex;flex-direction:column;gap:12px;padding:10px 4px}
 .pct-bar-row{display:flex;align-items:center;gap:10px}
-.pct-bar-label{font-size:11px;color:var(--text2);width:80px;flex-shrink:0}
-.pct-bar-track{flex:1;height:20px;background:var(--bg4);border-radius:4px;position:relative;overflow:hidden}
-.pct-bar-zones{position:absolute;inset:0;display:flex}
-.pct-zone-red{background:rgba(239,68,68,.2);width:20%}
-.pct-zone-mid{flex:1}
-.pct-zone-grn{background:rgba(34,197,94,.2);width:20%}
-.pct-bar-fill{position:absolute;top:2px;bottom:2px;border-radius:3px;transition:width .5s ease}
-.pct-bar-marker{position:absolute;top:0;bottom:0;width:2px;background:var(--text);transform:translateX(-50%)}
-.pct-bar-val{font-size:11px;font-family:var(--mono);font-weight:600;width:40px;text-align:right;flex-shrink:0}
-/* ── Section title ── */
-.section-title{font-size:14px;font-weight:600;color:var(--text2);padding:4px 0 12px;display:flex;align-items:center;gap:8px}
-.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
-/* ── Tooltip ── */
-#tooltip{position:fixed;pointer-events:none;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;font-size:11px;line-height:1.8;z-index:9999;max-width:220px;box-shadow:var(--shadow);display:none}
-/* ── Error banner ── */
-#error-banner{display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:12px 24px;text-align:center;font-size:12px}
-/* ── Loading ── */
+.pct-bar-lbl{font-size:11px;color:var(--text2);width:70px;flex-shrink:0}
+.pct-bar-track{flex:1;height:18px;background:var(--bg4);border-radius:4px;position:relative;overflow:hidden}
+.pct-zone-wrap{position:absolute;inset:0;display:flex}
+.pct-zone-r{width:20%;background:rgba(239,68,68,.2)}
+.pct-zone-m{flex:1}
+.pct-zone-g{width:20%;background:rgba(34,197,94,.2)}
+.pct-bar-fill{position:absolute;top:2px;bottom:2px;left:0;border-radius:3px;transition:width .5s}
+.pct-bar-marker{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.7);transform:translateX(-50%)}
+.pct-bar-val{font-size:11px;font-family:var(--mono);font-weight:600;width:36px;text-align:right;flex-shrink:0}
+
+/* â”€â”€ Year overlay checkboxes â”€â”€ */
+.year-toggles{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.year-toggle{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer;user-select:none}
+.year-toggle input{cursor:pointer;accent-color:var(--accent)}
+
+/* â”€â”€ Tooltip â”€â”€ */
+#tooltip{position:fixed;pointer-events:none;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:9px 11px;font-size:11px;line-height:1.9;z-index:9999;max-width:210px;box-shadow:var(--shadow);display:none}
+
+/* â”€â”€ Loading / Error â”€â”€ */
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .4s}
-.spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.spinner{width:38px;height:38px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* ── Responsive ── */
+#error-banner{display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:var(--red);padding:12px 24px;font-size:12px;text-align:center}
+
+/* â”€â”€ Responsive â”€â”€ */
 @media(max-width:640px){
-  .instruments-grid,.three-trader-grid{grid-template-columns:1fr}
-  .cards-grid{grid-template-columns:repeat(2,1fr)}
-  header{padding:12px 14px}
-  .tab-panel{padding:12px 14px}
-  .toolbar{padding:8px 14px}
+  header,#main-content .tab-panel{padding:12px 14px}
   .tabs{padding:0 14px}
+  .toolbar{padding:8px 14px}
+  .inst-grid,.three-grid{grid-template-columns:1fr}
+  .cards-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
-</head>
 <body>
-
-<div id="loading"><div class="spinner"></div><p style="color:var(--text2);font-size:13px">Loading CFTC data…</p></div>
-<div id="error-banner" role="alert"></div>
+<div id="loading"><div class="spinner"></div><p style="color:var(--text2);font-size:13px">Loading CFTC dataâ€¦</p></div>
+<div id="error-banner"></div>
 <div id="tooltip"></div>
 
-<!-- HEADER -->
 <header>
   <div class="logo">
-    <div class="logo-icon">📊</div>
+    <div class="logo-icon">ðŸ“Š</div>
     <div>
       <h1>CFTC Natural Gas Positioning</h1>
-      <p>Commitment of Traders — 9 Instruments · 3 Trader Categories</p>
+      <p>Commitment of Traders Â· 9 Instruments Â· 3 Trader Categories</p>
     </div>
   </div>
   <div class="header-meta">
-    <div class="meta-item"><div class="meta-label">Latest Report</div><div class="meta-val" id="latest-report">—</div></div>
-    <div class="meta-item"><div class="meta-label">Last Updated</div><div class="meta-val" id="last-updated">—</div></div>
+    <div class="meta-item"><div class="meta-label">Latest Report</div><div class="meta-val" id="latest-report">â€”</div></div>
+    <div class="meta-item"><div class="meta-label">Last Updated</div><div class="meta-val" id="last-updated">â€”</div></div>
   </div>
 </header>
 
-<!-- TABS -->
 <div class="tabs" role="tablist">
-  <button class="tab-btn active" id="tab-overview"   onclick="showTab('overview')"   role="tab">📋 Overview</button>
-  <button class="tab-btn"        id="tab-instrument" onclick="showTab('instrument')" role="tab">📈 By Instrument</button>
-  <button class="tab-btn"        id="tab-three"      onclick="showTab('three')"      role="tab">🔀 Three-Trader View</button>
+  <button class="tab-btn active" id="tab-overview"    onclick="switchTab('overview')"    role="tab">ðŸ“‹ Overview</button>
+  <button class="tab-btn"        id="tab-instrument"  onclick="switchTab('instrument')"  role="tab">ðŸ“ˆ By Instrument</button>
+  <button class="tab-btn"        id="tab-three"       onclick="switchTab('three')"       role="tab">ðŸ”€ Three-Trader View</button>
 </div>
 
-<!-- TOOLBAR -->
 <div class="toolbar">
   <label for="date-filter">Show data from:</label>
   <select id="date-filter" onchange="onDateFilterChange()"></select>
-  <label for="trader-filter" style="margin-left:12px">Trader:</label>
-  <select id="trader-filter" onchange="onTraderFilterChange()">
-    <option value="managed_money">Managed Money</option>
-    <option value="swap_dealers">Swap Dealers</option>
-    <option value="producers">Producers</option>
-  </select>
+  <div id="trader-wrap" style="display:none">
+    <label for="trader-filter">Trader:</label>
+    <select id="trader-filter" onchange="onTraderFilterChange()">
+      <option value="managed_money">Managed Money</option>
+      <option value="swap_dealers">Swap Dealers</option>
+      <option value="producers">Producers</option>
+    </select>
+  </div>
 </div>
 
-<!-- ══ TAB: OVERVIEW ══ -->
+<div id="main-content">
+
+<!-- â•â• OVERVIEW TAB â•â• -->
 <div id="panel-overview" class="tab-panel active">
   <div class="section-title">Current Week Signal Dashboard</div>
-  <div class="cards-grid" id="cards-grid"></div>
+  <div id="signal-cards-container" class="cards-grid"></div>
 
-  <div class="section-title" style="margin-top:8px">Positioning Heatmap — MM Z-Score (Last 52 Weeks)</div>
-  <div class="heatmap-wrap">
-    <div id="heatmap-dates" class="hm-dates"></div>
-    <div id="heatmap-grid" class="heatmap-grid"></div>
+  <div class="section-title">Positioning Heatmap â€” MM Z-Score (Last 52 Weeks)</div>
+  <div class="chart-panel" style="padding:12px">
+    <div class="heatmap-outer">
+      <div id="heatmap-header-row" class="heatmap-header-row"></div>
+      <div id="heatmap-body" class="heatmap-body"></div>
+    </div>
   </div>
 
-  <div class="section-title" style="margin-top:8px">Weekly Change Summary</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:14px">
+    <div>
+      <div class="section-title">Instrument Correlation Matrix (52w MM Net)</div>
+      <div class="chart-panel" style="padding:12px">
+        <div class="corr-matrix-wrap">
+          <div id="corr-col-labels" style="display:flex;gap:2px;margin-left:102px;margin-bottom:2px;flex-wrap:nowrap"></div>
+          <div id="corr-matrix-body" class="corr-matrix"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Market Concentration â€” Nat Gas NYME</div>
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div><div class="chart-title">Top-4 Trader Concentration</div><div class="chart-sub">% of Open Interest held by largest 4 longs and shorts</div></div>
+        </div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:#4f8ef7"></div>Top-4 Long</div>
+          <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Top-4 Short</div>
+        </div>
+        <div class="chart-container h240"><canvas id="cv-concentration"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Weekly Change Summary</div>
   <div class="table-wrap">
     <table id="weekly-table">
-      <thead>
-        <tr>
-          <th onclick="sortTable(0)" id="th0">Instrument<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(1)" id="th1">MM Net<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(2)" id="th2">MM Δwow<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(3)" id="th3">MM Z<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(4)" id="th4">Swap Net<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(5)" id="th5">Swap Δ<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(6)" id="th6">Prod Net<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(7)" id="th7">Prod Δ<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(8)" id="th8">Price<span class="sort-arrow">↕</span></th>
-          <th onclick="sortTable(9)" id="th9">Price Δ<span class="sort-arrow">↕</span></th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th onclick="sortTable(0)" id="th0">Instrument â†•</th>
+        <th onclick="sortTable(1)" id="th1">MM Net â†•</th>
+        <th onclick="sortTable(2)" id="th2">MM Î” â†•</th>
+        <th onclick="sortTable(3)" id="th3">MM Z â†•</th>
+        <th onclick="sortTable(4)" id="th4">COT(3y) â†•</th>
+        <th onclick="sortTable(5)" id="th5">Score â†•</th>
+        <th onclick="sortTable(6)" id="th6">Swap Net â†•</th>
+        <th onclick="sortTable(7)" id="th7">Swap Î” â†•</th>
+        <th onclick="sortTable(8)" id="th8">Prod Net â†•</th>
+        <th onclick="sortTable(9)" id="th9">Prod Î” â†•</th>
+        <th onclick="sortTable(10)" id="th10">Price â†•</th>
+        <th onclick="sortTable(11)" id="th11">Price Î”% â†•</th>
+      </tr></thead>
       <tbody id="weekly-tbody"></tbody>
     </table>
   </div>
 </div>
 
-<!-- ══ TAB: BY INSTRUMENT ══ -->
+<!-- â•â• BY INSTRUMENT TAB â•â• -->
 <div id="panel-instrument" class="tab-panel">
-  <div class="inst-selector" id="inst-selector"></div>
-  <div id="inst-charts-area"></div>
+  <div id="instrument-pills" class="pill-wrap"></div>
+  <div id="inst-charts-area" class="inst-grid"></div>
 </div>
 
-<!-- ══ TAB: THREE-TRADER ══ -->
+<!-- â•â• THREE-TRADER TAB â•â• -->
 <div id="panel-three" class="tab-panel">
-  <div class="section-title">Three-Trader Overlay — All 9 Instruments</div>
-  <div class="three-trader-grid" id="three-trader-grid"></div>
+  <div class="normalise-bar">
+    <span style="font-size:12px;color:var(--text2)">Scale mode:</span>
+    <button class="toggle-btn active" id="btn-pct-oi"  onclick="setNormalise(true)">% of Open Interest</button>
+    <button class="toggle-btn"        id="btn-raw"      onclick="setNormalise(false)">Raw Contracts</button>
+  </div>
+  <div id="three-trader-grid" class="three-grid"></div>
 </div>
 
+</div><!-- /#main-content -->
 <script>
-// ═══════════════════════════════════════════════════════════════
-// GLOBALS
-// ═══════════════════════════════════════════════════════════════
+// === BEGIN CHUNK 3: Data loading, constants, utilities ===
+
 let CFTC_DATA = null;
 let filterFromDate = null;
+let activeInstrument = 'nat_gas_nyme';
 let activeTrader = 'managed_money';
-let activeInst = 'nat_gas_nyme';
-let ALL_CHARTS = [];      // for crosshair sync
-let sortCol = 2, sortDir = -1;  // default: sort by |MM Δwow| desc
+let normaliseByOI = true;
+const ALL_CHARTS = [];
+let sortCol = 2, sortDir = -1;
 
-const INST_KEYS = ['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen','henry_hub_nyme',
-                   'hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice'];
+const INSTRUMENT_KEYS = ['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen','henry_hub_nyme',
+  'hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice'];
 
-const TRADER_LABELS = {managed_money:'Managed Money', swap_dealers:'Swap Dealers', producers:'Producers'};
-const TRADER_COLORS = {managed_money:'#4f8ef7', swap_dealers:'#f59e0b', producers:'#22c55e'};
-const CHART_DEFAULTS = {
+const INSTRUMENT_LABELS = {
+  nat_gas_nyme:'Nat Gas NYME', nat_gas_ld1:'Nat Gas LD1',
+  nat_gas_ice_pen:'NAT GAS ICE PEN', henry_hub_nyme:'Henry Hub NYME',
+  hh_last_day:'HH Last Day Fin', hh_penult_fin:'HH Penultimate Fin',
+  hh_penult_nat_gas:'HH Penultimate Nat Gas',
+  hh_index_ice:'HH Index ICE', hh_basis_ice:'HH Basis ICE',
+};
+const TRADER_KEYS   = ['managed_money','swap_dealers','producers'];
+const TRADER_LABELS = {managed_money:'Managed Money',swap_dealers:'Swap Dealers',producers:'Producers'};
+const TRADER_COLOURS= {managed_money:'#3b82f6',swap_dealers:'#f59e0b',producers:'#22c55e'};
+
+const CHART_BASE = {
   responsive:true, maintainAspectRatio:false,
-  animation:{duration:300},
-  plugins:{legend:{display:false}, tooltip:{enabled:false}},
+  animation:{duration:250},
+  plugins:{legend:{display:false},tooltip:{enabled:false}},
   scales:{
-    x:{ticks:{color:'#5c6b8a',maxTicksLimit:8,maxRotation:0,font:{size:10}}, grid:{color:'rgba(37,48,71,.5)'}},
-    y:{ticks:{color:'#5c6b8a',font:{size:10}}, grid:{color:'rgba(37,48,71,.3)'}},
+    x:{ticks:{color:'#5c6b8a',maxTicksLimit:7,maxRotation:0,font:{size:10}},grid:{color:'rgba(37,48,71,.5)'}},
+    y:{ticks:{color:'#5c6b8a',font:{size:10}},grid:{color:'rgba(37,48,71,.3)'}},
   }
 };
 
-// ═══════════════════════════════════════════════════════════════
-// DATA LOADING
-// ═══════════════════════════════════════════════════════════════
+// â”€â”€ Data loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadData(){
   try{
-    const resp = await fetch(`data/cftc_processed.json?v=${Date.now()}`);
-    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    CFTC_DATA = await resp.json();
-    const req = ['meta','instruments'];
-    for(const k of req) if(!CFTC_DATA[k]) throw new Error(`Missing key: ${k}`);
+    const r = await fetch(`data/cftc_processed.json?v=${Date.now()}`);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    CFTC_DATA = await r.json();
+    if(!CFTC_DATA.meta||!CFTC_DATA.instruments) throw new Error('Bad JSON structure');
+    document.getElementById('latest-report').textContent = CFTC_DATA.meta.latest_report_date;
     document.getElementById('last-updated').textContent =
       new Date(CFTC_DATA.meta.last_updated).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    document.getElementById('latest-report').textContent = CFTC_DATA.meta.latest_report_date;
     populateDateFilter();
-    populateInstSelector();
-    render();
+    initDashboard();
     document.getElementById('loading').style.opacity='0';
     setTimeout(()=>document.getElementById('loading').style.display='none',400);
-  } catch(e){
-    showError(`Data unavailable — ${e.message}. Last successful update: ${document.getElementById('latest-report').textContent||'unknown'}`);
+  }catch(e){
+    const b=document.getElementById('error-banner');
+    b.textContent=`Data unavailable â€” ${e.message}`;
+    b.style.display='block';
     document.getElementById('loading').style.display='none';
   }
 }
 
-function showError(msg){
-  const b=document.getElementById('error-banner');
-  b.textContent=msg; b.style.display='block';
-}
-
-// ═══════════════════════════════════════════════════════════════
-// FILTER HELPERS
-// ═══════════════════════════════════════════════════════════════
+// â”€â”€ Date filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function populateDateFilter(){
-  const dates = CFTC_DATA.instruments['nat_gas_nyme']?.dates || [];
+  const dates = CFTC_DATA.instruments['nat_gas_nyme']?.dates||[];
+  const last = dates.at(-1)||'';
   const sel = document.getElementById('date-filter');
-  const options = [
-    {label:'All history', value:''},
-    {label:'Last 5 years', value: offsetDate(dates.at(-1),-5*52)},
-    {label:'Last 3 years', value: offsetDate(dates.at(-1),-3*52)},
-    {label:'Last 2 years', value: offsetDate(dates.at(-1),-2*52)},
-    {label:'Last 1 year',  value: offsetDate(dates.at(-1),-52)},
-    {label:'Last 6 months',value: offsetDate(dates.at(-1),-26)},
-    {label:'Last 3 months',value: offsetDate(dates.at(-1),-13)},
+  const opts=[
+    {l:'All history',v:''},
+    {l:'Last 5 years',v:wkOffset(last,-260)},
+    {l:'Last 3 years',v:wkOffset(last,-156)},
+    {l:'Last 2 years',v:wkOffset(last,-104)},
+    {l:'Last 1 year', v:wkOffset(last,-52)},
+    {l:'Last 6 months',v:wkOffset(last,-26)},
   ];
-  // Also add year-start anchors
-  const years = [...new Set(dates.map(d=>d.slice(0,4)))].slice(-6);
-  for(const y of years) options.push({label:`Since Jan ${y}`, value:`${y}-01-01`});
-  options.sort((a,b)=>a.value.localeCompare(b.value));
-  sel.innerHTML = options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
-  sel.value = '';
-  filterFromDate = null;
+  const years=[...new Set(dates.map(d=>d.slice(0,4)))].slice(-6);
+  years.forEach(y=>opts.push({l:`Since Jan ${y}`,v:`${y}-01-01`}));
+  sel.innerHTML=opts.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
 }
-
-function offsetDate(isoDate, weekOffset){
-  const d = new Date(isoDate);
-  d.setDate(d.getDate() + weekOffset*7);
+function wkOffset(iso, weeks){
+  const d=new Date(iso); d.setDate(d.getDate()+weeks*7);
   return d.toISOString().slice(0,10);
 }
-
-function applyDateFilter(dates, ...arrays){
-  if(!filterFromDate) return {dates, arrays};
-  const cutoff = new Date(filterFromDate);
-  const idx = dates.findIndex(d=>new Date(d)>=cutoff);
-  const start = idx===-1 ? 0 : idx;
-  return {dates:dates.slice(start), arrays:arrays.map(a=>a?a.slice(start):a)};
-}
-
 function onDateFilterChange(){
-  filterFromDate = document.getElementById('date-filter').value || null;
-  rebuildCharts();
+  filterFromDate=document.getElementById('date-filter').value||null;
+  redrawAll();
 }
 function onTraderFilterChange(){
-  activeTrader = document.getElementById('trader-filter').value;
-  rebuildCharts();
+  activeTrader=document.getElementById('trader-filter').value;
+  renderByInstrument();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TAB SWITCHING
-// ═══════════════════════════════════════════════════════════════
-function showTab(name){
+// â”€â”€ Date filter application â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function applyDateFilter(dates,...arrays){
+  if(!filterFromDate) return {dates,arrays};
+  const cutoff=new Date(filterFromDate);
+  const idx=dates.findIndex(d=>new Date(d)>=cutoff);
+  const s=idx===-1?0:idx;
+  return{dates:dates.slice(s),arrays:arrays.map(a=>a?a.slice(s):a)};
+}
+
+// â”€â”€ Formatting helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function fmt(n,dec=0){
+  if(n==null||n===undefined||isNaN(n)) return 'â€”';
+  return (+n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtZ(n){ return n==null||isNaN(n)?'â€”':((+n>=0?'+':'')+((+n).toFixed(2))); }
+function fmtPct(n){ return n==null||isNaN(n)?'â€”':`${Math.round(+n*100)}th`; }
+function fmtChg(n){ return n==null||isNaN(n)?'â€”':((+n>=0?'+':'')+fmt(n)); }
+function fmtPctChg(n){ return n==null||isNaN(n)?'â€”':((+n>=0?'+':'')+((+n*100).toFixed(1))+'%'); }
+function last(arr,n=1){ return arr&&arr.length>=n?arr[arr.length-n]:null; }
+function wow(arr){ const v=last(arr),p=last(arr,2); return v!=null&&p!=null?v-p:null; }
+function wowPct(arr){ const v=last(arr),p=last(arr,2); return v!=null&&p!=null&&p!==0?(v-p)/Math.abs(p):null; }
+function nn(v){ return v==null||isNaN(v)?null:v; }
+
+// â”€â”€ Signal / composite score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function getSignalLabel(score){
+  const m={3:'STRONG BULLISH SETUP',2:'BULLISH POSITIONING',1:'MILD BULLISH BIAS',
+           0:'NEUTRAL','-1':'MILD BEARISH BIAS','-2':'BEARISH POSITIONING','-3':'STRONG BEARISH SETUP'};
+  return m[String(score)]||'NEUTRAL';
+}
+function getSignalColour(score){
+  if(score>=3) return '#16a34a';
+  if(score===2) return '#22c55e';
+  if(score===1) return '#86efac';
+  if(score===-1) return '#fca5a5';
+  if(score===-2) return '#ef4444';
+  if(score<=-3) return '#991b1b';
+  return '#5c6b8a';
+}
+function scoreClass(score){
+  const s=Math.max(-3,Math.min(3,+score||0));
+  return s>=0?`score-${s}`:`score--${Math.abs(s)}`;
+}
+
+// â”€â”€ Chart destroy helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function destroyCharts(ids){
+  ids.forEach(id=>{
+    const canvas=document.getElementById(id);
+    if(!canvas) return;
+    const ex=Chart.getChart(canvas);
+    if(ex) ex.destroy();
+  });
+}
+function destroyAll(){
+  ALL_CHARTS.forEach(c=>{try{c.destroy();}catch(e){}});
+  ALL_CHARTS.length=0;
+}
+
+// â”€â”€ Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function showTip(e, html){
+  const t=document.getElementById('tooltip');
+  t.innerHTML=html; t.style.display='block'; posTip(e);
+}
+function posTip(e){
+  const t=document.getElementById('tooltip');
+  let x=e.clientX+12, y=e.clientY-8;
+  if(x+220>window.innerWidth) x=e.clientX-224;
+  if(y+130>window.innerHeight) y=e.clientY-130;
+  t.style.left=x+'px'; t.style.top=y+'px';
+}
+function hideTip(){ document.getElementById('tooltip').style.display='none'; }
+document.addEventListener('mousemove',e=>{
+  if(document.getElementById('tooltip').style.display==='block') posTip(e);
+});
+
+// â”€â”€ Z-score to heatmap colour â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function zColour(z){
+  if(z==null||isNaN(z)) return '#1e2535';
+  const v=Math.max(-2.5,Math.min(2.5,+z));
+  if(v>=0){ const t=v/2.5; return `hsl(${Math.round(120*t)},65%,${Math.round(25+t*20)}%)`; }
+  else{ const t=-v/2.5; return `hsl(0,${Math.round(60*t+10)}%,${Math.round(20+t*20)}%)`; }
+}
+// Correlation colour
+function corrColour(c){
+  if(c==null||isNaN(c)) return '#1e2535';
+  const v=Math.max(-1,Math.min(1,+c));
+  if(v>=0){ const t=v; return `hsl(${Math.round(120*t)},60%,${Math.round(20+t*25)}%)`; }
+  else{ const t=-v; return `hsl(0,${Math.round(50*t+10)}%,${Math.round(18+t*22)}%)`; }
+}
+
+// â”€â”€ Tab switching â€” Bug 4 fix: hide trader-filter on non-instrument tabs â”€â”€
+function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  document.getElementById('panel-'+name).classList.add('active');
-  // lazy render
-  if(name==='instrument') renderInstView();
-  if(name==='three') renderThreeTrader();
+  document.getElementById('panel-'+(name==='three'?'three':'instrument'===name?'instrument':'overview')).classList.add('active');
+  // Bug 4 fix: trader dropdown only shown on By Instrument tab
+  document.getElementById('trader-wrap').style.display = name==='instrument'?'flex':'none';
+  if(name==='instrument') renderByInstrument();
+  if(name==='three')      renderThreeTraderGrid();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// RENDER ORCHESTRATOR
-// ═══════════════════════════════════════════════════════════════
-function render(){
-  renderSignalCards();
-  renderHeatmap();
-  renderWeeklyTable();
-}
-function rebuildCharts(){
-  ALL_CHARTS.forEach(c=>c.destroy());
-  ALL_CHARTS=[];
-  render();
-  const active = document.querySelector('.tab-panel.active');
-  if(active?.id==='panel-instrument') renderInstView();
-  if(active?.id==='panel-three') renderThreeTrader();
+function redrawAll(){
+  const active=document.querySelector('.tab-panel.active');
+  if(!active) return;
+  if(active.id==='panel-overview'){
+    renderSignalCards();
+    renderHeatmap();
+    renderCorrelationMatrix();
+    renderConcentrationChart();
+    renderWeeklyTable();
+  }
+  if(active.id==='panel-instrument') renderByInstrument();
+  if(active.id==='panel-three') renderThreeTraderGrid();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SIGNAL LOGIC
-// ═══════════════════════════════════════════════════════════════
-function getSignal(mmNet, mmZ, mmPct, prodNet, prodZ){
-  if(mmZ===null||mmZ===undefined) return {type:'neutral',label:'NEUTRAL'};
-  if(mmZ>1.5 && mmPct>0.80) return {type:'bull',label:'MM EXTENDED LONG'};
-  if(mmZ<-1.5 && mmPct<0.20) return {type:'bear',label:'MM EXTENDED SHORT'};
-  const mmAbs = Math.abs(mmZ||0), prodAbs = Math.abs(prodZ||0);
-  if(mmNet>0 && prodNet<0 && mmAbs>1.0 && prodAbs>1.0) return {type:'diverg',label:'MM vs PROD DIVERGENCE'};
-  return {type:'neutral',label:'NEUTRAL'};
-}
+// === END CHUNK 3 ===
 
-function last(arr,n=1){ return arr && arr.length>=n ? arr[arr.length-n] : null; }
-function fmt(n,dec=0){ return n==null?'—':(+n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
-function fmtZ(n){ return n==null?'—':(+n>=0?'+':'')+((+n).toFixed(2)); }
-function fmtPct(n){ return n==null?'—':`${(+n*100).toFixed(0)}th`; }
-function fmtPctChg(n){ return n==null?'—':((+n>=0?'+':'')+((+n*100).toFixed(1))+'%'); }
-function wow(arr){ const l=last(arr), p=last(arr,2); return l!=null&&p!=null?l-p:null; }
-function wowPct(arr){ const l=last(arr), p=last(arr,2); return l!=null&&p!=null&&p!==0?(l-p)/Math.abs(p):null; }
+// === BEGIN CHUNK 4: Overview tab renderers ===
 
-// ═══════════════════════════════════════════════════════════════
-// SIGNAL CARDS
-// ═══════════════════════════════════════════════════════════════
+// â”€â”€ Signal Cards (Bug 2 fix: >= <= thresholds; Enhancement 6: composite score) â”€â”€
 function renderSignalCards(){
-  const grid = document.getElementById('cards-grid');
-  grid.innerHTML='';
-  for(const key of INST_KEYS){
-    const inst = CFTC_DATA.instruments[key]; if(!inst) continue;
-    const mm = inst.managed_money||{}, sw = inst.swap_dealers||{}, pr = inst.producers||{};
+  const g=document.getElementById('signal-cards-container');
+  g.innerHTML='';
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
+    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const scores=inst.composite_scores||[];
+    const score=scores.length?scores[scores.length-1]:0;
     const mmNet=last(mm.net), mmZ=last(mm.z_score), mmPct=last(mm.pct_rank);
-    const swNet=last(sw.net), prNet=last(pr.net), prZ=last(pr.z_score);
+    const mmCot=last(mm.cot_index?.w156);
+    const swNet=last(sw.net), prNet=last(pr.net);
     const price=last(inst.price), priceWow=wowPct(inst.price);
-    const mmWow=wow(mm.net), sig=getSignal(mmNet,mmZ,mmPct,prNet,prZ);
+    const mmDelta=last(mm.change_net)??wow(mm.net);
+    const cotPct=mmCot!=null?Math.round(+mmCot):null;
+
+    // COT gauge colour
+    const cotC = cotPct==null?'#5c6b8a':cotPct>=80?'#22c55e':cotPct<=20?'#ef4444':'#f59e0b';
+    const sigLabel=getSignalLabel(score);
+    const sigCol=getSignalColour(score);
+
     const card=document.createElement('div');
-    card.className=`signal-card ${sig.type}`;
-    card.title=`Click to view ${inst.label}`;
-    card.onclick=()=>{showTab('instrument');setActiveInst(key)};
+    card.className=`signal-card ${scoreClass(score)}`;
+    card.onclick=()=>{switchTab('instrument');setActiveInst(key)};
     card.innerHTML=`
-      <div class="card-title">${inst.label}</div>
-      <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)} <small class="${mmWow>=0?'wow-up':'wow-dn'}">${mmWow>=0?'▲':'▼'}${fmt(Math.abs(mmWow))}</small></span></div>
-      <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)} &nbsp;${fmtPct(mmPct)}</span></div>
-      <div class="card-row"><span class="card-key">Swap Net</span><span class="card-val">${fmt(swNet)}</span></div>
+      <div class="card-title">${inst.label}<span class="score-pill" style="background:${sigCol}20;color:${sigCol};font-size:10px">${score>=0?'+':''}${score}</span></div>
+      <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)} <span class="${mmDelta>=0?'wow-up':'wow-dn'}">${mmDelta>=0?'â–²':'â–¼'}${fmt(Math.abs(mmDelta))}</span></span></div>
+      <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+      <div class="card-row"><span class="card-key">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct!=null?cotPct+'%':'â€”'}</span></div>
+      <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct??0}%;background:${cotC}80"></div></div>
+      <div class="card-row" style="margin-top:5px"><span class="card-key">Swap Net</span><span class="card-val">${fmt(swNet)}</span></div>
       <div class="card-row"><span class="card-key">Prod Net</span><span class="card-val">${fmt(prNet)}</span></div>
-      <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)} <small class="${priceWow>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</small></span></div>
-      <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'—'}</span></div>
-      <span class="card-signal ${sig.type}">${sig.label}</span>`;
-    grid.appendChild(card);
+      <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)} <span class="${priceWow>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
+      <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'â€”'}</span></div>
+      <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
+    g.appendChild(card);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HEATMAP
-// ═══════════════════════════════════════════════════════════════
-function zColor(z){
-  if(z===null||z===undefined) return '#1e2535';
-  const v=Math.max(-3,Math.min(3,+z));
-  if(v>=0){const t=v/3; return `rgba(34,197,94,${0.15+t*0.7})`;}
-  else{const t=-v/3; return `rgba(239,68,68,${0.15+t*0.7})`;}
-}
-
+// â”€â”€ Heatmap (Bug 1 fix: CSS grid, explicit columns) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderHeatmap(){
   const NWEEKS=52;
-  const datesEl=document.getElementById('heatmap-dates');
-  const gridEl=document.getElementById('heatmap-grid');
-  datesEl.innerHTML=''; gridEl.innerHTML='';
+  const header=document.getElementById('heatmap-header-row');
+  const body=document.getElementById('heatmap-body');
+  header.innerHTML=''; body.innerHTML='';
+
   // Date labels from nat_gas_nyme
   const refDates=(CFTC_DATA.instruments['nat_gas_nyme']?.dates||[]).slice(-NWEEKS);
-  datesEl.style.marginBottom='4px';
+  // First cell = blank spacer for row labels column
+  const spacer=document.createElement('div'); header.appendChild(spacer);
   refDates.forEach((d,i)=>{
-    if(i%4===0){const el=document.createElement('div');el.className='hm-date-lbl';el.textContent=d.slice(5);el.style.width=`${4*16}px`;datesEl.appendChild(el);}
+    const el=document.createElement('div');
+    el.className='heatmap-date-lbl';
+    el.textContent=i%4===0?d.slice(5):'';
+    header.appendChild(el);
   });
-  for(const key of INST_KEYS){
+
+  for(const key of INSTRUMENT_KEYS){
     const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
     const mm=inst.managed_money||{};
     const allDates=inst.dates||[], allZ=mm.z_score||[];
-    // align to last 52 weeks
-    const row=document.createElement('div'); row.className='hm-row';
-    const lbl=document.createElement('div'); lbl.className='hm-label'; lbl.textContent=inst.label;
-    row.appendChild(lbl);
+    const row=document.createElement('div'); row.className='heatmap-row';
+    const lbl=document.createElement('div'); lbl.className='hm-row-label';
+    lbl.textContent=inst.label; row.appendChild(lbl);
     for(let i=NWEEKS;i>0;i--){
       const di=allDates.length-i;
       const z=di>=0?allZ[di]:null;
-      const cell=document.createElement('div');
-      cell.className='hm-cell';
-      cell.style.background=zColor(z);
-      cell.title=`${inst.label}\n${allDates[di]||'–'}\nZ-Score: ${z!=null?(+z).toFixed(2):'n/a'}`;
-      cell.onmouseenter=e=>showTooltip(e,`<b>${inst.label}</b><br>${allDates[di]||'–'}<br>Z-Score: ${z!=null?(+z).toFixed(2):'n/a'}`);
-      cell.onmouseleave=hideTooltip;
-      cell.onclick=()=>{showTab('instrument');setActiveInst(key);};
+      const cell=document.createElement('div'); cell.className='hm-cell';
+      cell.style.background=zColour(z);
+      const dateStr=di>=0?allDates[di]:'â€“';
+      cell.onmouseenter=e=>showTip(e,`<b>${inst.label}</b><br>${dateStr}<br>Z-Score: ${z!=null?(+z).toFixed(2):'n/a'}`);
+      cell.onmouseleave=hideTip;
+      cell.onclick=()=>{switchTab('instrument');setActiveInst(key)};
       row.appendChild(cell);
     }
-    gridEl.appendChild(row);
+    body.appendChild(row);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// WEEKLY TABLE
-// ═══════════════════════════════════════════════════════════════
+// â”€â”€ Correlation Matrix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderCorrelationMatrix(){
+  const cm=CFTC_DATA.correlation_matrix; if(!cm) return;
+  const keys=cm.instruments||[], mat=cm.matrix||[];
+  const colLabels=document.getElementById('corr-col-labels');
+  const matBody=document.getElementById('corr-matrix-body');
+  colLabels.innerHTML=''; matBody.innerHTML='';
+  keys.forEach(k=>{
+    const el=document.createElement('div');
+    el.style.cssText='width:44px;font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;flex-shrink:0';
+    el.textContent=INSTRUMENT_LABELS[k]?.split(' ').slice(-1)[0]||k;
+    colLabels.appendChild(el);
+  });
+  mat.forEach((rowData,ri)=>{
+    const row=document.createElement('div'); row.className='corr-row';
+    const lbl=document.createElement('div'); lbl.className='corr-row-label';
+    lbl.textContent=INSTRUMENT_LABELS[keys[ri]]||keys[ri]; row.appendChild(lbl);
+    rowData.forEach((val,ci)=>{
+      const cell=document.createElement('div'); cell.className='corr-cell';
+      cell.style.background=corrColour(val);
+      cell.textContent=val!=null?(+val).toFixed(2):'';
+      cell.onmouseenter=e=>showTip(e,`<b>${INSTRUMENT_LABELS[keys[ri]]}</b> vs <b>${INSTRUMENT_LABELS[keys[ci]]}</b><br>Corr: ${val!=null?(+val).toFixed(3):'n/a'}`);
+      cell.onmouseleave=hideTip;
+      row.appendChild(cell);
+    });
+    matBody.appendChild(row);
+  });
+}
+
+// â”€â”€ Concentration Chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderConcentrationChart(){
+  const inst=CFTC_DATA.instruments['nat_gas_nyme']; if(!inst?.concentration) return;
+  const conc=inst.concentration;
+  const {dates,arrays}=applyDateFilter(inst.dates, conc.top4_long, conc.top4_short);
+  const [t4l,t4s]=arrays;
+  const canvas=document.getElementById('cv-concentration'); if(!canvas) return;
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
+    type:'line',
+    data:{labels:dates,datasets:[
+      {label:'Top-4 Long %', data:t4l, borderColor:'#4f8ef7', borderWidth:1.5, pointRadius:0, tension:.3, fill:false},
+      {label:'Top-4 Short %',data:t4s, borderColor:'#ef4444', borderWidth:1.5, pointRadius:0, tension:.3, fill:false},
+    ]},
+    options:{...CHART_BASE,responsive:true,maintainAspectRatio:false,
+      plugins:{...CHART_BASE.plugins,
+        annotation:{annotations:{line50:{type:'line',yMin:50,yMax:50,borderColor:'rgba(245,158,11,.5)',borderWidth:1,borderDash:[4,4]}}}
+      },
+      scales:{
+        x:{...CHART_BASE.scales.x},
+        y:{...CHART_BASE.scales.y,title:{display:true,text:'% of OI',color:'#5c6b8a',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// â”€â”€ Weekly table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let tableData=[];
 function renderWeeklyTable(){
   tableData=[];
-  for(const key of INST_KEYS){
+  for(const key of INSTRUMENT_KEYS){
     const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
     const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const scores=inst.composite_scores||[];
     tableData.push({
-      label:inst.label, key,
-      mmNet:last(mm.net), mmWow:wow(mm.net), mmZ:last(mm.z_score),
-      swNet:last(sw.net), swWow:wow(sw.net),
-      prNet:last(pr.net), prWow:wow(pr.net),
-      price:last(inst.price), priceWow:wowPct(inst.price)*100
+      label:inst.label,key,
+      mmNet:last(mm.net), mmDelta:last(mm.change_net)??wow(mm.net),
+      mmZ:last(mm.z_score), mmCot:last(mm.cot_index?.w156),
+      score:scores.length?scores[scores.length-1]:0,
+      swNet:last(sw.net), swDelta:last(sw.change_net)??wow(sw.net),
+      prNet:last(pr.net), prDelta:last(pr.change_net)??wow(pr.net),
+      price:last(inst.price), priceWow:wowPct(inst.price)
     });
   }
-  sortTableData(); buildTableHTML();
+  sortAndBuildTable();
 }
-function sortTableData(){
-  const fields=['label','mmNet','mmWow','mmZ','swNet','swWow','prNet','prWow','price','priceWow'];
+function sortAndBuildTable(){
+  const fields=['label','mmNet','mmDelta','mmZ','mmCot','score','swNet','swDelta','prNet','prDelta','price','priceWow'];
   tableData.sort((a,b)=>{
     const va=a[fields[sortCol]]??-Infinity, vb=b[fields[sortCol]]??-Infinity;
     return sortCol===0?(va<vb?-1:va>vb?1:0)*sortDir:(va-vb)*sortDir;
   });
-}
-function buildTableHTML(){
   const tbody=document.getElementById('weekly-tbody');
   tbody.innerHTML=tableData.map(r=>`
-    <tr onclick="showTab('instrument');setActiveInst('${r.key}')" style="cursor:pointer">
+    <tr onclick="switchTab('instrument');setActiveInst('${r.key}')">
       <td>${r.label}</td>
       <td>${fmt(r.mmNet)}</td>
-      <td class="${r.mmWow>=0?'delta-pos':'delta-neg'}">${r.mmWow>=0?'+':''}${fmt(r.mmWow)}</td>
+      <td class="${(r.mmDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.mmDelta)}</td>
       <td>${fmtZ(r.mmZ)}</td>
+      <td>${r.mmCot!=null?Math.round(r.mmCot)+'%':'â€”'}</td>
+      <td style="color:${getSignalColour(r.score)};font-weight:600">${r.score>=0?'+':''}${r.score}</td>
       <td>${fmt(r.swNet)}</td>
-      <td class="${r.swWow>=0?'delta-pos':'delta-neg'}">${r.swWow>=0?'+':''}${fmt(r.swWow)}</td>
+      <td class="${(r.swDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.swDelta)}</td>
       <td>${fmt(r.prNet)}</td>
-      <td class="${r.prWow>=0?'delta-pos':'delta-neg'}">${r.prWow>=0?'+':''}${fmt(r.prWow)}</td>
+      <td class="${(r.prDelta||0)>=0?'d-pos':'d-neg'}">${fmtChg(r.prDelta)}</td>
       <td>$${fmt(r.price,2)}</td>
-      <td class="${r.priceWow>=0?'delta-pos':'delta-neg'}">${r.priceWow>=0?'+':''}${fmt(r.priceWow,1)}%</td>
+      <td class="${(r.priceWow||0)>=0?'d-pos':'d-neg'}">${fmtPctChg(r.priceWow)}</td>
     </tr>`).join('');
-  document.querySelectorAll('th[id^=th]').forEach(th=>th.classList.remove('sorted'));
-  document.getElementById(`th${sortCol}`)?.classList.add('sorted');
+  document.querySelectorAll('th[id^=th]').forEach(t=>t.style.color='');
+  const th=document.getElementById(`th${sortCol}`);
+  if(th) th.style.color='var(--accent)';
 }
 function sortTable(col){
   if(sortCol===col) sortDir*=-1; else{sortCol=col;sortDir=-1;}
-  sortTableData(); buildTableHTML();
+  sortAndBuildTable();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TOOLTIP
-// ═══════════════════════════════════════════════════════════════
-function showTooltip(e,html){
-  const t=document.getElementById('tooltip');
-  t.innerHTML=html; t.style.display='block';
-  positionTooltip(e);
-}
-function positionTooltip(e){
-  const t=document.getElementById('tooltip');
-  let x=e.clientX+14,y=e.clientY-10;
-  if(x+240>window.innerWidth) x=e.clientX-244;
-  if(y+120>window.innerHeight) y=e.clientY-120;
-  t.style.left=x+'px'; t.style.top=y+'px';
-}
-function hideTooltip(){ document.getElementById('tooltip').style.display='none'; }
-document.addEventListener('mousemove',e=>{if(document.getElementById('tooltip').style.display==='block') positionTooltip(e);});
+// === END CHUNK 4 ===
 
-// ═══════════════════════════════════════════════════════════════
-// CHART HELPERS
-// ═══════════════════════════════════════════════════════════════
-function mkCanvas(id){ const c=document.createElement('canvas'); c.id=id; return c; }
+// === BEGIN CHUNK 5: By Instrument tab renderers ===
 
-function buildNetVsPrice(canvasId, inst, traderKey){
-  const canvas=document.getElementById(canvasId); if(!canvas) return null;
+function setActiveInst(key){
+  activeInstrument=key;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  const pill=document.getElementById('pill-'+key);
+  if(pill) pill.classList.add('active');
+  renderByInstrument();
+}
+
+function renderInstrumentPills(){
+  const wrap=document.getElementById('instrument-pills'); wrap.innerHTML='';
+  INSTRUMENT_KEYS.forEach(key=>{
+    const inst=CFTC_DATA.instruments[key]; if(!inst) return;
+    const btn=document.createElement('button');
+    btn.className='pill'+(key===activeInstrument?' active':'');
+    btn.id='pill-'+key; btn.textContent=inst.label;
+    btn.onclick=()=>setActiveInst(key);
+    wrap.appendChild(btn);
+  });
+}
+
+function renderByInstrument(){
+  const area=document.getElementById('inst-charts-area');
+  area.innerHTML='';
+  const inst=CFTC_DATA.instruments[activeInstrument]; if(!inst) return;
+  const t=activeTrader;
+
+  // Build chart containers
+  const panels=[
+    {id:'cv-net-price', title:'Net Position vs Price', sub:TRADER_LABELS[t], legend:`
+      <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>Net Long</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Net Short</div>
+      <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>Price</div>`, h:'h240', dl:true},
+    {id:'cv-scatter',   title:'Price vs Net Long', sub:'Scatter by Season', legend:`
+      <div class="leg-item"><div class="leg-dot" style="background:#60a5fa"></div>Withdrawal</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fb923c"></div>Injection</div>`, h:'h240'},
+    {id:'cv-corr',      title:'20-Week Rolling Correlation', sub:'Price vs Net Position', legend:`
+      <div class="leg-item"><div class="leg-line" style="background:#22c55e;opacity:.5"></div>Trending &gt;0.4</div>
+      <div class="leg-item"><div class="leg-line" style="background:#ef4444;opacity:.5"></div>Mean-Rev &lt;-0.4</div>`, h:'h200'},
+    {id:'cv-flow',      title:'Weekly Flow', sub:'CFTC-reported change in net position', h:'h200', dl:true},
+    {id:'cv-cot',       title:'COT Index', sub:'3-year lookback â€” 0=Min, 100=Max', h:'h180'},
+    {id:'cv-seasonal',  title:'Seasonal Overlay', sub:'Current vs historical average Â± 1Ïƒ', h:'h200'},
+  ];
+
+  panels.forEach(p=>{
+    const div=document.createElement('div'); div.className='chart-panel';
+    div.innerHTML=`
+      <div class="chart-header">
+        <div><div class="chart-title">${p.title}</div><div class="chart-sub">${p.sub||''}</div></div>
+        <div class="chart-actions">
+          ${p.dl?`<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" title="Download CSV">â¬‡ CSV</button>`:''}
+        </div>
+      </div>
+      ${p.legend?`<div class="chart-legend">${p.legend}</div>`:''}
+      <div class="chart-container ${p.h}"><canvas id="${p.id}"></canvas></div>`;
+    area.appendChild(div);
+  });
+
+  // Percentile panel (non-canvas)
+  const pctDiv=document.createElement('div'); pctDiv.className='chart-panel';
+  pctDiv.innerHTML=`<div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-sub">All Three Traders â€” Current Week</div></div></div><div id="pct-bars-area"></div>`;
+  area.appendChild(pctDiv);
+
+  // Now render each chart
+  renderNetPosChart(inst, t);
+  renderScatterChart(inst, t);
+  renderCorrChart(inst, t);
+  renderFlowChart(inst, t);
+  renderCOTChart(inst, t);
+  renderSeasonalChart(inst, t);
+  renderPercentileBars(inst);
+}
+
+// â”€â”€ Net Position vs Price â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderNetPosChart(inst, traderKey){
+  const canvas=document.getElementById('cv-net-price'); if(!canvas) return;
   const td=inst[traderKey]||{};
   const {dates,arrays}=applyDateFilter(inst.dates, td.net, inst.price, td.z_score, td.pct_rank);
   const [net,price,zArr,pctArr]=arrays;
-  if(!dates?.length){canvas.parentElement.innerHTML='<p style="color:var(--text3);text-align:center;padding:20px;font-size:12px">No data for selected range</p>';return null;}
-  const colors=net.map(v=>v==null?'rgba(0,0,0,0)':v>=0?'rgba(34,197,94,.7)':'rgba(239,68,68,.7)');
-  const ctx=canvas.getContext('2d');
-  const chart=new Chart(ctx,{
+  if(!dates?.length){canvas.closest('.chart-container').innerHTML='<div class="no-data">No data for selected range</div>';return;}
+  const barColors=net.map(v=>v==null?'transparent':v>=0?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)');
+
+  // Extremes
+  const ex=td.extremes||{};
+  const annotations={};
+  if(ex.max_long_value!=null) annotations.maxLong={type:'line',yMin:ex.max_long_value,yMax:ex.max_long_value,yScaleID:'y',borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],label:{content:`ATH Long: ${(+ex.max_long_value/1000).toFixed(0)}k (${ex.max_long_date||''})`,display:true,position:'end',color:'rgba(34,197,94,.7)',font:{size:9},backgroundColor:'transparent'}};
+  if(ex.max_short_value!=null) annotations.maxShort={type:'line',yMin:ex.max_short_value,yMax:ex.max_short_value,yScaleID:'y',borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],label:{content:`ATH Short: ${(+ex.max_short_value/1000).toFixed(0)}k (${ex.max_short_date||''})`,display:true,position:'end',color:'rgba(239,68,68,.7)',font:{size:9},backgroundColor:'transparent'}};
+
+  const ex2=Chart.getChart(canvas); if(ex2) ex2.destroy();
+  const chart=new Chart(canvas.getContext('2d'),{
     data:{labels:dates,datasets:[
-      {type:'bar',label:'Net Position',data:net,backgroundColor:colors,borderWidth:0,yAxisID:'y'},
-      {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.7)',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y2'},
+      {type:'bar', label:'Net',  data:net,   backgroundColor:barColors, borderWidth:0, yAxisID:'y'},
+      {type:'line',label:'Price',data:price, borderColor:'rgba(248,250,252,.65)', borderWidth:1.5, pointRadius:0, tension:.3, yAxisID:'y2'},
     ]},
-    options:{...CHART_DEFAULTS,
-      plugins:{...CHART_DEFAULTS.plugins,
-        tooltip:{enabled:false,external:ctx=>externalTooltip(ctx,dates,net,price,zArr,pctArr)}
-      },
+    options:{...CHART_BASE,
+      plugins:{...CHART_BASE.plugins},
       scales:{
-        x:{...CHART_DEFAULTS.scales.x},
-        y:{position:'left',...CHART_DEFAULTS.scales.y,title:{display:true,text:'Net Pos',color:'#5c6b8a',font:{size:10}}},
-        y2:{position:'right',...CHART_DEFAULTS.scales.y,grid:{display:false},title:{display:true,text:'Price',color:'#5c6b8a',font:{size:10}}},
+        x:{...CHART_BASE.scales.x},
+        y:{position:'left',...CHART_BASE.scales.y,title:{display:true,text:'Net Pos',color:'#5c6b8a',font:{size:9}}},
+        y2:{position:'right',...CHART_BASE.scales.y,grid:{display:false},title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}},
       },
-      onHover:(_,els,chart)=>syncCrosshair(chart,els)
+      onHover:(_,els,chart)=>syncCross(chart)
     }
   });
-  ALL_CHARTS.push(chart); return chart;
+  ALL_CHARTS.push(chart);
 }
 
-function buildScatter(canvasId, inst, traderKey){
-  const canvas=document.getElementById(canvasId); if(!canvas) return null;
+// â”€â”€ Price vs Net Long scatter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderScatterChart(inst, traderKey){
+  const canvas=document.getElementById('cv-scatter'); if(!canvas) return;
   const td=inst[traderKey]||{};
   const {dates,arrays}=applyDateFilter(inst.dates, td.long, inst.price, inst.season);
   const [longs,prices,seasons]=arrays;
-  if(!dates?.length) return null;
-  const data=dates.map((_,i)=>({x:longs[i],y:prices[i],d:dates[i],s:seasons[i]})).filter(p=>p.x!=null&&p.y!=null);
-  const ctx=canvas.getContext('2d');
-  const chart=new Chart(ctx,{
+  if(!dates?.length) return;
+  const wData=[], iData=[];
+  dates.forEach((_,i)=>{
+    if(longs[i]==null||prices[i]==null) return;
+    const pt={x:longs[i],y:prices[i],d:dates[i]};
+    (seasons[i]==='Withdrawal'?wData:iData).push(pt);
+  });
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
     type:'scatter',
     data:{datasets:[
-      {label:'Withdrawal',data:data.filter(p=>p.s==='Withdrawal').map(p=>({x:p.x,y:p.y,d:p.d})),backgroundColor:'rgba(79,142,247,.6)',pointRadius:3,pointHoverRadius:5},
-      {label:'Injection', data:data.filter(p=>p.s==='Injection') .map(p=>({x:p.x,y:p.y,d:p.d})),backgroundColor:'rgba(245,158,11,.6)',pointRadius:3,pointHoverRadius:5},
+      {label:'Withdrawal',data:wData,backgroundColor:'rgba(96,165,250,.65)',pointRadius:3.5,pointHoverRadius:5},
+      {label:'Injection', data:iData,backgroundColor:'rgba(251,146,60,.65)', pointRadius:3.5,pointHoverRadius:5},
     ]},
-    options:{...CHART_DEFAULTS,
-      plugins:{...CHART_DEFAULTS.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:10},boxWidth:10}}},
+    options:{...CHART_BASE,
+      plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:10},boxWidth:9}}},
       scales:{
-        x:{...CHART_DEFAULTS.scales.x,title:{display:true,text:'Net Long',color:'#5c6b8a',font:{size:10}}},
-        y:{...CHART_DEFAULTS.scales.y,title:{display:true,text:'Price',color:'#5c6b8a',font:{size:10}}},
+        x:{...CHART_BASE.scales.x,title:{display:true,text:'Net Long',color:'#5c6b8a',font:{size:10}}},
+        y:{...CHART_BASE.scales.y,title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:10}}},
       }
     }
   });
-  ALL_CHARTS.push(chart); return chart;
 }
 
-function buildCorrelation(canvasId, inst, traderKey){
-  const canvas=document.getElementById(canvasId); if(!canvas) return null;
+// â”€â”€ Rolling Correlation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderCorrChart(inst, traderKey){
+  const canvas=document.getElementById('cv-corr'); if(!canvas) return;
   const td=inst[traderKey]||{};
   const {dates,arrays}=applyDateFilter(inst.dates, td.rolling_corr);
   const [corr]=arrays;
-  if(!dates?.length) return null;
-  const ctx=canvas.getContext('2d');
-  // Build gradient shading for regime zones
-  const chart=new Chart(ctx,{
+  if(!dates?.length) return;
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
     type:'line',
     data:{labels:dates,datasets:[
-      {label:'20w Corr',data:corr,borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-      {label:'Upper',data:dates.map(()=>0.4),borderColor:'rgba(34,197,94,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1'},
-      {label:'Lower',data:dates.map(()=>-0.4),borderColor:'rgba(239,68,68,.3)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+      {label:'Corr',    data:corr,              borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+      {label:'Upper',   data:dates.map(()=>0.4),borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1',backgroundColor:'rgba(34,197,94,.06)'},
+      {label:'Lower',   data:dates.map(()=>-0.4),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+      {label:'Zero',    data:dates.map(()=>0),  borderColor:'rgba(255,255,255,.15)',borderWidth:1,pointRadius:0,fill:false},
     ]},
-    options:{...CHART_DEFAULTS,
+    options:{...CHART_BASE,
       scales:{
-        x:{...CHART_DEFAULTS.scales.x},
-        y:{...CHART_DEFAULTS.scales.y,min:-1.1,max:1.1,
-           grid:{color:'rgba(37,48,71,.3)'},
-           ticks:{color:'#5c6b8a',font:{size:10},callback:v=>v.toFixed(1)}}
+        x:{...CHART_BASE.scales.x},
+        y:{...CHART_BASE.scales.y,min:-1.1,max:1.1,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v.toFixed(1)}}
       }
     }
   });
-  ALL_CHARTS.push(chart); return chart;
 }
 
-function buildThreeTrader(canvasId, inst){
-  const canvas=document.getElementById(canvasId); if(!canvas) return null;
-  const traders=['managed_money','swap_dealers','producers'];
-  const labels=['MM','Swap','Prod'];
-  const {dates,arrays}=applyDateFilter(inst.dates,
-    inst.managed_money?.net, inst.swap_dealers?.net, inst.producers?.net, inst.price);
-  if(!dates?.length) return null;
-  const [mm,sw,pr,price]=arrays;
-  const ctx=canvas.getContext('2d');
-  const chart=new Chart(ctx,{
+// â”€â”€ Weekly Flow bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderFlowChart(inst, traderKey){
+  const canvas=document.getElementById('cv-flow'); if(!canvas) return;
+  const td=inst[traderKey]||{};
+  const {dates,arrays}=applyDateFilter(inst.dates, td.change_net);
+  const [cn]=arrays;
+  if(!dates?.length) return;
+  const cols=(cn||[]).map(v=>v==null?'transparent':v>=0?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)');
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
+    type:'bar',
+    data:{labels:dates,datasets:[{label:'Flow',data:cn,backgroundColor:cols,borderWidth:0}]},
+    options:{...CHART_BASE,
+      scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,title:{display:true,text:'Î” Net',color:'#5c6b8a',font:{size:9}}}}
+    }
+  });
+}
+
+// â”€â”€ COT Index chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderCOTChart(inst, traderKey){
+  const canvas=document.getElementById('cv-cot'); if(!canvas) return;
+  const td=inst[traderKey]||{};
+  const {dates,arrays}=applyDateFilter(inst.dates, td.cot_index?.w156);
+  const [cot]=arrays;
+  if(!dates?.length) return;
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
+    type:'line',
     data:{labels:dates,datasets:[
-      {type:'line',label:'MM',   data:mm,  borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
-      {type:'line',label:'Swap', data:sw,  borderColor:'#f59e0b',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
-      {type:'line',label:'Prod', data:pr,  borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
-      {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.5)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y2',borderDash:[3,3]},
+      {label:'COT(3yr)',data:cot,borderColor:'#a855f7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+      {label:'80',data:dates.map(()=>80),borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1',backgroundColor:'rgba(34,197,94,.07)'},
+      {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
     ]},
-    options:{...CHART_DEFAULTS,
-      plugins:{...CHART_DEFAULTS.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:10},boxWidth:10}}},
-      scales:{
-        x:{...CHART_DEFAULTS.scales.x},
-        y:{position:'left',...CHART_DEFAULTS.scales.y,title:{display:true,text:'Net Pos',color:'#5c6b8a',font:{size:10}}},
-        y2:{position:'right',...CHART_DEFAULTS.scales.y,grid:{display:false},title:{display:true,text:'Price',color:'#5c6b8a',font:{size:10}}},
-      }
+    options:{...CHART_BASE,
+      scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:-5,max:105,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v+'%'}}}
     }
   });
-  ALL_CHARTS.push(chart); return chart;
 }
 
-function buildPercentilePanel(container, inst){
-  container.innerHTML='';
-  const traders=[{k:'managed_money',l:'MM',c:'#4f8ef7'},{k:'swap_dealers',l:'Swap',c:'#f59e0b'},{k:'producers',l:'Prod',c:'#22c55e'}];
+// â”€â”€ Seasonal overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderSeasonalChart(inst, traderKey){
+  const canvas=document.getElementById('cv-seasonal'); if(!canvas) return;
+  const td=inst[traderKey]||{};
+  const avgByWeek=td.seasonal_avg_by_week||[];
+  const stdByWeek=td.seasonal_std_by_week||[];
+  const allDates=inst.dates||[], allNet=td.net||[];
+  const currentYear=new Date().getFullYear();
+  // Current year data by week number
+  const wkNums=allDates.map(d=>{ const dt=new Date(d); const s=new Date(dt.getFullYear(),0,1); return Math.ceil(((dt-s)/86400000+s.getDay()+1)/7); });
+  const curIdx=allDates.map((d,i)=>d.slice(0,4)===String(currentYear)?i:-1).filter(i=>i>=0);
+  const curWks=curIdx.map(i=>wkNums[i]);
+  const curNet=curIdx.map(i=>allNet[i]);
+  // Build 52-week x-axis labels
+  const weekLabels=Array.from({length:52},(_,i)=>`W${i+1}`);
+  const avgLine=avgByWeek.slice(0,52);
+  const upperBand=avgByWeek.map((a,i)=>a!=null&&stdByWeek[i]!=null?a+stdByWeek[i]:null);
+  const lowerBand=avgByWeek.map((a,i)=>a!=null&&stdByWeek[i]!=null?a-stdByWeek[i]:null);
+  // Sparse current year
+  const curSparse=Array(52).fill(null);
+  curWks.forEach((w,i)=>{ if(w>=1&&w<=52) curSparse[w-1]=curNet[i]; });
+  const ex=Chart.getChart(canvas); if(ex) ex.destroy();
+  new Chart(canvas.getContext('2d'),{
+    type:'line',
+    data:{labels:weekLabels,datasets:[
+      {label:'Hist Avg',  data:avgLine,   borderColor:'rgba(255,255,255,.3)',borderWidth:1,pointRadius:0,tension:.3,fill:false},
+      {label:'Upper 1Ïƒ',  data:upperBand, borderColor:'transparent',pointRadius:0,fill:'+1',backgroundColor:'rgba(79,142,247,.1)'},
+      {label:'Lower 1Ïƒ',  data:lowerBand, borderColor:'transparent',pointRadius:0,fill:false},
+      {label:`${currentYear}`,data:curSparse,borderColor:'#4f8ef7',borderWidth:2,pointRadius:0,tension:.3,fill:false},
+    ]},
+    options:{...CHART_BASE,
+      scales:{x:{...CHART_BASE.scales.x,ticks:{...CHART_BASE.scales.x.ticks,maxTicksLimit:13}},y:{...CHART_BASE.scales.y}}
+    }
+  });
+}
+
+// â”€â”€ Percentile bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderPercentileBars(inst){
+  const area=document.getElementById('pct-bars-area'); if(!area) return;
+  area.innerHTML='';
   const wrap=document.createElement('div'); wrap.className='pct-bars';
-  for(const {k,l,c} of traders){
-    const pct=last(inst[k]?.pct_rank);
-    if(pct==null) continue;
+  TRADER_KEYS.forEach(tk=>{
+    const td=inst[tk]||{};
+    const pct=last(td.pct_rank); const cot=last(td.cot_index?.w156);
+    const col=TRADER_COLOURS[tk];
+    const p=pct!=null?Math.round(pct*100):null;
+    const c=cot!=null?Math.round(+cot):null;
     const row=document.createElement('div'); row.className='pct-bar-row';
     row.innerHTML=`
-      <span class="pct-bar-label">${l}</span>
-      <div class="pct-bar-track">
-        <div class="pct-bar-zones"><div class="pct-zone-red"></div><div class="pct-zone-mid"></div><div class="pct-zone-grn"></div></div>
-        <div class="pct-bar-fill" style="width:${(pct*100).toFixed(1)}%;background:${c}80;left:0"></div>
-        <div class="pct-bar-marker" style="left:${(pct*100).toFixed(1)}%"></div>
+      <span class="pct-bar-lbl">${TRADER_LABELS[tk].split(' ')[0]}</span>
+      <div style="flex:1">
+        <div class="pct-bar-track" title="Pctile Rank">
+          <div class="pct-zone-wrap"><div class="pct-zone-r"></div><div class="pct-zone-m"></div><div class="pct-zone-g"></div></div>
+          <div class="pct-bar-fill" style="width:${p??0}%;background:${col}70"></div>
+          <div class="pct-bar-marker" style="left:${p??0}%"></div>
+        </div>
+        <div class="pct-bar-track" title="COT Index 3yr" style="margin-top:3px">
+          <div class="pct-zone-wrap"><div class="pct-zone-r"></div><div class="pct-zone-m"></div><div class="pct-zone-g"></div></div>
+          <div class="pct-bar-fill" style="width:${c??0}%;background:${col}50"></div>
+          <div class="pct-bar-marker" style="left:${c??0}%"></div>
+        </div>
       </div>
-      <span class="pct-bar-val" style="color:${c}">${(pct*100).toFixed(0)}%</span>`;
+      <span class="pct-bar-val" style="color:${col}">${p!=null?p+'%':'â€”'}<br><span style="font-size:9px;opacity:.7">${c!=null?c+'%':'â€”'}</span></span>`;
     wrap.appendChild(row);
-  }
-  container.appendChild(wrap);
-}
-
-// External tooltip for net-vs-price charts
-function externalTooltip(ctx2,dates,net,price,zArr,pctArr){
-  const {chart,tooltip}=ctx2;
-  const tip=document.getElementById('tooltip');
-  if(tooltip.opacity===0){tip.style.display='none';return;}
-  const i=tooltip.dataPoints?.[0]?.dataIndex;
-  if(i===undefined){tip.style.display='none';return;}
-  tip.innerHTML=`<b>${dates[i]}</b><br>Net: ${fmt(net[i])}<br>Price: $${fmt(price[i],2)}<br>Z: ${fmtZ(zArr?.[i])}<br>Pctile: ${fmtPct(pctArr?.[i])}`;
-  tip.style.display='block';
-  const rect=chart.canvas.getBoundingClientRect();
-  let x=rect.left+tooltip.caretX+12, y=rect.top+tooltip.caretY-30;
-  if(x+220>window.innerWidth) x=rect.left+tooltip.caretX-224;
-  tip.style.left=x+'px'; tip.style.top=y+'px';
-}
-
-// Crosshair sync
-function syncCrosshair(activeChart, elements){
-  if(!elements?.length) return;
-  const idx=elements[0].index;
-  ALL_CHARTS.forEach(c=>{
-    if(c===activeChart) return;
-    c.data.datasets.forEach(ds=>ds._syncIdx=idx);
-    c.update('none');
   });
+  area.appendChild(wrap);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// INSTRUMENT SELECTOR
-// ═══════════════════════════════════════════════════════════════
-function populateInstSelector(){
-  const sel=document.getElementById('inst-selector');
-  sel.innerHTML='';
-  for(const key of INST_KEYS){
-    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
-    const btn=document.createElement('button');
-    btn.className='inst-btn'+(key===activeInst?' active':'');
-    btn.textContent=inst.label; btn.id='ibtn-'+key;
-    btn.onclick=()=>setActiveInst(key);
-    sel.appendChild(btn);
-  }
+// â”€â”€ CSV Download â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function downloadCSV(instrumentKey, traderKey){
+  const inst=CFTC_DATA.instruments[instrumentKey]; if(!inst) return;
+  const td=inst[traderKey]||{};
+  const {dates,arrays}=applyDateFilter(inst.dates, td.long, td.short, td.net, inst.price, td.z_score, td.cot_index?.w156, td.pct_rank, td.change_net);
+  const [longs,shorts,nets,prices,zs,cots,pcts,chng]=arrays;
+  const header=['Date','Long','Short','Net','Price','Z-Score','COT_Index_3yr','Pct_Rank','Change_Net'];
+  const rows=[header,...dates.map((d,i)=>[d,longs?.[i],shorts?.[i],nets?.[i],prices?.[i],zs?.[i],cots?.[i],pcts?.[i],chng?.[i]])];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`${instrumentKey}_${traderKey}_cftc.csv`; a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-function setActiveInst(key){
-  activeInst=key;
-  document.querySelectorAll('.inst-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('ibtn-'+key)?.classList.add('active');
-  renderInstView();
+// === END CHUNK 5 ===
+
+// === BEGIN CHUNK 6: Three-Trader View + Crosshair ===
+
+// Bug 3 fix: normalise toggle
+function setNormalise(val){
+  normaliseByOI=val;
+  document.getElementById('btn-pct-oi').classList.toggle('active', val);
+  document.getElementById('btn-raw').classList.toggle('active', !val);
+  renderThreeTraderGrid();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// BY-INSTRUMENT VIEW
-// ═══════════════════════════════════════════════════════════════
-function renderInstView(){
-  const area=document.getElementById('inst-charts-area');
-  // Destroy old charts for this view
-  area.innerHTML='';
-  const inst=CFTC_DATA.instruments[activeInst]; if(!inst) return;
-  const trader=activeTrader;
+function renderThreeTraderGrid(){
+  const grid=document.getElementById('three-trader-grid'); grid.innerHTML='';
+  // Destroy previously registered charts
+  ALL_CHARTS.forEach(c=>{try{c.destroy();}catch(e){}});
+  ALL_CHARTS.length=0;
 
-  const html=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px">
-
-      <div class="chart-panel">
-        <div class="chart-header">
-          <div><div class="chart-title">Net Position vs Price</div><div class="chart-subtitle">${TRADER_LABELS[trader]}</div></div>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Long</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Short</div>
-            <div class="legend-item"><div class="legend-line" style="background:rgba(248,250,252,.7)"></div>Price</div>
-          </div>
-        </div>
-        <div class="chart-container tall"><canvas id="cv-net-price"></canvas></div>
-      </div>
-
-      <div class="chart-panel">
-        <div class="chart-header">
-          <div><div class="chart-title">Price vs Net Long</div><div class="chart-subtitle">Scatter by Season</div></div>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div>Withdrawal</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Injection</div>
-          </div>
-        </div>
-        <div class="chart-container tall"><canvas id="cv-scatter"></canvas></div>
-      </div>
-
-      <div class="chart-panel">
-        <div class="chart-header">
-          <div><div class="chart-title">20-Week Rolling Correlation</div><div class="chart-subtitle">Price vs Net Position</div></div>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-line" style="background:#22c55e;opacity:.4"></div>Trending (&gt;0.4)</div>
-            <div class="legend-item"><div class="legend-line" style="background:#ef4444;opacity:.4"></div>Mean-Rev (&lt;-0.4)</div>
-          </div>
-        </div>
-        <div class="chart-container"><canvas id="cv-corr"></canvas></div>
-      </div>
-
-      <div class="chart-panel">
-        <div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-subtitle">All Three Traders — Current Week</div></div></div>
-        <div id="cv-pctrank" style="min-height:120px;padding:8px 0"></div>
-      </div>
-
-    </div>`;
-  area.innerHTML=html;
-
-  buildNetVsPrice('cv-net-price', inst, trader);
-  buildScatter('cv-scatter', inst, trader);
-  buildCorrelation('cv-corr', inst, trader);
-  buildPercentilePanel(document.getElementById('cv-pctrank'), inst);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// THREE-TRADER VIEW
-// ═══════════════════════════════════════════════════════════════
-function renderThreeTrader(){
-  const grid=document.getElementById('three-trader-grid');
-  grid.innerHTML='';
-  for(const key of INST_KEYS){
-    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
+  for(const key of INSTRUMENT_KEYS){
+    const inst=CFTC_DATA.instruments[key]; if(!inst) return;
     const panel=document.createElement('div'); panel.className='chart-panel';
     const cid='cv-three-'+key;
     panel.innerHTML=`
       <div class="chart-header">
-        <div><div class="chart-title">${inst.label}</div><div class="chart-subtitle">MM · Swap · Producers + Price</div></div>
+        <div><div class="chart-title">${inst.label}</div><div class="chart-sub">MM Â· Swap Â· Producers + Price</div></div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-line" style="background:#4f8ef7"></div>MM</div>
-          <div class="legend-item"><div class="legend-line" style="background:#f59e0b"></div>Swap</div>
-          <div class="legend-item"><div class="legend-line" style="background:#22c55e"></div>Prod</div>
+          <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>MM</div>
+          <div class="leg-item"><div class="leg-line" style="background:#f59e0b"></div>Swap</div>
+          <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div>Prod</div>
         </div>
       </div>
-      <div class="chart-container"><canvas id="${cid}"></canvas></div>`;
+      <div class="chart-container h240"><canvas id="${cid}"></canvas></div>`;
     grid.appendChild(panel);
-    buildThreeTrader(cid, inst);
+
+    const canvas=document.getElementById(cid); if(!canvas) continue;
+    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{}, pr=inst.producers||{};
+    const oi=inst.open_interest||[];
+
+    const {dates,arrays}=applyDateFilter(inst.dates, mm.net, sw.net, pr.net, inst.price, oi);
+    const [mmNet,swNet,prNet,price,oiArr]=arrays;
+    if(!dates?.length) continue;
+
+    let mmD=mmNet, swD=swNet, prD=prNet;
+    let yLabel='Net Pos', yLabel2='Price $';
+
+    if(normaliseByOI){
+      // Bug 3 fix: divide by OI so all traders are on same comparable scale
+      mmD=mmNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      swD=swNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      prD=prNet.map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
+      yLabel='% of OI';
+    }
+
+    let datasets, scalesCfg;
+
+    if(normaliseByOI){
+      // Single y-axis: all on same scale
+      scalesCfg={
+        x:{...CHART_BASE.scales.x},
+        y:{position:'left',...CHART_BASE.scales.y,title:{display:true,text:yLabel,color:'#5c6b8a',font:{size:9}}},
+        y2:{position:'right',...CHART_BASE.scales.y,grid:{display:false},title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}},
+      };
+      datasets=[
+        {type:'line',label:'MM',   data:mmD, borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Swap', data:swD, borderColor:'#f59e0b',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Prod', data:prD, borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.4)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y2',borderDash:[3,3]},
+      ];
+    } else {
+      // Bug 3 fix: independent y-axes so large Producers don't crush MM/Swap
+      scalesCfg={
+        x:{...CHART_BASE.scales.x},
+        y: {position:'left', ...CHART_BASE.scales.y, title:{display:true,text:'MM Net',color:'#3b82f6',font:{size:9}}},
+        y1:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, display:false},
+        y2:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, display:false},
+        y3:{position:'right',...CHART_BASE.scales.y, grid:{display:false}, title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}},
+      };
+      datasets=[
+        {type:'line',label:'MM',   data:mmNet,borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y'},
+        {type:'line',label:'Swap', data:swNet,borderColor:'#f59e0b',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y1'},
+        {type:'line',label:'Prod', data:prNet,borderColor:'#22c55e',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y2'},
+        {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.4)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y3',borderDash:[3,3]},
+      ];
+    }
+
+    const chart=new Chart(canvas.getContext('2d'),{
+      data:{labels:dates,datasets},
+      options:{...CHART_BASE,
+        plugins:{...CHART_BASE.plugins, legend:{display:true,labels:{color:'#9ba8c0',font:{size:10},boxWidth:10}}},
+        scales:scalesCfg,
+        onHover:(event,elements,chart)=>syncCross(chart,event.x)
+      }
+    });
+    ALL_CHARTS.push(chart);
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════════════
+// â”€â”€ Synced crosshair across all charts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const syncCrosshairPlugin={
+  id:'syncCrosshair',
+  afterDraw(chart){
+    if(chart._crosshairX==null) return;
+    const ctx=chart.ctx, x=chart._crosshairX;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x,chart.chartArea.top);
+    ctx.lineTo(x,chart.chartArea.bottom);
+    ctx.strokeStyle='rgba(255,255,255,.25)';
+    ctx.lineWidth=1;
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+Chart.register(syncCrosshairPlugin);
+
+function syncCross(activeChart, x){
+  ALL_CHARTS.forEach(c=>{
+    c._crosshairX=x;
+    c.update('none');
+  });
+}
+
+// === END CHUNK 6 ===
+
+// === BEGIN CHUNK 7: Init + event wiring ===
+
+function initDashboard(){
+  renderSignalCards();
+  renderHeatmap();
+  renderCorrelationMatrix();
+  renderConcentrationChart();
+  renderWeeklyTable();
+  renderInstrumentPills();
+  renderByInstrument();
+  renderThreeTraderGrid();
+  // Start on overview tab
+  switchTab('overview');
+}
+
 window.addEventListener('DOMContentLoaded', loadData);
+
+// === END CHUNK 7 ===
 </script>
 </body>
 </html>

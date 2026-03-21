@@ -1,0 +1,22 @@
+
+// === BEGIN CHUNK 7: Init + event wiring ===
+
+function initDashboard(){
+  renderSignalCards();
+  renderHeatmap();
+  renderCorrelationMatrix();
+  renderConcentrationChart();
+  renderWeeklyTable();
+  renderInstrumentPills();
+  renderByInstrument();
+  renderThreeTraderGrid();
+  // Start on overview tab
+  switchTab('overview');
+}
+
+window.addEventListener('DOMContentLoaded', loadData);
+
+// === END CHUNK 7 ===
+</script>
+</body>
+</html>

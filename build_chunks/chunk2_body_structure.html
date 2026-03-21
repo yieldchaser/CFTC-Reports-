@@ -1,0 +1,118 @@
+<body>
+<div id="loading"><div class="spinner"></div><p style="color:var(--text2);font-size:13px">Loading CFTC data…</p></div>
+<div id="error-banner"></div>
+<div id="tooltip"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <h1>CFTC Natural Gas Positioning</h1>
+      <p>Commitment of Traders · 9 Instruments · 3 Trader Categories</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-item"><div class="meta-label">Latest Report</div><div class="meta-val" id="latest-report">—</div></div>
+    <div class="meta-item"><div class="meta-label">Last Updated</div><div class="meta-val" id="last-updated">—</div></div>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab-btn active" id="tab-overview"    onclick="switchTab('overview')"    role="tab">📋 Overview</button>
+  <button class="tab-btn"        id="tab-instrument"  onclick="switchTab('instrument')"  role="tab">📈 By Instrument</button>
+  <button class="tab-btn"        id="tab-three"       onclick="switchTab('three')"       role="tab">🔀 Three-Trader View</button>
+</div>
+
+<div class="toolbar">
+  <label for="date-filter">Show data from:</label>
+  <select id="date-filter" onchange="onDateFilterChange()"></select>
+  <div id="trader-wrap" style="display:none">
+    <label for="trader-filter">Trader:</label>
+    <select id="trader-filter" onchange="onTraderFilterChange()">
+      <option value="managed_money">Managed Money</option>
+      <option value="swap_dealers">Swap Dealers</option>
+      <option value="producers">Producers</option>
+    </select>
+  </div>
+</div>
+
+<div id="main-content">
+
+<!-- ══ OVERVIEW TAB ══ -->
+<div id="panel-overview" class="tab-panel active">
+  <div class="section-title">Current Week Signal Dashboard</div>
+  <div id="signal-cards-container" class="cards-grid"></div>
+
+  <div class="section-title">Positioning Heatmap — MM Z-Score (Last 52 Weeks)</div>
+  <div class="chart-panel" style="padding:12px">
+    <div class="heatmap-outer">
+      <div id="heatmap-header-row" class="heatmap-header-row"></div>
+      <div id="heatmap-body" class="heatmap-body"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:14px">
+    <div>
+      <div class="section-title">Instrument Correlation Matrix (52w MM Net)</div>
+      <div class="chart-panel" style="padding:12px">
+        <div class="corr-matrix-wrap">
+          <div id="corr-col-labels" style="display:flex;gap:2px;margin-left:102px;margin-bottom:2px;flex-wrap:nowrap"></div>
+          <div id="corr-matrix-body" class="corr-matrix"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Market Concentration — Nat Gas NYME</div>
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div><div class="chart-title">Top-4 Trader Concentration</div><div class="chart-sub">% of Open Interest held by largest 4 longs and shorts</div></div>
+        </div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:#4f8ef7"></div>Top-4 Long</div>
+          <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Top-4 Short</div>
+        </div>
+        <div class="chart-container h240"><canvas id="cv-concentration"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Weekly Change Summary</div>
+  <div class="table-wrap">
+    <table id="weekly-table">
+      <thead><tr>
+        <th onclick="sortTable(0)" id="th0">Instrument ↕</th>
+        <th onclick="sortTable(1)" id="th1">MM Net ↕</th>
+        <th onclick="sortTable(2)" id="th2">MM Δ ↕</th>
+        <th onclick="sortTable(3)" id="th3">MM Z ↕</th>
+        <th onclick="sortTable(4)" id="th4">COT(3y) ↕</th>
+        <th onclick="sortTable(5)" id="th5">Score ↕</th>
+        <th onclick="sortTable(6)" id="th6">Swap Net ↕</th>
+        <th onclick="sortTable(7)" id="th7">Swap Δ ↕</th>
+        <th onclick="sortTable(8)" id="th8">Prod Net ↕</th>
+        <th onclick="sortTable(9)" id="th9">Prod Δ ↕</th>
+        <th onclick="sortTable(10)" id="th10">Price ↕</th>
+        <th onclick="sortTable(11)" id="th11">Price Δ% ↕</th>
+      </tr></thead>
+      <tbody id="weekly-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ BY INSTRUMENT TAB ══ -->
+<div id="panel-instrument" class="tab-panel">
+  <div id="instrument-pills" class="pill-wrap"></div>
+  <div id="inst-charts-area" class="inst-grid"></div>
+</div>
+
+<!-- ══ THREE-TRADER TAB ══ -->
+<div id="panel-three" class="tab-panel">
+  <div class="normalise-bar">
+    <span style="font-size:12px;color:var(--text2)">Scale mode:</span>
+    <button class="toggle-btn active" id="btn-pct-oi"  onclick="setNormalise(true)">% of Open Interest</button>
+    <button class="toggle-btn"        id="btn-raw"      onclick="setNormalise(false)">Raw Contracts</button>
+  </div>
+  <div id="three-trader-grid" class="three-grid"></div>
+</div>
+
+</div><!-- /#main-content -->
