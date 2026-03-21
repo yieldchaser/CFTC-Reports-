@@ -401,6 +401,13 @@ const TRADER_COLOURS = {
 };
 
 
+function getVisibleCharts() {
+    return ALL_CHARTS.filter(c => {
+        const canvas = c.canvas;
+        return canvas && canvas.offsetParent !== null;
+    });
+}
+
 const crosshairPlugin = {
     id: 'crosshair',
     afterDraw(chart) {
@@ -423,9 +430,9 @@ const crosshairPlugin = {
             chart._crosshairX = event.x;
             if (chart.crosshairThrottle) return;
             chart.crosshairThrottle = requestAnimationFrame(() => {
-                ALL_CHARTS.forEach(c => {
-                    const canvas = c.canvas;
-                    if (c !== chart && canvas && canvas.offsetParent !== null) {
+                const visibleCharts = getVisibleCharts();
+                visibleCharts.forEach(c => {
+                    if (c !== chart) {
                         c._crosshairX = chart._crosshairX;
                         c.update('none');
                     }
@@ -436,12 +443,9 @@ const crosshairPlugin = {
         }
         if (event.type === 'mouseout') {
             chart._crosshairX = null;
-            ALL_CHARTS.forEach(c => {
-                const canvas = c.canvas;
-                if (canvas && canvas.offsetParent !== null) {
-                    c._crosshairX = null;
-                    c.update('none');
-                }
+            getVisibleCharts().forEach(c => {
+                c._crosshairX = null;
+                c.update('none');
             });
         }
     }
@@ -466,24 +470,55 @@ tooltipEl.style.cssText = `
 `;
 document.body.appendChild(tooltipEl);
 
+function getTooltipData(instrumentKey, traderKey, idx) {
+    const inst = CFTC_DATA?.instruments?.[instrumentKey];
+    if (!inst) return null;
+    const trader = traderKey ? inst?.[traderKey] : null;
+    return {
+        date:       inst.dates?.[idx]          ?? '—',
+        price:      inst.price?.[idx]          ?? null,
+        oi:         inst.open_interest?.[idx]  ?? null,
+        season:     inst.season?.[idx]         ?? '—',
+        oi_regime:  inst.oi_regime?.[idx]      ?? '—',
+        net:        trader?.net?.[idx]         ?? null,
+        long:       trader?.long?.[idx]        ?? null,
+        short:      trader?.short?.[idx]       ?? null,
+        z_score:    trader?.z_score?.[idx]     ?? null,
+        pct_rank:   trader?.pct_rank?.[idx]    ?? null,
+        cot_3yr:    trader?.cot_index?.w156?.[idx] ?? null,
+        change_net: trader?.change_net?.[idx]  ?? null,
+        momentum:   trader?.momentum_score?.[idx] ?? null,
+    };
+}
+
 function buildTooltipHTML(type, instKey, trader, idx) {
-    const inst = CFTC_DATA.instruments[instKey];
-    if(!inst) return '';
-    const date = inst.dates[idx];
-    const net = inst[trader]?.net?.[idx];
-    if (type === 'net_pos_vs_price') {
-        const longV = inst[trader]?.long?.[idx];
-        const shortV = inst[trader]?.short?.[idx];
-        const z = inst[trader]?.z_score?.[idx];
-        const pct = inst[trader]?.pct_rank?.[idx];
-        const cot = inst[trader]?.cot_index?.w156?.[idx];
-        const pr = inst.price?.[idx];
-        const pr_prev = inst.price?.[idx-1];
-        const pr_wow = pr && pr_prev ? (pr-pr_prev)/pr_prev : 0;
-        const reg = inst.oi_regime?.[idx];
-        return `📅 ${date}<br>──────────────────────────────<br>Net Position &nbsp; ${fmt(net)}<br>Long &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(longV)}<br>Short &nbsp;&nbsp;&nbsp;&nbsp; ${fmt(shortV)}<br>──────────────────────────────<br>Z-Score &nbsp;&nbsp; ${fmtZ(z)} (${fmtPct(pct)})<br>COT Index &nbsp; ${cot!=null?Math.round(cot):'-'}%<br>──────────────────────────────<br>Price &nbsp;&nbsp;&nbsp;&nbsp; $${fmt(pr,2)} (${fmtPctChg(pr_wow)})<br>OI Regime &nbsp; ${reg||'Neutral'}`;
+    const instLabel = INSTRUMENT_LABELS[instKey] ?? instKey ?? 'Unknown';
+    const traderLabel = TRADER_LABELS[trader] ?? trader ?? 'All Traders';
+    const d = getTooltipData(instKey, trader, idx);
+    if (!d) return `<div class="tt-header">${instLabel}</div><div class="tt-row">No data available</div>`;
+
+    const fmt = (v, dec = 0, pre = '', suf = '') =>
+        (v === null || v === undefined) ? '—' : `${pre}${Number(v).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec})}${suf}`;
+
+    if (type === 'multi_trader') {
+       const inst = CFTC_DATA.instruments[instKey];
+       const traders = ['managed_money', 'swap_dealers', 'producers', 'other_reportables', 'non_reportables'];
+       const lines = traders.map(tk => {
+           const net = inst?.[tk]?.net?.[idx];
+           const pct = inst?.[tk]?.pct_of_oi?.[idx];
+           return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmt(net)} (${fmt(pct,1,'','%')})</span></div>` : '';
+       }).join('');
+       return `<div class="tt-header">${instLabel} &middot; ${fmt(d.date)}</div><div class="tt-divider"></div>${lines}<div class="tt-divider"></div><div class="tt-row"><span>Price</span><span>${fmt(d.price,2,'$')}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
     }
-    return `📅 ${date}<br>Value: ${fmt(net)}`;
+
+    if (type === 'net_pos_vs_price') {
+        return `📅 ${d.date}<br>──────────────────────────────<br>Net Position &nbsp; ${fmt(d.net)}<br>Long &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(d.long)}<br>Short &nbsp;&nbsp;&nbsp;&nbsp; ${fmt(d.short)}<br>──────────────────────────────<br>Z-Score &nbsp;&nbsp; ${fmtZ(d.z_score)} (${fmtPct(d.pct_rank)})<br>COT Index &nbsp; ${fmt(d.cot_3yr,0,'','%')}<br>──────────────────────────────<br>Price &nbsp;&nbsp;&nbsp;&nbsp; $${fmt(d.price,2)}<br>OI Regime &nbsp; ${d.oi_regime}`;
+    }
+
+    if (type === 'rolling_corr') return `📅 ${d.date}<br>20w Correlation: ${fmt(d.net, 2)}<br>Regime: ${d.oi_regime}`;
+    if (type === 'seasonal') return `📅 ${d.date}<br>Net Position: ${fmt(d.net)}<br>5Y Average: ${fmt(d.long)}`; // season has historical in these datasets usually
+    
+    return `📅 ${d.date}<br>Value: ${fmt(d.net)}`;
 }
 
 function externalTooltipHandler(context) {
@@ -757,6 +792,9 @@ function switchTab(name){
       destroyChartsInTab(p.id);
       p.classList.remove('active');
   });
+
+  // PROFESSIONAL FIX: Clear crosshair state globally to prevent ghost lines
+  ALL_CHARTS.forEach(c => { c._crosshairX = null; });
 
   document.getElementById('tab-'+name).classList.add('active');
   const panelId={overview:'panel-overview',instrument:'panel-instrument',three:'panel-three'}[name];
@@ -1237,7 +1275,7 @@ function renderNetPosChart(inst,traderKey){
       }
     }
   });
-  // ALL_CHARTS.push(chart); handled in safeCreateChart
+  chart.userData = { type: 'net_pos_vs_price', instrumentKey: inst.key, traderKey: traderKey };
 }
 function buildExtremeAnnotations(ex){
   const a={};
@@ -1270,7 +1308,7 @@ function renderScatterChart(inst,traderKey){
   const[longs,prices,seasons]=arrays;
   const wData=[],iData=[];
   dates.forEach((_,i)=>{if(longs[i]==null||prices[i]==null)return;const pt={x:longs[i],y:prices[i]};(seasons[i]==='Withdrawal'?wData:iData).push(pt);});
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'scatter',
     data:{datasets:[
       {label:'Withdrawal',data:wData,backgroundColor:'rgba(96,165,250,.65)',pointRadius:3.5,pointHoverRadius:5},
@@ -1282,6 +1320,7 @@ function renderScatterChart(inst,traderKey){
       scales:{x:{...CHART_BASE.scales.x,title:{display:true,text:'Net Long',color:'#5c6b8a',font:{size:9}}},y:{...CHART_BASE.scales.y,title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}}}
     }
   });
+  chart.userData = { type: 'scatter', instrumentKey: inst.key, traderKey: traderKey };
 }
 
 // ── Rolling Correlation ───────────────────────────────────────
@@ -1290,7 +1329,7 @@ function renderCorrChart(inst,traderKey){
   const td=inst[traderKey]||{};
   const{dates,arrays}=applyDateFilter(inst.dates,td.rolling_corr);
   const[corr]=arrays;
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[
       {label:'Corr',data:corr,borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
@@ -1300,6 +1339,7 @@ function renderCorrChart(inst,traderKey){
     ]},
     options:{...CHART_BASE,scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:-1.1,max:1.1,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v.toFixed(1)}}}}
   });
+  chart.userData = { type: 'rolling_corr', instrumentKey: inst.key, traderKey: traderKey };
 }
 
 // ── Weekly Flow ───────────────────────────────────────────────
@@ -1309,11 +1349,12 @@ function renderFlowChart(inst,traderKey){
   const{dates,arrays}=applyDateFilter(inst.dates,td.change_net);
   const[cn]=arrays;
   const cols=(cn||[]).map(v=>v==null?'transparent':v>=0?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)');
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'bar',
     data:{labels:dates,datasets:[{label:'Flow',data:cn,backgroundColor:cols,borderWidth:0}]},
     options:{...CHART_BASE,scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,title:{display:true,text:'\u0394 Net',color:'#5c6b8a',font:{size:8}}}}}
   });
+  chart.userData = { type: 'weekly_flow', instrumentKey: inst.key, traderKey: traderKey };
 }
 
 // ── COT Index (Improvement 6: lookback selector + dual line) ──
@@ -1351,7 +1392,7 @@ function renderCOTChart(inst,traderKey){
     {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
   ];
   if(secondary&&cot26) datasets.unshift({label:'COT 26w',data:cot26,borderColor:'rgba(168,85,247,.4)',borderWidth:1,pointRadius:0,tension:.3,fill:false,borderDash:[2,2]});
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets},
     options:{...CHART_BASE,
@@ -1359,6 +1400,7 @@ function renderCOTChart(inst,traderKey){
       scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:0,max:100,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v+'%'}}}
     }
   });
+  chart.userData = { type: 'cot_index', instrumentKey: inst.key, traderKey: traderKey };
 }
 
 // ── Seasonal overlay ──────────────────────────────────────────
@@ -1401,12 +1443,13 @@ function renderSeasonalChart(inst,traderKey){
     allDates.forEach((d,i)=>{if(+d.slice(0,4)===y){const w=wkNum(d);if(w>=1&&w<=52)sparse[w-1]=allNet[i];}});
     datasets.push({label:String(y),data:sparse,borderColor:colours[yi%colours.length],borderWidth:y===nowYear?2:1.2,pointRadius:0,tension:.3,fill:false,opacity:y===nowYear?1:.7});
   });
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'line',
     data:{labels:weekLabels,datasets},
     options:{...CHART_BASE,plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:8},boxWidth:8,filter:item=>!['Upper 1\u03c3','Lower 1\u03c3'].includes(item.text)}}},
       scales:{x:{...CHART_BASE.scales.x,ticks:{...CHART_BASE.scales.x.ticks,maxTicksLimit:13}},y:{...CHART_BASE.scales.y}}}
   });
+  chart.userData = { type: 'seasonal', instrumentKey: inst.key, traderKey: traderKey };
 }
 
 // ── Lagged Correlation (F6) ───────────────────────────────────
@@ -1424,7 +1467,7 @@ function renderLaggedCorrChart(inst,traderKey){
   const maxLag=currLags.reduce((best,v,i)=>Math.abs(v??0)>Math.abs(best.val??0)?{val:v,lag:i+1}:best,{val:0,lag:0});
   const note=maxLag.lag?`Positioning leads price by ~${maxLag.lag}w (r=${(maxLag.val||0).toFixed(2)})`:'' ;
   canvas.closest('.chart-panel').querySelector('.chart-sub').textContent=note||'Does MM positioning lead/lag price?';
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[1,2,3,4].map((lag,i)=>({
       label:`+${lag}w`,data:[l1,l2,l3,l4][i],borderColor:lagCols[i],borderWidth:1.5,pointRadius:0,tension:.3,fill:false
@@ -1435,6 +1478,7 @@ function renderLaggedCorrChart(inst,traderKey){
       scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:-1.1,max:1.1}}
     }
   });
+  chart.userData = { type: 'lagged_corr', instrumentKey: inst.key, traderKey: null };
 }
 
 // ── Smart vs Dumb Money (F3) ──────────────────────────────────
@@ -1444,7 +1488,7 @@ function renderSmartDumbChart(inst){
   if(!mm.net||!nr.net){canvas.closest('.chart-container').innerHTML='<div class="no-data">Non-reportable data unavailable</div>';return;}
   const{dates,arrays}=applyDateFilter(inst.dates,mm.net,nr.net);
   const[mmN,nrN]=arrays;
-  safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[
       {label:'MM Net',data:mmN,borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
@@ -1455,6 +1499,7 @@ function renderSmartDumbChart(inst){
       scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y}}
     }
   });
+  chart.userData = { type: 'smart_dumb', instrumentKey: inst.key, traderKey: 'managed_money' };
 }
 
 // ── Percentile bars (Bug 4 fix: labelled sub-bars, MM naming) ─
@@ -1600,32 +1645,8 @@ function renderThreeTraderGrid(){
         scales:scalesCfg,
       }
     });
-
+    chart.userData = { type: 'multi_trader', instrumentKey: key, traderKey: null };
   }
-}
-
-// ── Synced crosshair plugin ───────────────────────────────────
-const syncCrosshairPlugin={
-  id:'syncCrosshair',
-  afterDraw(chart){
-    if(chart._crosshairX==null) return;
-    const ctx=chart.ctx,x=chart._crosshairX;
-    ctx.save();ctx.beginPath();ctx.moveTo(x,chart.chartArea.top);ctx.lineTo(x,chart.chartArea.bottom);
-    ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
-  }
-};
-Chart.register(syncCrosshairPlugin);
-let syncCrossThrottle = null;
-function syncCross(activeChart,x) {
-    if (syncCrossThrottle) return;
-    syncCrossThrottle = requestAnimationFrame(() => {
-        ALL_CHARTS.forEach(c => {
-            if (c !== activeChart && c.canvas && c.canvas.offsetParent !== null) {
-                c._crosshairX = x; c.update('none');
-            }
-        });
-        syncCrossThrottle = null;
-    });
 }
 
 // === END CHUNK 6 ===

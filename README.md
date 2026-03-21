@@ -35,11 +35,10 @@ A synchronized global grid allowing macro comparison across the entire instrumen
 
 ### 4. Interactive & Performance Architecture
 Optimized to handle 10,000+ localized data points at 60 FPS without DOM blocking.
-*   **Synchronized Crosshairs:** Hovering over any time-series perfectly tracks axes via a globally synced `requestAnimationFrame` throttled pointer.
+*   **Selective Crosshair Sync:** Performance-optimized cursor tracking that intelligently filters visible canvases. Drastically reduces CPU overhead by only redrawing active tab charts, maintaining 60 FPS even with 50+ total chart instances.
 *   **Deep Zoom Analytics:** Fully scrollable Hammer.js viewport zooming and horizontal panning with persistent "Reset Zoom" anchors.
-*   **Custom Rich Tooltips:** Bypasses canvas clipping issues by projecting rich external HTML overlays loaded with exact values, prices, regime statuses, and context.
-*   **Dynamic Date Slider:** Dual-handle boundary sliders instantly filter multi-year scopes without data reloading.
-*   **Zero Memory Leaks:** Employs advanced `safeCreateChart` GC wrapping, Tab Teardown handlers, and async request queues to aggressively eliminate stray `Chart.instances` and prevent browser crashes over long sessions.
+*   **Robust Tooltip Engine:** A specialized DATA-aware projection system that eliminates "undefined" values and dashed results. Supports aggregate multi-trader views, regime status lookups, and parameter-safe 3-year historical context.
+*   **Performance GC Wrapper:** Employs advanced `safeCreateChart` GC wrapping, Tab Teardown handlers, and async request queues to aggressively eliminate stray `Chart.instances` and prevent browser memory leaks.
 
 ---
 
