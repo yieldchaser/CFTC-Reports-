@@ -103,10 +103,10 @@ select:focus{border-color:var(--accent)}
 .corr-matrix-wrap{overflow-x:auto;width:100%}
 .corr-row{display:flex;gap:2px;align-items:center}
 .corr-row-label{font-size:9px;color:var(--text2);font-family:var(--mono);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.corr-cell{width:56px;height:36px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:rgba(255,255,255,.85);transition:transform .1s;flex-shrink:0}
+.corr-cell{flex:1;min-width:40px;height:36px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:rgba(255,255,255,.85);transition:transform .1s;}
 .corr-cell:hover{transform:scale(1.08);z-index:10;position:relative}
 .corr-period-bar{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.corr-col-header{width:56px;font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg);height:72px;padding-bottom:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.corr-col-header{flex:1;min-width:40px;font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg);height:72px;padding-bottom:4px;display:flex;align-items:center;justify-content:center;}
 
 /* === Table === */
 .table-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
@@ -789,27 +789,34 @@ function renderOILeaderboard(){
     const prev52=oi.length>=53?oi[oi.length-53]:null;
     const chg4pct=prev4&&prev4>0?(cur-prev4)/prev4*100:null;
     const pct52=prev52&&prev52>0?(cur/Math.max(...oi.slice(-52).filter(Boolean))*100):null;
-    let val,label,col;
-    if(oiMode==='4wchg'){val=chg4pct;label=chg4pct!=null?(chg4pct>=0?'+':'')+chg4pct.toFixed(1)+'%':'—';col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
-    else if(oiMode==='52hi'){val=pct52;label=pct52!=null?pct52.toFixed(0)+'%':'—';col=pct52==null?'#5c6b8a':pct52>=80?'#22c55e':pct52<50?'#ef4444':'#f59e0b';}
-    else{val=cur;label=fmt(cur);col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
-    items.push({key:k,label:inst.label,val:val??-Infinity,displayVal:label,col,oi:cur});
-  });
-  items.sort((a,b)=>b.val-a.val);
-  const maxOI=Math.max(...items.map(i=>i.oi));
-  items.forEach(({key,label,displayVal,col,oi})=>{
-    const pct=maxOI>0?oi/maxOI*100:0;
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer';
-    row.onclick=()=>{switchTab('instrument');setActiveInst(key);};
-    row.innerHTML=`
-      <div style="width:110px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
-      <div style="flex:1;background:var(--bg4);border-radius:2px;height:14px;position:relative;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${col}50;border-radius:2px"></div>
-      </div>
-      <div style="width:54px;font-size:9px;font-family:var(--mono);font-weight:600;color:${col};text-align:right;flex-shrink:0">${displayVal}</div>`;
-    el.appendChild(row);
-  });
+      let val,label,col;
+      if(oiMode==='4wchg'){val=chg4pct;label=chg4pct!=null?(chg4pct>=0?'+':'')+chg4pct.toFixed(1)+'%':'—';col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
+      else if(oiMode==='52hi'){val=pct52;label=pct52!=null?pct52.toFixed(0)+'%':'—';col=pct52==null?'#5c6b8a':pct52>=80?'#22c55e':pct52<50?'#ef4444':'#f59e0b';}
+      else{val=cur;label=fmt(cur);col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
+      items.push({key:k,label:inst.label,val:val??-Infinity,displayVal:label,col,oi:cur});
+    });
+    items.sort((a,b)=>b.val-a.val);
+    const maxOI=Math.max(...items.filter(i=>i.val!==-Infinity).map(i=>i.oi));
+    const maxValAbs=Math.max(0.0001, ...items.filter(i=>i.val!==-Infinity).map(i=>Math.abs(i.val)));
+
+    items.forEach(({key,label,displayVal,col,oi,val})=>{
+      let pct = 0;
+      if(oiMode==='52hi'){ pct = val===-Infinity?0:val; }
+      else if(oiMode==='4wchg'){ pct = val===-Infinity?0:(Math.abs(val)/maxValAbs*100); }
+      else { pct = maxOI>0?oi/maxOI*100:0; }
+      pct = Math.min(100, Math.max(0, pct));
+
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer';
+      row.onclick=()=>{switchTab('instrument');setActiveInst(key);};
+      row.innerHTML=`
+        <div style="width:110px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
+        <div style="flex:1;background:var(--bg4);border-radius:2px;height:14px;position:relative;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${col}50;border-radius:2px"></div>
+        </div>
+        <div style="width:54px;font-size:9px;font-family:var(--mono);font-weight:600;color:${col};text-align:right;flex-shrink:0">${displayVal}</div>`;
+      el.appendChild(row);
+    });
 }
 
 // ── Weekly Table ─────────────────────────────────────────────
@@ -956,7 +963,8 @@ function renderByInstrument(){
   panel('cv-smart-dumb','Smart vs Dumb Money','MM (blue) vs Non-Reportable (red dashed) net position',null,'h200');
 
   // Percentile panel
-  const pctDiv=document.createElement('div'); pctDiv.className='chart-panel';
+  const pctDiv=document.createElement('div'); pctDiv.className='chart-panel percentile-rank-container';
+  pctDiv.style.cssText='height:auto; min-height:400px; overflow:visible;';
   pctDiv.innerHTML=`<div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-sub">All 5 Traders &middot; Current Week</div></div></div><div id="pct-bars-area"></div>`;
   area.appendChild(pctDiv);
 
@@ -1176,6 +1184,7 @@ function renderLaggedCorrChart(inst,traderKey){
       label:`+${lag}w`,data:[l1,l2,l3,l4][i],borderColor:lagCols[i],borderWidth:1.5,pointRadius:0,tension:.3,fill:false
     }))},
     options:{...CHART_BASE,
+      maintainAspectRatio: false,
       plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:9},boxWidth:8}}},
       scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:-1.1,max:1.1}}
     }
