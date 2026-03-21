@@ -2263,7 +2263,7 @@
           }
         }
       });
-      chart.userData = { type: 'net_pos_vs_price', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'net_pos_vs_price', instrumentKey: activeInstrument, traderKey: traderKey };
     }
     function buildExtremeAnnotations(ex) {
       const a = {};
@@ -2311,7 +2311,7 @@
           scales: { x: { ...CHART_BASE.scales.x, title: { display: true, text: 'Net Long', color: '#5c6b8a', font: { size: 9 } } }, y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 9 } } } }
         }
       });
-      chart.userData = { type: 'scatter', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'scatter', instrumentKey: activeInstrument, traderKey: traderKey };
     }
 
     // ── Rolling Correlation ───────────────────────────────────────
@@ -2332,7 +2332,7 @@
         },
         options: { ...CHART_BASE, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } } }
       });
-      chart.userData = { type: 'rolling_corr', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'rolling_corr', instrumentKey: activeInstrument, traderKey: traderKey };
     }
 
     // ── Weekly Flow ───────────────────────────────────────────────
@@ -2347,7 +2347,7 @@
         data: { labels: dates, datasets: [{ label: 'Flow', data: cn, backgroundColor: cols, borderWidth: 0 }] },
         options: { ...CHART_BASE, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, title: { display: true, text: '\u0394 Net', color: '#5c6b8a', font: { size: 8 } } } } }
       });
-      chart.userData = { type: 'weekly_flow', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'weekly_flow', instrumentKey: activeInstrument, traderKey: traderKey };
     }
 
     // ── COT Index (lookback selector + dual line) ──
@@ -2393,7 +2393,7 @@
           scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: 0, max: 100, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v + '%' } } }
         }
       });
-      chart.userData = { type: 'cot_index', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'cot_index', instrumentKey: activeInstrument, traderKey: traderKey };
     }
 
     // ── Seasonal overlay ──────────────────────────────────────────
@@ -2444,7 +2444,7 @@
           scales: { x: { ...CHART_BASE.scales.x, ticks: { ...CHART_BASE.scales.x.ticks, maxTicksLimit: 13 } }, y: { ...CHART_BASE.scales.y } }
         }
       });
-      chart.userData = { type: 'seasonal', instrumentKey: inst.key, traderKey: traderKey };
+      chart.userData = { type: 'seasonal', instrumentKey: activeInstrument, traderKey: traderKey };
     }
 
     // ── Lagged Correlation (F6) ───────────────────────────────────
@@ -2475,7 +2475,7 @@
           scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1 } }
         }
       });
-      chart.userData = { type: 'lagged_corr', instrumentKey: inst.key, traderKey: null };
+      chart.userData = { type: 'lagged_corr', instrumentKey: activeInstrument, traderKey: null };
     }
 
     // ── Smart vs Dumb Money (F3) ──────────────────────────────────
@@ -2499,7 +2499,7 @@
           scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y } }
         }
       });
-      chart.userData = { type: 'smart_dumb', instrumentKey: inst.key, traderKey: 'managed_money' };
+      chart.userData = { type: 'smart_dumb', instrumentKey: activeInstrument, traderKey: 'managed_money' };
     }
 
     // ── Percentile bars ─
