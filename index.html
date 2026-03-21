@@ -421,19 +421,27 @@ const crosshairPlugin = {
         const event = args.event;
         if (event.type === 'mousemove') {
             chart._crosshairX = event.x;
-            ALL_CHARTS.forEach(c => {
-                if (c !== chart) {
-                    c._crosshairX = event.x;
-                    c.update('none');
-                }
+            if (chart.crosshairThrottle) return;
+            chart.crosshairThrottle = requestAnimationFrame(() => {
+                ALL_CHARTS.forEach(c => {
+                    const canvas = c.canvas;
+                    if (c !== chart && canvas && canvas.offsetParent !== null) {
+                        c._crosshairX = chart._crosshairX;
+                        c.update('none');
+                    }
+                });
+                chart.update('none');
+                chart.crosshairThrottle = null;
             });
-            chart.update('none');
         }
         if (event.type === 'mouseout') {
             chart._crosshairX = null;
             ALL_CHARTS.forEach(c => {
-                c._crosshairX = null;
-                c.update('none');
+                const canvas = c.canvas;
+                if (canvas && canvas.offsetParent !== null) {
+                    c._crosshairX = null;
+                    c.update('none');
+                }
             });
         }
     }
@@ -626,6 +634,43 @@ function applyDateFilter(dates,...arrays){
   return{dates:dates.slice(s),arrays:arrays.map(a=>a?a.slice(s):a)};
 }
 
+
+// --- Performance Fixes ---
+function safeCreateChart(canvasId, config) {
+    const canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
+    if (!canvas) return null;
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    
+    // Clean ALL_CHARTS of destroyed instances
+    for (let i = ALL_CHARTS.length - 1; i >= 0; i--) {
+        if (!Chart.instances[ALL_CHARTS[i].id]) {
+            ALL_CHARTS.splice(i, 1);
+        }
+    }
+    
+    const chart = new Chart(canvas.getContext('2d'), config);
+    if (!ALL_CHARTS.includes(chart)) {
+    
+    }
+    return chart;
+}
+
+function destroyChartsInTab(tabId) {
+    const tabEl = document.getElementById(tabId);
+    if (!tabEl) return;
+    tabEl.querySelectorAll('canvas').forEach(canvas => {
+        const chart = Chart.getChart(canvas);
+        if (chart) chart.destroy();
+    });
+    // Cleanup ALL_CHARTS
+    for (let i = ALL_CHARTS.length - 1; i >= 0; i--) {
+        if (!Chart.instances[ALL_CHARTS[i].id]) {
+            ALL_CHARTS.splice(i, 1);
+        }
+    }
+}
+
 // ── Formatters ────────────────────────────────────────────────
 function fmt(n,dec=0){if(n==null||isNaN(n))return'\u2014';return (+n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
 function fmtZ(n){return n==null||isNaN(n)?'\u2014':((+n>=0?'+':'')+((+n).toFixed(2)));}
@@ -705,7 +750,13 @@ function setCorrPeriod(p){
 // ── Tab switching ──
 function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  
+  // Performance fix: destroy charts in currently active tab before hiding
+  document.querySelectorAll('.tab-panel.active').forEach(p => {
+      destroyChartsInTab(p.id);
+      p.classList.remove('active');
+  });
+
   document.getElementById('tab-'+name).classList.add('active');
   const panelId={overview:'panel-overview',instrument:'panel-instrument',three:'panel-three'}[name];
   document.getElementById(panelId).classList.add('active');
@@ -1062,6 +1113,7 @@ function setActiveInst(key){
   activeInstrument=key;
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
   const pill=document.getElementById('pill-'+key); if(pill)pill.classList.add('active');
+  destroyChartsInTab('content-instrument');
   renderByInstrument();
 }
 
@@ -1170,8 +1222,7 @@ function renderNetPosChart(inst,traderKey){
   const barColors=(net||[]).map(v=>v==null?'transparent':v>=0?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)');
   const oiNorm=(oi||[]).map((v,i)=>v&&net[i]!=null?v/Math.max(...(oi||[]).filter(Boolean))*Math.max(...(net||[]).map(Math.abs).filter(Boolean)):null);
   const ex=td.extremes||{};
-  const ex2=Chart.getChart(canvas); if(ex2)ex2.destroy();
-  const chart=new Chart(canvas.getContext('2d'),{
+  const chart=safeCreateChart(canvas,{
     data:{labels:dates,datasets:[
       {type:'bar',label:'Net',data:net,backgroundColor:barColors,borderWidth:0,yAxisID:'y'},
       {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.65)',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y2'},
@@ -1185,7 +1236,7 @@ function renderNetPosChart(inst,traderKey){
       }
     }
   });
-  ALL_CHARTS.push(chart);
+  // ALL_CHARTS.push(chart); handled in safeCreateChart
 }
 function buildExtremeAnnotations(ex){
   const a={};
@@ -1218,8 +1269,7 @@ function renderScatterChart(inst,traderKey){
   const[longs,prices,seasons]=arrays;
   const wData=[],iData=[];
   dates.forEach((_,i)=>{if(longs[i]==null||prices[i]==null)return;const pt={x:longs[i],y:prices[i]};(seasons[i]==='Withdrawal'?wData:iData).push(pt);});
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'scatter',
     data:{datasets:[
       {label:'Withdrawal',data:wData,backgroundColor:'rgba(96,165,250,.65)',pointRadius:3.5,pointHoverRadius:5},
@@ -1238,8 +1288,7 @@ function renderCorrChart(inst,traderKey){
   const td=inst[traderKey]||{};
   const{dates,arrays}=applyDateFilter(inst.dates,td.rolling_corr);
   const[corr]=arrays;
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[
       {label:'Corr',data:corr,borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
@@ -1258,8 +1307,7 @@ function renderFlowChart(inst,traderKey){
   const{dates,arrays}=applyDateFilter(inst.dates,td.change_net);
   const[cn]=arrays;
   const cols=(cn||[]).map(v=>v==null?'transparent':v>=0?'rgba(34,197,94,.75)':'rgba(239,68,68,.75)');
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'bar',
     data:{labels:dates,datasets:[{label:'Flow',data:cn,backgroundColor:cols,borderWidth:0}]},
     options:{...CHART_BASE,scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,title:{display:true,text:'\u0394 Net',color:'#5c6b8a',font:{size:8}}}}}
@@ -1301,7 +1349,7 @@ function renderCOTChart(inst,traderKey){
     {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
   ];
   if(secondary&&cot26) datasets.unshift({label:'COT 26w',data:cot26,borderColor:'rgba(168,85,247,.4)',borderWidth:1,pointRadius:0,tension:.3,fill:false,borderDash:[2,2]});
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets},
     options:{...CHART_BASE,
@@ -1351,8 +1399,7 @@ function renderSeasonalChart(inst,traderKey){
     allDates.forEach((d,i)=>{if(+d.slice(0,4)===y){const w=wkNum(d);if(w>=1&&w<=52)sparse[w-1]=allNet[i];}});
     datasets.push({label:String(y),data:sparse,borderColor:colours[yi%colours.length],borderWidth:y===nowYear?2:1.2,pointRadius:0,tension:.3,fill:false,opacity:y===nowYear?1:.7});
   });
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'line',
     data:{labels:weekLabels,datasets},
     options:{...CHART_BASE,plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:8},boxWidth:8,filter:item=>!['Upper 1\u03c3','Lower 1\u03c3'].includes(item.text)}}},
@@ -1375,7 +1422,7 @@ function renderLaggedCorrChart(inst,traderKey){
   const maxLag=currLags.reduce((best,v,i)=>Math.abs(v??0)>Math.abs(best.val??0)?{val:v,lag:i+1}:best,{val:0,lag:0});
   const note=maxLag.lag?`Positioning leads price by ~${maxLag.lag}w (r=${(maxLag.val||0).toFixed(2)})`:'' ;
   canvas.closest('.chart-panel').querySelector('.chart-sub').textContent=note||'Does MM positioning lead/lag price?';
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[1,2,3,4].map((lag,i)=>({
       label:`+${lag}w`,data:[l1,l2,l3,l4][i],borderColor:lagCols[i],borderWidth:1.5,pointRadius:0,tension:.3,fill:false
@@ -1395,8 +1442,7 @@ function renderSmartDumbChart(inst){
   if(!mm.net||!nr.net){canvas.closest('.chart-container').innerHTML='<div class="no-data">Non-reportable data unavailable</div>';return;}
   const{dates,arrays}=applyDateFilter(inst.dates,mm.net,nr.net);
   const[mmN,nrN]=arrays;
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
+  safeCreateChart(canvas,{
     type:'line',
     data:{labels:dates,datasets:[
       {label:'MM Net',data:mmN,borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
@@ -1545,14 +1591,14 @@ function renderThreeTraderGrid(){
       ];
     }
 
-    const chart=new Chart(canvas.getContext('2d'),{
+    const chart=safeCreateChart(canvas,{
       data:{labels:dates,datasets},
       options:{...CHART_BASE,
         plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:9},boxWidth:9}}},
         scales:scalesCfg,
       }
     });
-    ALL_CHARTS.push(chart);
+
   }
 }
 
@@ -1567,7 +1613,18 @@ const syncCrosshairPlugin={
   }
 };
 Chart.register(syncCrosshairPlugin);
-function syncCross(activeChart,x){ALL_CHARTS.forEach(c=>{c._crosshairX=x;c.update('none');});}
+let syncCrossThrottle = null;
+function syncCross(activeChart,x) {
+    if (syncCrossThrottle) return;
+    syncCrossThrottle = requestAnimationFrame(() => {
+        ALL_CHARTS.forEach(c => {
+            if (c !== activeChart && c.canvas && c.canvas.offsetParent !== null) {
+                c._crosshairX = x; c.update('none');
+            }
+        });
+        syncCrossThrottle = null;
+    });
+}
 
 // === END CHUNK 6 ===
 
@@ -1581,8 +1638,6 @@ function initDashboard(){
   renderOILeaderboard();
   renderWeeklyTable();
   renderInstrumentPills();
-  renderByInstrument();
-  renderThreeTraderGrid();
   switchTab('overview');
 }
 
