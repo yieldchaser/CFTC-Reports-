@@ -630,7 +630,7 @@
     }
 
     tr:hover td {
-      background: rgba(79, 142, 247, .05);
+      background: rgba(79, 142, 247, .09);
       cursor: pointer
     }
 
@@ -846,6 +846,11 @@
       background: var(--accent);
       border-color: var(--accent);
       color: #fff
+    }
+
+    .pill:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px
     }
 
     /* === Instrument charts layout === */
@@ -1300,6 +1305,10 @@
         <span style="font-size:11px;color:var(--text2)" data-tooltip="Toggle the chart's y-axis scaling method.">Scale:</span>
         <button class="toggle-btn active" id="btn-pct-oi" onclick="setNormalise(true)" data-tooltip="Normalize positions as a percentage of total Open Interest to easily compare relative conviction across different contract sizes.">% of Open Interest</button>
         <button class="toggle-btn" id="btn-raw" onclick="setNormalise(false)" data-tooltip="View raw nominal contract quantities on independent axes. Useful for spotting pure volumetric changes.">Raw (Independent Axes)</button>
+        <span style="margin-left:12px;font-size:11px;color:var(--text3)">|</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:12px" data-tooltip="Sort order for the Multi-Trader grid.">Sort:</span>
+        <button class="toggle-btn active" id="btn-sort-signal" onclick="setThreeSort('signal')" data-tooltip="Sort instruments by absolute composite signal score — most extreme setups first.">Signal Strength</button>
+        <button class="toggle-btn" id="btn-sort-name" onclick="setThreeSort('name')" data-tooltip="Sort instruments alphabetically by name.">A–Z</button>
       </div>
       <div id="three-trader-grid" class="three-grid"></div>
     </div>
@@ -1313,6 +1322,7 @@
     let activeInstrument = 'nat_gas_nyme';
     let activeTrader = 'managed_money';
     let normaliseByOI = true;
+    let threeSort = 'signal'; // 'signal' | 'name'
     let hmTrader = 'managed_money';
     let hmWeeks = 52;
     let corrPeriod = 52;
@@ -1491,7 +1501,8 @@
       'OI Regime': 'Market structure via OI trend + price. Accumulation: OI↑+Price↑ (new longs). Distribution: OI↑+Price↓ (new shorts). Short Covering: OI↓+Price↑. Long Liquidation: OI↓+Price↓.',
       'Momentum': 'Flow momentum score 0–100. Above 80 = statistically outsized repositioning vs trailing 13w volatility — often precedes trend breakouts. Below 20 = positioning stagnation.',
       'Price': 'Most recent weekly settlement price. WoW % change shown — cross-reference with positioning flow for directional confirmation or divergence.',
-      'Season': 'Withdrawal (Nov–Mar): demand-driven drawdowns, price-sensitive. Injection (Apr–Oct): storage rebuilding, structurally oversupplied. Season context shapes how positioning extremes read.'
+      'Season': 'Withdrawal (Nov–Mar): demand-driven drawdowns, price-sensitive. Injection (Apr–Oct): storage rebuilding, structurally oversupplied. Season context shapes how positioning extremes read.',
+      'MM Edge': 'Positioning momentum divergence: weekly Z-score change minus price return signal (normalized). Positive = MM repositioning faster than price implies — potential leading signal. Negative = MM lagging or fading price — potential divergence or exhaustion.'
     };
 
     const REGIME_TOOLTIPS = {
@@ -1974,6 +1985,7 @@
           const nrDelta = last(nr.change_net) ?? wow(nr.net);
           const oi = last(inst.open_interest);
           const oiRoc = last(inst.oi_roc_4w);
+          const mmEdge = last(mm.edge);
           const oiRocC = oiRoc == null ? '#5c6b8a' : oiRoc > 5 ? '#22c55e' : oiRoc < -5 ? '#ef4444' : '#f59e0b';
           const cotPct = mmCot != null ? Math.round(+mmCot) : null;
           const regime = last(inst.oi_regime) || 'Neutral';
@@ -2004,6 +2016,7 @@
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="Total open interest across all traders. 4wk ROC shows momentum of market participation.">OI Total</span><span class="card-val">${fmt(oi)}${oiRoc != null ? '&nbsp;<span style="color:' + oiRocC + '">' + (oiRoc >= 0 ? '+' : '') + oiRoc.toFixed(1) + '%</span>' : ''}</span></div>
+        ${mmEdge != null ? `<div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">MM Edge</span><span class="card-val" style="color:${mmEdge > 0.1 ? '#22c55e' : mmEdge < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdge >= 0 ? '+' : ''}${mmEdge.toFixed(2)}</span></div>` : ''}
         <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
           <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
           Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
@@ -2302,6 +2315,7 @@
         const mmNet = last(mm.net), mmDelta = last(mm.change_net) ?? wow(mm.net);
         const mmZ = last(mm.z_score), mmPct = last(mm.pct_rank);
         const mmCot = last(mm.cot_index?.w156), mmMom = last(mm.momentum_score);
+        const mmEdgeV = last(mm.edge);
         const price = last(inst.price), priceWow = wowPct(inst.price);
         const regime = last(inst.oi_regime) || '—';
         const season = last(inst.season) || '—';
@@ -2347,7 +2361,11 @@
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Season']}">
             <span class="inst-stat-lbl">Season</span>
             <span class="inst-stat-val" style="font-size:9px;color:var(--text2)">${season}</span>
-          </div>`;
+          </div>
+          ${mmEdgeV != null ? `<div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">
+            <span class="inst-stat-lbl">MM Edge</span>
+            <span class="inst-stat-val" style="color:${mmEdgeV > 0.1 ? '#22c55e' : mmEdgeV < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdgeV >= 0 ? '+' : ''}${mmEdgeV.toFixed(2)}</span>
+          </div>` : ''}`;
       }
       const latestNet = last(td.net), latestPrice = last(inst.price);
       const titleSuffix = latestNet != null && latestPrice != null ? ` \u2014 Net: ${fmt(latestNet)} | Price: $${fmt(latestPrice, 2)}` : '';
@@ -2506,7 +2524,7 @@
             { label: 'Z', data: dates.map(() => 0), borderColor: 'rgba(255,255,255,.12)', borderWidth: 1, pointRadius: 0, fill: false },
           ]
         },
-        options: { ...CHART_BASE, plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['U','L','Z'].includes(item.text) } } }, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } } }
+        options: { ...CHART_BASE, plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['U','L','Z'].includes(item.text) } } }, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, title: { display: true, text: '20w Corr', color: '#5c6b8a', font: { size: 8 } }, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } } }
       });
       chart.userData = { type: 'rolling_corr', instrumentKey: activeInstrument, traderKey: traderKey };
     }
@@ -2619,7 +2637,7 @@
         data: { labels: weekLabels, datasets },
         options: {
           ...CHART_BASE, plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['Upper 1\u03c3', 'Lower 1\u03c3'].includes(item.text) } } },
-          scales: { x: { ...CHART_BASE.scales.x, ticks: { ...CHART_BASE.scales.x.ticks, maxTicksLimit: 13 } }, y: { ...CHART_BASE.scales.y } }
+          scales: { x: { ...CHART_BASE.scales.x, ticks: { ...CHART_BASE.scales.x.ticks, maxTicksLimit: 13 } }, y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Net Pos', color: '#5c6b8a', font: { size: 8 } } } }
         }
       });
       chart.userData = { type: 'seasonal', instrumentKey: activeInstrument, traderKey: traderKey };
@@ -2649,8 +2667,8 @@
         options: {
           ...CHART_BASE,
           maintainAspectRatio: false,
-          plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 9 }, boxWidth: 8 } } },
-          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1 } }
+          plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 9 }, boxWidth: 8 } }, annotation: { annotations: { zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,.15)', borderWidth: 1, borderDash: [4, 4] } } } },
+          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, title: { display: true, text: 'Corr (r)', color: '#5c6b8a', font: { size: 8 } }, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } }
         }
       });
       chart.userData = { type: 'lagged_corr', instrumentKey: activeInstrument, traderKey: null };
@@ -2755,15 +2773,26 @@
       renderThreeTraderGrid();
     }
 
+    function setThreeSort(mode) {
+      threeSort = mode;
+      document.getElementById('btn-sort-signal').classList.toggle('active', mode === 'signal');
+      document.getElementById('btn-sort-name').classList.toggle('active', mode === 'name');
+      renderThreeTraderGrid();
+    }
+
     function renderThreeTraderGrid() {
       const grid = document.getElementById('three-trader-grid'); grid.innerHTML = '';
       const instKeys = Object.keys(CFTC_DATA.instruments);
-      // Sort by |composite score| descending so most extreme instruments appear first
-      instKeys.sort((a, b) => {
-        const sa = CFTC_DATA.instruments[a]?.composite_scores || [], sb = CFTC_DATA.instruments[b]?.composite_scores || [];
-        const va = sa.length ? Math.abs(sa[sa.length - 1]) : 0, vb = sb.length ? Math.abs(sb[sb.length - 1]) : 0;
-        return vb - va;
-      });
+      if (threeSort === 'name') {
+        instKeys.sort((a, b) => (CFTC_DATA.instruments[a]?.label || a).localeCompare(CFTC_DATA.instruments[b]?.label || b));
+      } else {
+        // Sort by |composite score| descending so most extreme instruments appear first
+        instKeys.sort((a, b) => {
+          const sa = CFTC_DATA.instruments[a]?.composite_scores || [], sb = CFTC_DATA.instruments[b]?.composite_scores || [];
+          const va = sa.length ? Math.abs(sa[sa.length - 1]) : 0, vb = sb.length ? Math.abs(sb[sb.length - 1]) : 0;
+          return vb - va;
+        });
+      }
       for (const key of instKeys) {
         const inst = CFTC_DATA.instruments[key]; if (!inst) continue;
         const panel = document.createElement('div'); panel.className = 'chart-panel';
