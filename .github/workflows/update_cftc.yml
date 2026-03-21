@@ -2,7 +2,9 @@ name: Update CFTC Data
 
 on:
   schedule:
-    - cron: '30 21 * * 5'   # Every Friday 21:30 UTC = ~17:30 ET (after CFTC release)
+    - cron: '30 21 * * 5'   # Friday 21:30 UTC  — primary (CFTC releases ~21:00 UTC)
+    - cron: '30 03 * * 6'   # Saturday 03:30 UTC — retry if Friday release was late
+    - cron: '30 15 * * 1'   # Monday 15:30 UTC   — catch holiday/slip delays
   workflow_dispatch:          # Allow manual trigger from Actions tab
 
 jobs:
@@ -22,14 +24,17 @@ jobs:
         run: pip install requests pandas numpy
 
       - name: Run CFTC pipeline
+        id: pipeline
         run: python scripts/update_cftc_data.py
 
       - name: Verify output exists and is non-empty
+        if: steps.pipeline.outputs.new_data == 'true'
         run: |
           test -f data/cftc_processed.json
           test $(wc -c < data/cftc_processed.json) -gt 100000
 
       - name: Commit and push
+        if: steps.pipeline.outputs.new_data == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
