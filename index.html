@@ -2506,7 +2506,7 @@
             { label: 'Z', data: dates.map(() => 0), borderColor: 'rgba(255,255,255,.12)', borderWidth: 1, pointRadius: 0, fill: false },
           ]
         },
-        options: { ...CHART_BASE, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } } }
+        options: { ...CHART_BASE, plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['U','L','Z'].includes(item.text) } } }, scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } } }
       });
       chart.userData = { type: 'rolling_corr', instrumentKey: activeInstrument, traderKey: traderKey };
     }
@@ -2565,7 +2565,7 @@
         data: { labels: dates, datasets },
         options: {
           ...CHART_BASE,
-          plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8 } } },
+          plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['80', '20'].includes(item.text) } } },
           scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: 0, max: 100, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v + '%' } } }
         }
       });
