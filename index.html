@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>CFTC Natural Gas Positioning Dashboard</title>
+  <title>NatGas Structure — COT Positioning Intelligence</title>
   <meta name="description"
     content="Professional CFTC COT positioning dashboard — Natural Gas instruments, 5 trader categories, composite signals." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,6 +16,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
     :root {
@@ -1132,11 +1133,11 @@
 
   <header>
     <div class="logo">
-      <div class="logo-icon"><img src="favicon.png" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">
+      <div class="logo-icon"><img src="favicon.svg" style="width:100%;height:100%;border-radius:8px;object-fit:cover;" onerror="this.src='favicon.png'">
       </div>
       <div>
-        <h1>CFTC Natural Gas Positioning</h1>
-        <p>Commitment of Traders &middot; <span id="hdr-instruments">10 Instruments</span> &middot; 5 Trader Categories
+        <h1>NatGas Structure</h1>
+        <p data-tooltip="Weekly COT disaggregated data sourced from publicreporting.cftc.gov — covers futures and options combined across 5 participant categories.">COT Intelligence &middot; <span id="hdr-instruments">10 Instruments</span> &middot; 5 Categories
         </p>
       </div>
     </div>
@@ -1193,26 +1194,26 @@
         <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       </div>
 
-      <div class="section-title">Current Week Signal Dashboard</div>
+      <div class="section-title" data-tooltip="Per-instrument summary cards showing composite signal score, net positioning, Z-score, COT Index, and all trader categories for the latest report week. Click any card to open the full By Instrument view.">Current Week Signal Dashboard</div>
       <div id="signal-cards-container"></div>
 
-      <div class="section-title">Positioning Heatmap &mdash; Z-Score (Last N Weeks)</div>
+      <div class="section-title" data-tooltip="Weekly Z-score grid showing historical positioning intensity across all instruments. Green = historically extended long. Red = historically extended short. Select a trader category and lookback window to isolate specific flow patterns.">Positioning Heatmap &mdash; Z-Score (Last N Weeks)</div>
       <div class="chart-panel" style="padding:10px">
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
           <div class="hm-trader-bar">
             <span style="font-size:10px;color:var(--text3)">Trader:</span>
-            <button class="hm-btn active" id="hmbt-managed_money" onclick="setHmTrader('managed_money')">MM</button>
-            <button class="hm-btn" id="hmbt-swap_dealers" onclick="setHmTrader('swap_dealers')">Swap</button>
-            <button class="hm-btn" id="hmbt-producers" onclick="setHmTrader('producers')">Prod</button>
-            <button class="hm-btn" id="hmbt-other_reportables" onclick="setHmTrader('other_reportables')">Other</button>
-            <button class="hm-btn" id="hmbt-non_reportables" onclick="setHmTrader('non_reportables')">Retail</button>
+            <button class="hm-btn active" id="hmbt-managed_money" onclick="setHmTrader('managed_money')" data-tooltip="<strong>Managed Money</strong><br>Leveraged funds, hedge funds, and CTAs. The primary speculative flow — most watched category for positioning signals and mean-reversion setups.">MM</button>
+            <button class="hm-btn" id="hmbt-swap_dealers" onclick="setHmTrader('swap_dealers')" data-tooltip="<strong>Swap Dealers</strong><br>Banks and financial intermediaries managing OTC swap exposure. Often the structural counterparty to speculative longs — large negative Swap net with positive MM net is a classic crowded positioning setup.">Swap</button>
+            <button class="hm-btn" id="hmbt-producers" onclick="setHmTrader('producers')" data-tooltip="<strong>Producers / Merchants</strong><br>Physical market participants (E&amp;P companies, utilities, processors) hedging real commodity exposure. Their net position signals commercial hedging intensity — deeply negative = heavy producer hedging, often near price cycle highs.">Prod</button>
+            <button class="hm-btn" id="hmbt-other_reportables" onclick="setHmTrader('other_reportables')" data-tooltip="<strong>Other Reportables</strong><br>CTAs, commodity pools, and hedge funds not classified as Managed Money. Often a fast-moving leading indicator — this category tends to reposition more quickly than MM in response to technical signals.">Other</button>
+            <button class="hm-btn" id="hmbt-non_reportables" onclick="setHmTrader('non_reportables')" data-tooltip="<strong>Non-Reportable (Small Speculators)</strong><br>Positions below the CFTC reporting threshold — retail and small participants. Classic contrarian indicator: peak retail net long often aligns with price tops; peak net short with price troughs.">Retail</button>
           </div>
           <div class="hm-range-bar">
             <span style="font-size:10px;color:var(--text3)">Weeks:</span>
-            <button class="hm-btn" id="hmrb-13" onclick="setHmWeeks(13)">13w</button>
-            <button class="hm-btn" id="hmrb-26" onclick="setHmWeeks(26)">26w</button>
-            <button class="hm-btn active" id="hmrb-52" onclick="setHmWeeks(52)">52w</button>
-            <button class="hm-btn" id="hmrb-all" onclick="setHmWeeks(0)">All</button>
+            <button class="hm-btn" id="hmrb-13" onclick="setHmWeeks(13)" data-tooltip="Show last 13 weeks (~1 quarter). Best for identifying recent positioning momentum and short-term trend changes.">13w</button>
+            <button class="hm-btn" id="hmrb-26" onclick="setHmWeeks(26)" data-tooltip="Show last 26 weeks (~6 months). Captures a full seasonal half-cycle — useful for injection/withdrawal regime context.">26w</button>
+            <button class="hm-btn active" id="hmrb-52" onclick="setHmWeeks(52)" data-tooltip="Show last 52 weeks (1 year). Full annual cycle view — balances recency with enough history to judge true positioning extremes.">52w</button>
+            <button class="hm-btn" id="hmrb-all" onclick="setHmWeeks(0)" data-tooltip="Show all available history. Maximum context for Z-score interpretation — useful for identifying multi-year positioning extremes.">All</button>
           </div>
         </div>
         <div class="heatmap-outer">
@@ -1221,14 +1222,14 @@
         </div>
       </div>
 
-      <div class="section-title">Instrument Correlation Matrix</div>
+      <div class="section-title" data-tooltip="Pearson correlation of Managed Money net positions across all 10 instruments over the selected period. Strong positive (green) = instruments tend to move together in positioning. Strong negative (red) = instruments are positioned in opposite directions — potential hedging or basis pair. Use to identify cluster risk and uncorrelated positioning opportunities.">Instrument Correlation Matrix</div>
       <div class="chart-panel" style="padding:10px; margin-bottom: 12px;">
         <div class="corr-period-bar">
           <span style="font-size:10px;color:var(--text3)">Period:</span>
-          <button class="hm-btn" id="crrb-13" onclick="setCorrPeriod(13)">13w</button>
-          <button class="hm-btn" id="crrb-26" onclick="setCorrPeriod(26)">26w</button>
-          <button class="hm-btn active" id="crrb-52" onclick="setCorrPeriod(52)">52w</button>
-          <button class="hm-btn" id="crrb-156" onclick="setCorrPeriod(156)">3yr</button>
+          <button class="hm-btn" id="crrb-13" onclick="setCorrPeriod(13)" data-tooltip="13-week correlation window. Captures recent regime — correlations can shift quickly in response to macro events or supply shocks.">13w</button>
+          <button class="hm-btn" id="crrb-26" onclick="setCorrPeriod(26)" data-tooltip="26-week correlation window. Half-year view balancing recency with structural relationship stability.">26w</button>
+          <button class="hm-btn active" id="crrb-52" onclick="setCorrPeriod(52)" data-tooltip="52-week correlation window. Full annual cycle — the standard lookback for understanding structural relationships between instruments.">52w</button>
+          <button class="hm-btn" id="crrb-156" onclick="setCorrPeriod(156)" data-tooltip="3-year correlation window. Maximum structural context — reveals which instrument pairs are persistently correlated vs those showing regime-dependent relationships.">3yr</button>
         </div>
         <div class="corr-matrix-wrap">
           <div id="corr-col-labels" style="display:flex;gap:2px;margin-bottom:2px;flex-wrap:nowrap"></div>
@@ -1236,22 +1237,22 @@
         </div>
       </div>
 
-      <div class="section-title">Open Interest Leaderboard</div>
+      <div class="section-title" data-tooltip="Ranks all 10 instruments by open interest metric. Use 'This Week' to see absolute market size and capital concentration. '4w Change %' reveals which contracts are attracting or losing participation. '52w High %' shows how current OI compares to the past year's peak — useful for identifying under/over-crowded markets.">Open Interest Leaderboard</div>
       <div class="chart-panel" style="padding:12px;margin-bottom:12px">
         <div
           style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div style="font-size:11px;color:var(--text2);font-weight:500">All Instruments &middot; Ranked by Open
             Interest</div>
           <div style="display:flex;gap:6px">
-            <button class="hm-btn active" id="oibt-thisweek" onclick="setOIMode('thisweek')">This Week</button>
-            <button class="hm-btn" id="oibt-4wchg" onclick="setOIMode('4wchg')">4w Change %</button>
-            <button class="hm-btn" id="oibt-52hi" onclick="setOIMode('52hi')">52w High %</button>
+            <button class="hm-btn active" id="oibt-thisweek" onclick="setOIMode('thisweek')" data-tooltip="Rank by absolute open interest this week. Shows where capital is concentrated — larger OI = more liquid, more influential positioning signals.">This Week</button>
+            <button class="hm-btn" id="oibt-4wchg" onclick="setOIMode('4wchg')" data-tooltip="Rank by 4-week OI rate of change %. Positive = growing participation (market attracting new positioning). Negative = capital leaving the market. Strong divergence from price can be a leading signal.">4w Change %</button>
+            <button class="hm-btn" id="oibt-52hi" onclick="setOIMode('52hi')" data-tooltip="Current OI as a % of its 52-week high. 100% = at 52w peak (maximum participation). &lt;50% = significantly below peak — structurally thin market where positioning signals may be less reliable.">52w High %</button>
           </div>
         </div>
         <div id="oi-leaderboard-body"></div>
       </div>
 
-      <div class="section-title">Weekly Change Summary</div>
+      <div class="section-title" data-tooltip="Sortable table of all key metrics for the latest report week across all 10 instruments. Click any column header to sort. Click any row to open the full By Instrument view. Color coding: green = bullish/positive, red = bearish/negative, yellow = elevated but not extreme.">Weekly Change Summary</div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table id="weekly-table">
@@ -1331,16 +1332,16 @@
       nat_gas_ld1_texok: 'NG LD1 Texok',
     };
     const INSTRUMENT_TOOLTIPS = {
-      nat_gas_nyme: 'Primary physical delivery Henry Hub contract traded on NYMEX. The high-liquidity global benchmark.',
-      nat_gas_ld1: 'ICE Henry Hub Look-Alike Financial. Financially settled mirroring the NYMEX NG physical contract.',
-      nat_gas_ice_pen: 'ICE Penultimate Financial. Settles on the penultimate day instead of final day to avoid expiration volatility.',
-      henry_hub_nyme: 'NYMEX Henry Hub Last Day Financial. Cash-settled futures based on the final settlement price.',
-      hh_last_day: 'Henry Hub Last Day Financial. Cash-settled based on the final settlement price of the NYMEX NG contract.',
-      hh_penult_fin: 'Henry Hub Penultimate Financial. Cash-settled based on penultimate trading day pricing.',
-      hh_penult_nat_gas: 'Henry Hub Penultimate Nat Gas. Financial settlement specifically tracking natural gas indices.',
-      hh_index_ice: 'ICE index tracking Henry Hub spot or near-term delivery pricing differentials.',
-      hh_basis_ice: 'ICE Basis contract trading the differential between local spot and the Henry Hub benchmark.',
-      nat_gas_ld1_texok: 'ICE LD1 Financial contract specific to Texas/Oklahoma (Texok) regional pricing basis.'
+      nat_gas_nyme: '<strong>Nat Gas NYME — Henry Hub Physical Futures</strong><br>The global benchmark contract for US natural gas, traded on NYMEX. Physical delivery at Henry Hub, Louisiana. Highest open interest of all variants — the reference price for the entire natural gas complex. Positioning here sets the tone for all related instruments.',
+      nat_gas_ld1: '<strong>Nat Gas LD1 — ICE Last Day Financial</strong><br>ICE financially-settled contract that mirrors the NYMEX NG physical contract but cash-settles on the last trading day. Popular with participants wanting NYMEX exposure without physical delivery obligations. Very high OI — tracks NYME closely but with distinct positioning dynamics.',
+      nat_gas_ice_pen: '<strong>NAT GAS ICE PEN — ICE Penultimate Financial</strong><br>Settles on the <em>penultimate</em> (second-to-last) trading day to avoid final-day expiration volatility. Used extensively by financial participants for roll management. Positioning can diverge from NYME near expiration windows.',
+      henry_hub_nyme: '<strong>Henry Hub NYME — CME Cleared Swap</strong><br>OTC-cleared financial swap at Henry Hub, traded on NYMEX. Used by utilities and producers for long-dated hedging beyond the standard futures curve. Positioning reflects structural commercial hedging demand rather than speculative flows.',
+      hh_last_day: '<strong>HH Last Day Fin — CME Henry Hub Last Day</strong><br>Cash-settled on the <em>final</em> trading day of the NYMEX NG contract. Bridges physical futures and financial swap markets. Often used for precision hedging of month-end exposure. COT positioning reflects a mix of financial and commercial participants.',
+      hh_penult_fin: '<strong>HH Penultimate Fin — CME Penultimate Financial</strong><br>Settles against the penultimate trading day price of Henry Hub. Structurally similar to ICE PEN but cleared through CME. Participants use this to manage rollover basis risk. Useful cross-check with ICE PEN for inter-exchange flow divergence.',
+      hh_penult_nat_gas: '<strong>HH Penultimate Nat Gas — CME Physical Index</strong><br>Financial settlement referencing the natural gas index price at Henry Hub on the penultimate day. Primarily used by physical market participants for index-based exposure. Positioning here often reflects utility and LDC hedging activity.',
+      hh_index_ice: '<strong>HH Index ICE — ICE Henry Hub Spot Index</strong><br>Tracks the daily Henry Hub spot index rather than futures. Used by physical traders and power generators managing real-time gas exposure. Positioning is structurally different from futures — watch for divergences that may signal basis dislocations.',
+      hh_basis_ice: '<strong>HH Basis ICE — ICE Henry Hub Basis</strong><br>Trades the <em>differential</em> between a regional delivery point and the Henry Hub benchmark. Pure basis risk instrument — positioning reflects views on pipeline constraints, storage differentials, and regional supply/demand imbalances rather than outright price direction.',
+      nat_gas_ld1_texok: '<strong>NG LD1 Texok — ICE Texas/Oklahoma Regional Basis</strong><br>Financially-settled contract specific to the Texoma/Oklahoma natural gas hub. Reflects regional supply dynamics in the Permian, Haynesville, and SCOOP/STACK basins vs Henry Hub. Positioning extremes here often lead regional basis moves driven by pipeline capacity or production shifts.'
     };
     const TRADER_KEYS = ['managed_money', 'swap_dealers', 'producers', 'other_reportables', 'non_reportables'];
     const TRADER_LABELS = {
@@ -1480,17 +1481,17 @@
     }
 
     const METRIC_TOOLTIPS = {
-      'MM Net': 'Managed Money net position (longs minus shorts). Positive = speculative funds are net long.',
-      'Z-Score': 'Standard deviations from the expanding historical mean. Above +1.5 = extended long, below -1.5 = extended short.',
-      'COT 3yr': 'COT Index over a 3-year lookback. 0 = minimum positioning of last 3 years, 100 = maximum. Above 80 = historically extended.',
-      'Swap Net': 'Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.',
-      'Prod Net': 'Producer/Merchant net. Producers hedge by going short — an extremely negative Prod net signals heavy hedging, often at price highs.',
-      'Other Net': 'Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.',
-      'Retail Net': 'Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.',
-      'OI Regime': 'Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.',
-      'Momentum': 'Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.',
-      'Price': 'Most recent settlement price for the contract, with percentage change from the previous week.',
-      'Season': 'Current historical seasonality phase or defined seasonal trend for this time of year.'
+      'MM Net': '<strong>Managed Money Net Position</strong><br>Longs minus shorts held by leveraged funds (hedge funds, CTAs). Positive = net long. The primary speculative flow signal — extremes often precede mean-reversion moves. Watch for divergence from price.',
+      'Z-Score': '<strong>Z-Score (Expanding Window)</strong><br>Standard deviations from the full historical mean. <span style="color:#22c55e">Above +1.5</span> = historically extended long. <span style="color:#ef4444">Below −1.5</span> = historically extended short. Readings beyond ±2 are rare and high-conviction reversal zones.',
+      'COT 3yr': '<strong>COT Index (3-Year Lookback)</strong><br>Percentile rank of current net position within the prior 3-year range. <span style="color:#22c55e">≥80%</span> = near 3yr highs (crowded long). <span style="color:#ef4444">≤20%</span> = near 3yr lows (crowded short). Complements Z-score by anchoring to recent history.',
+      'Swap Net': '<strong>Swap Dealer Net Position</strong><br>Typically the structural counterparty to speculative longs. When Swap net is deeply negative while spec net is deeply positive, the positioning setup is "classic" — specs long, dealers short. A narrowing spread can precede momentum shifts.',
+      'Prod Net': '<strong>Producer / Merchant Net Position</strong><br>Commercial hedgers (producers, processors, utilities). Producers lock in prices by selling forward — deeply negative Prod net = heavy physical hedging, often at cycle price highs. Watch Prod net vs price for hedging pressure signals.',
+      'Other Net': '<strong>Other Reportables Net</strong><br>Includes CTAs, commodity pools, and hedge funds not classified as Managed Money. Often a leading or coincident signal — this category tends to respond quickly to momentum shifts before Managed Money reacts.',
+      'Retail Net': '<strong>Non-Reportable (Small Speculator) Net</strong><br>Positions too small to meet CFTC reporting thresholds. Classic contrarian signal — when retail is maximally net long, large participants are typically on the other side. Extreme retail positioning historically precedes reversals.',
+      'OI Regime': '<strong>Open Interest Regime</strong><br>Classifies market structure using OI trend + price direction. <strong>Accumulation</strong>: OI↑ + Price↑ (new longs building). <strong>Distribution</strong>: OI↑ + Price↓ (new shorts building). <strong>Short Covering</strong>: OI↓ + Price↑ (shorts exiting, not new longs). <strong>Long Liquidation</strong>: OI↓ + Price↓ (longs exiting). Regime context is critical for interpreting net position changes.',
+      'Momentum': '<strong>Positioning Momentum Score (0–100)</strong><br>Measures how large this week\'s repositioning is relative to the trailing 13-week standard deviation. <span style="color:#f59e0b">Above 80</span> = statistically unusual — large repositioning that often precedes or accompanies trend breakouts. Below 20 = positioning stagnation.',
+      'Price': '<strong>Settlement Price</strong><br>Most recent weekly settlement price for this contract. WoW % shown alongside — used to cross-reference with positioning flow for directional confirmation or divergence detection.',
+      'Season': '<strong>Seasonal Phase</strong><br>Withdrawal season (Nov–Mar): demand-driven inventory drawdowns, typically more price-sensitive. Injection season (Apr–Oct): storage rebuilding phase, typically structurally oversupplied. Seasonal regime affects how positioning extremes should be interpreted.'
     };
 
     const REGIME_TOOLTIPS = {
@@ -1502,14 +1503,14 @@
     };
 
     const SIGNAL_TOOLTIPS = {
-      'STRONG BEARISH SETUP': 'Composite score -3: z-score ≤ -2.0, COT index ≤ 20%, and at least one additional bearish factor confirmed.',
-      'BEARISH POSITIONING': 'Composite score -2: z-score ≤ -1.5 and COT index ≤ 20%.',
-      'MILD BEARISH BIAS': 'Composite score -1: one bearish factor present but not yet extreme.',
-      'NEUTRAL': 'No significant positioning signal this week.',
-      'MILD BULLISH BIAS': 'Composite score +1: one bullish factor present but not yet extreme.',
-      'BULLISH POSITIONING': 'Composite score +2: z-score ≥ +1.5 and COT index ≥ 80%.',
-      'STRONG BULLISH SETUP': 'Composite score +3: z-score ≥ +2.0, COT index ≥ 80%, and at least one additional bearish factor confirmed.', // The user provided "STRONG BULLISH SETUP" twice in signals, I'll use the unique ones.
-      'HIGH ACTIVITY': 'Momentum score > 80 — unusually large repositioning this week. Pay attention.',
+      'STRONG BEARISH SETUP': '<strong>Score −3: Strong Bearish Setup</strong><br>Z-score ≤ −2.0 <em>and</em> COT Index ≤ 20% <em>and</em> at least one confirming factor (Distribution regime or elevated short momentum). Rare, high-conviction setup — positioning is at multi-year extremes on the short side.',
+      'BEARISH POSITIONING': '<strong>Score −2: Bearish Positioning</strong><br>Z-score ≤ −1.5 <em>and</em> COT Index ≤ 20%. Speculative positioning is historically extended short with no immediate catalyst for reversal. Structurally meaningful but awaiting a confirming regime signal.',
+      'MILD BEARISH BIAS': '<strong>Score −1: Mild Bearish Bias</strong><br>One bearish factor present (low Z-score or low COT Index) but not both confirmed at extremes. Directional lean, not a high-conviction signal. Monitor for the second factor to trigger.',
+      'NEUTRAL': '<strong>Score 0: Neutral</strong><br>No statistically meaningful positioning signal this week. Z-score and COT Index are within normal historical ranges. Market structure is balanced — no edge from positioning alone.',
+      'MILD BULLISH BIAS': '<strong>Score +1: Mild Bullish Bias</strong><br>One bullish factor present (elevated Z-score or high COT Index) but not both confirmed at extremes. Directional lean — watch for the second factor or a regime change to upgrade the signal.',
+      'BULLISH POSITIONING': '<strong>Score +2: Bullish Positioning</strong><br>Z-score ≥ +1.5 <em>and</em> COT Index ≥ 80%. Speculative positioning is historically extended long. Structurally meaningful — particularly powerful if accompanied by an Accumulation OI regime.',
+      'STRONG BULLISH SETUP': '<strong>Score +3: Strong Bullish Setup</strong><br>Z-score ≥ +2.0 <em>and</em> COT Index ≥ 80% <em>and</em> at least one confirming factor (Accumulation regime or elevated long momentum). Rare, high-conviction setup — positioning is at multi-year extremes on the long side.',
+      'HIGH ACTIVITY': '<strong>High Activity — Momentum Score &gt;80</strong><br>This week\'s repositioning is statistically outsized relative to the trailing 13-week volatility of flows. Large flow events often precede or accompany trend inflections. Cross-reference with Z-score direction and OI regime.',
     };
 
 
@@ -1939,7 +1940,7 @@
         hdr.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px;margin-top:4px;user-select:none';
         hdr.innerHTML = `
       <span style="font-size:11px;font-weight:700;color:var(--text2)">${grp.label} <span style="color:var(--text3);font-weight:400">(${keys.length})</span></span>
-      ${maxAbs !== 0 ? `<span style="font-size:9px;font-weight:700;color:${maxC};background:${maxC}18;padding:1px 6px;border-radius:3px">Peak ${maxAbs >= 0 ? '+' : ''}${maxAbs}</span>` : ''}
+      ${maxAbs !== 0 ? `<span style="font-size:9px;font-weight:700;color:${maxC};background:${maxC}18;padding:1px 6px;border-radius:3px" data-tooltip="Highest absolute composite score within this group this week. Indicates which instrument in this group has the most extreme positioning signal.">Peak ${maxAbs >= 0 ? '+' : ''}${maxAbs}</span>` : ''}
       <span id="arrow-${grp.id}" style="margin-left:auto;color:var(--text3);font-size:12px">${collapsed ? '&#9654;' : '&#9660;'}</span>`;
         const cardWrap = document.createElement('div');
         cardWrap.id = 'cards-' + grp.id;
@@ -2312,38 +2313,38 @@
         const zC = mmZ == null ? 'var(--text2)' : mmZ > 1.5 ? '#22c55e' : mmZ < -1.5 ? '#ef4444' : mmZ > 0.5 ? '#86efac' : mmZ < -0.5 ? '#fca5a5' : 'var(--text2)';
         const momC = mmMom == null ? 'var(--text2)' : mmMom > 80 ? '#f59e0b' : mmMom < 20 ? 'var(--text3)' : 'var(--text2)';
         strip.innerHTML = `
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${SIGNAL_TOOLTIPS[getSignalLabel(score)] ?? 'Composite positioning score from -3 (strong bearish) to +3 (strong bullish).'}">
             <span class="inst-stat-lbl">Signal</span>
             <span class="inst-stat-val" style="color:${sigCol};background:${sigCol}18;padding:1px 6px;border-radius:3px">${score >= 0 ? '+' : ''}${score} ${getSignalLabel(score)}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">
             <span class="inst-stat-lbl">MM Net</span>
             <span class="inst-stat-val">${fmt(mmNet)}</span>
             <span style="font-size:9px;font-weight:600;color:${(mmDelta||0)>=0?'#22c55e':'#ef4444'}">${(mmDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(mmDelta||0))}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">
             <span class="inst-stat-lbl">Z-Score</span>
             <span class="inst-stat-val" style="color:${zC}">${fmtZ(mmZ)}</span>
             <span style="font-size:9px;color:var(--text3)">${fmtPct(mmPct)}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">
             <span class="inst-stat-lbl">COT 3yr</span>
             <span class="inst-stat-val" style="color:${cotC}">${cotV != null ? cotV + '%' : '—'}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Momentum']}">
             <span class="inst-stat-lbl">Momentum</span>
             <span class="inst-stat-val" style="color:${momC}">${mmMom != null ? Math.round(mmMom) : '—'}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Price']}">
             <span class="inst-stat-lbl">Price</span>
             <span class="inst-stat-val">$${fmt(price, 2)}</span>
             <span style="font-size:9px;font-weight:600;color:${(priceWow||0)>=0?'#22c55e':'#ef4444'}">${fmtPctChg(priceWow)}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">
             <span class="inst-stat-lbl">OI Regime</span>
             <span class="inst-stat-val" style="font-size:9px">${oiBadge(regime)}</span>
           </div>
-          <div class="inst-stat-item">
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Season']}">
             <span class="inst-stat-lbl">Season</span>
             <span class="inst-stat-val" style="font-size:9px;color:var(--text2)">${season}</span>
           </div>`;
@@ -2357,8 +2358,8 @@
       <div class="chart-header">
         <div><div class="chart-title">${title}${id === 'cv-net-price' ? titleSuffix : ''}</div><div class="chart-sub">${sub || ''}</div></div>
         <div class="chart-actions">
-          <button class="reset-zoom-btn" onclick="resetChartZoom('${id}')" title="Reset Zoom">Reset</button>
-          ${dl ? `<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" title="Download CSV">&#11015; CSV</button>` : ''}
+          <button class="reset-zoom-btn" onclick="resetChartZoom('${id}')" data-tooltip="Reset chart zoom and pan to the default date range view.">Reset</button>
+          ${dl ? `<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" data-tooltip="Download this instrument's positioning data as a CSV file including longs, shorts, net, Z-score, COT index, and momentum score.">&#11015; CSV</button>` : ''}
         </div>
       </div>
       ${legend ? `<div class="chart-legend">${legend}</div>` : ''}
@@ -2706,7 +2707,7 @@
       </div>
       <div class="pct-bar-row">
         <span class="pct-bar-lbl" style="color:${col}">${TRADER_LABELS[tk] || tk}</span>
-        <div class="pct-bar-track" title="Percentile Rank">
+        <div class="pct-bar-track" data-tooltip="<strong>Percentile Rank</strong><br>Current net position ranked against all historical weeks in the dataset. 95th = only 5% of weeks had higher positioning. Expanding window — grows as more data accumulates.">
           <div class="pct-zone-wrap"><div class="pct-zone-r"></div><div class="pct-zone-m"></div><div class="pct-zone-g"></div></div>
           <div class="pct-bar-fill" style="width:${p ?? 0}%;background:${col}80"></div>
           <div class="pct-bar-marker" style="left:${p ?? 0}%"></div>
@@ -2716,7 +2717,7 @@
       <div class="pct-bar-sub">Percentile Rank</div>
       <div class="pct-bar-row">
         <span class="pct-bar-lbl"></span>
-        <div class="pct-bar-track" title="COT Index 3yr">
+        <div class="pct-bar-track" data-tooltip="<strong>COT Index (3-Year Window)</strong><br>Current net position as a percentile within the prior 3 years only. Fixed window — not affected by older history. Complementary to Percentile Rank: use both to distinguish between long-term extremes and recent-cycle extremes.">
           <div class="pct-zone-wrap"><div class="pct-zone-r"></div><div class="pct-zone-m"></div><div class="pct-zone-g"></div></div>
           <div class="pct-bar-fill" style="width:${c ?? 0}%;background:${col}50"></div>
           <div class="pct-bar-marker" style="left:${c ?? 0}%"></div>
