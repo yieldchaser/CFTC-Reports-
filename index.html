@@ -2772,16 +2772,16 @@
         const oiLast = last(oi) || 1;
         const mmPctOI = last(mm.net) != null ? (last(mm.net) / oiLast * 100) : null;
         const swPctOI = last(sw.net) != null ? (last(sw.net) / oiLast * 100) : null;
-        const mmD = last(mm.change_net) ?? wow(mm.net);
-        const swD = last(sw.change_net) ?? wow(sw.net);
+        const mmWow = last(mm.change_net) ?? wow(mm.net);
+        const swWow = last(sw.change_net) ?? wow(sw.net);
         const sc = (inst.composite_scores || []);
         const score = sc.length ? sc[sc.length - 1] : 0;
         const sigCol = getSignalColour(score);
         const regime = last(inst.oi_regime) || 'Neutral';
         const mmPctStr = mmPctOI != null ? (mmPctOI >= 0 ? '+' : '') + mmPctOI.toFixed(1) + '%' : '—';
         const swPctStr = swPctOI != null ? (swPctOI >= 0 ? '+' : '') + swPctOI.toFixed(1) + '%' : '—';
-        const mmDC = (mmD || 0) >= 0 ? '#22c55e' : '#ef4444';
-        const swDC = (swD || 0) >= 0 ? '#22c55e' : '#ef4444';
+        const mmDC = (mmWow || 0) >= 0 ? '#22c55e' : '#ef4444';
+        const swDC = (swWow || 0) >= 0 ? '#22c55e' : '#ef4444';
         panel.innerHTML = `
       <div class="chart-header">
         <div style="flex:1;min-width:0">
@@ -2790,8 +2790,8 @@
             <span style="font-size:8px;font-weight:700;color:${sigCol};background:${sigCol}20;padding:1px 5px;border-radius:3px;flex-shrink:0">${score >= 0 ? '+' : ''}${score}</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:8px;color:#5c6b8a;font-family:var(--font)">MM&nbsp;<span style="color:#3b82f6;font-weight:600">${mmPctStr}</span>${mmD != null ? `&nbsp;<span style="color:${mmDC}">${mmD>=0?'▲':'▼'}</span>` : ''}</span>
-            <span style="font-size:8px;color:#5c6b8a;font-family:var(--font)">Swap&nbsp;<span style="color:#f59e0b;font-weight:600">${swPctStr}</span>${swD != null ? `&nbsp;<span style="color:${swDC}">${swD>=0?'▲':'▼'}</span>` : ''}</span>
+            <span style="font-size:8px;color:#5c6b8a;font-family:var(--font)">MM&nbsp;<span style="color:#3b82f6;font-weight:600">${mmPctStr}</span>${mmWow != null ? `&nbsp;<span style="color:${mmDC}">${mmWow>=0?'▲':'▼'}</span>` : ''}</span>
+            <span style="font-size:8px;color:#5c6b8a;font-family:var(--font)">Swap&nbsp;<span style="color:#f59e0b;font-weight:600">${swPctStr}</span>${swWow != null ? `&nbsp;<span style="color:${swDC}">${swWow>=0?'▲':'▼'}</span>` : ''}</span>
             <span style="font-size:8px;font-family:var(--font)">${oiBadge(regime)}</span>
           </div>
         </div>
@@ -2806,10 +2806,6 @@
         grid.appendChild(panel);
 
         const canvas = document.getElementById(cid); if (!canvas) continue;
-        const mm = inst.managed_money || {}, sw = inst.swap_dealers || {};
-        const pr = inst.producers || {}, or_ = inst.other_reportables || {};
-        const oi = inst.open_interest || [];
-
         const { dates, arrays } = applyDateFilter(inst.dates, mm.net, sw.net, pr.net, or_.net, inst.price, oi);
         const [mmNet, swNet, prNet, orNet, price, oiArr] = arrays;
         if (!dates?.length) continue;
