@@ -1327,6 +1327,7 @@
     };
     Chart.register(crosshairPlugin);
 
+    let CFTC_DATA = null, activeInstrument = 'nat_gas_nyme', activeTrader = 'managed_money', sortCol = 3, sortDir = -1, normaliseByOI = false;
     (function initGlobalTooltip() {
       const tt = document.createElement('div');
       tt.id = 'global-tooltip';
@@ -1449,13 +1450,6 @@
       'HIGH ACTIVITY': 'Momentum score > 80 — unusually large repositioning this week. Pay attention.',
     };
 
-    const fmt = (v, dec = 0, pre = '', suf = '') => {
-      if (v === null || v === undefined || isNaN(Number(v))) return '—';
-      return pre + Number(v).toLocaleString('en-US', {
-        minimumFractionDigits: dec,
-        maximumFractionDigits: dec
-      }) + suf;
-    };
 
     function buildTooltipHTML(type, instKey, trader, idx) {
       const instLabel = INSTRUMENT_LABELS[instKey] ?? instKey ?? 'Unknown';
@@ -1690,7 +1684,7 @@
     }
 
     // ── Formatters ────────────────────────────────────────────────
-    function fmt(n, dec = 0) { if (n == null || isNaN(n)) return '\u2014'; return (+n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+    function fmt(n, dec = 0, pre = '', suf = '') { if (n == null || isNaN(n)) return '\u2014'; return pre + (+n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suf; }
     function fmtZ(n) { return n == null || isNaN(n) ? '\u2014' : ((+n >= 0 ? '+' : '') + ((+n).toFixed(2))); }
     function fmtPct(n) { return n == null || isNaN(n) ? '\u2014' : `${Math.round(+n * 100)}th`; }
     function fmtChg(n) { return n == null || isNaN(n) ? '\u2014' : ((+n >= 0 ? '+' : '') + fmt(n)); }
