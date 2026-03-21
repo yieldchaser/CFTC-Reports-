@@ -37,47 +37,82 @@ PRICE_URL = (
 OUTPUT_PATH = "data/cftc_processed.json"
 
 INSTRUMENTS = {
-    "nat_gas_nyme":      "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE",
-    "nat_gas_ld1":       "NAT GAS ICE LD1 - ICE FUTURES ENERGY DIV",
-    "nat_gas_ice_pen":   "NAT GAS ICE PEN - ICE FUTURES ENERGY DIV",
-    "henry_hub_nyme":    "HENRY HUB - NEW YORK MERCANTILE EXCHANGE",
-    "hh_last_day":       "HENRY HUB LAST DAY FIN - NEW YORK MERCANTILE EXCHANGE",
-    "hh_penult_fin":     "HENRY HUB PENULTIMATE FIN - NEW YORK MERCANTILE EXCHANGE",
-    "hh_penult_nat_gas": "HENRY HUB PENULTIMATE NAT GAS - NEW YORK MERCANTILE EXCHANGE",
-    "hh_index_ice":      "HENRY HUB INDEX - ICE FUTURES ENERGY DIV",
-    "hh_basis_ice":      "HENRY HUB BASIS - ICE FUTURES ENERGY DIV",
+    # Core 9 (original)
+    "nat_gas_nyme":        "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE",
+    "nat_gas_ld1":         "NAT GAS ICE LD1 - ICE FUTURES ENERGY DIV",
+    "nat_gas_ice_pen":     "NAT GAS ICE PEN - ICE FUTURES ENERGY DIV",
+    "henry_hub_nyme":      "HENRY HUB - NEW YORK MERCANTILE EXCHANGE",
+    "hh_last_day":         "HENRY HUB LAST DAY FIN - NEW YORK MERCANTILE EXCHANGE",
+    "hh_penult_fin":       "HENRY HUB PENULTIMATE FIN - NEW YORK MERCANTILE EXCHANGE",
+    "hh_penult_nat_gas":   "HENRY HUB PENULTIMATE NAT GAS - NEW YORK MERCANTILE EXCHANGE",
+    "hh_index_ice":        "HENRY HUB INDEX - ICE FUTURES ENERGY DIV",
+    "hh_basis_ice":        "HENRY HUB BASIS - ICE FUTURES ENERGY DIV",
+    # New instruments from discovery (>= 50 rows)
+    "hh_tailgate_basis":   "HENRY HUB - TAILGATE LOUISIANA (BASIS) - ICE FUTURES ENERGY DIV",
+    "hh_tailgate_index":   "HENRY HUB - TAILGATE LOUISIANA (INDEX) - ICE FUTURES ENERGY DIV",
+    "nat_gas_legacy":      "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+    "nat_gas_ld1_fixed":   "NATURAL GAS HENRY LD1 FIXED - ICE FUTURES ENERGY DIV",
+    "nat_gas_pen_ice":     "NATURAL GAS PENULTIMATE ICE - ICE FUTURES ENERGY DIV",
+    "nat_gas_midcon":      "NATURAL GAS PIPELINE-MID-CONTINENT POOL PIN (BASIS) - ICE FUTURES ENERGY DIV",
+    "nat_gas_texok":       "NATURAL GAS PIPELINE-TEXOK (BASIS) - ICE FUTURES ENERGY DIV",
+    "nat_gas_ventura":     "NORTHERN NATURAL GAS - VENTURA (BASIS) - ICE FUTURES ENERGY DIV",
+    "nat_gas_ld1_texok":   "NAT GAS LD1 for GDD -TEXOK - ICE FUTURES ENERGY DIV",
+    "hh_penult_nasdaq":    "HHUB NAT GAS PENULT FINL-10000 - NASDAQ FUTURES",
 }
 INSTRUMENT_LABELS = {
-    "nat_gas_nyme":      "Nat Gas NYME",
-    "nat_gas_ld1":       "Nat Gas LD1",
-    "nat_gas_ice_pen":   "NAT GAS ICE PEN",
-    "henry_hub_nyme":    "Henry Hub NYME",
-    "hh_last_day":       "HH Last Day Fin",
-    "hh_penult_fin":     "HH Penultimate Fin",
-    "hh_penult_nat_gas": "HH Penultimate Nat Gas",
-    "hh_index_ice":      "HH Index ICE",
-    "hh_basis_ice":      "HH Basis ICE",
+    "nat_gas_nyme":        "Nat Gas NYME",
+    "nat_gas_ld1":         "Nat Gas LD1",
+    "nat_gas_ice_pen":     "NAT GAS ICE PEN",
+    "henry_hub_nyme":      "Henry Hub NYME",
+    "hh_last_day":         "HH Last Day Fin",
+    "hh_penult_fin":       "HH Penultimate Fin",
+    "hh_penult_nat_gas":   "HH Penultimate Nat Gas",
+    "hh_index_ice":        "HH Index ICE",
+    "hh_basis_ice":        "HH Basis ICE",
+    "hh_tailgate_basis":   "HH Tailgate Basis",
+    "hh_tailgate_index":   "HH Tailgate Index",
+    "nat_gas_legacy":      "Nat Gas Legacy",
+    "nat_gas_ld1_fixed":   "NG LD1 Fixed ICE",
+    "nat_gas_pen_ice":     "NG Penult ICE",
+    "nat_gas_midcon":      "NG Midcon Basis",
+    "nat_gas_texok":       "NG Texok Basis",
+    "nat_gas_ventura":     "NG Ventura Basis",
+    "nat_gas_ld1_texok":   "NG LD1 Texok",
+    "hh_penult_nasdaq":    "HH Penult Nasdaq",
 }
 
-# NOTE: exact CFTC names — double underscore in swap short, no _all in producers
+# NOTE: exact CFTC column names
 TRADER_COLUMNS = {
     "managed_money": {
-        "long":  "m_money_positions_long_all",
-        "short": "m_money_positions_short_all",
+        "long":         "m_money_positions_long_all",
+        "short":        "m_money_positions_short_all",
+        "spread":       "m_money_positions_spread_all",
         "change_long":  "change_in_m_money_long_all",
         "change_short": "change_in_m_money_short_all",
     },
     "swap_dealers": {
-        "long":  "swap_positions_long_all",
-        "short": "swap__positions_short_all",   # double underscore — actual CFTC schema
+        "long":         "swap_positions_long_all",
+        "short":        "swap__positions_short_all",   # double underscore
         "change_long":  "change_in_swap_long_all",
         "change_short": "change_in_swap_short_all",
     },
     "producers": {
-        "long":  "prod_merc_positions_long",    # no _all suffix
-        "short": "prod_merc_positions_short",
+        "long":         "prod_merc_positions_long",    # no _all suffix
+        "short":        "prod_merc_positions_short",
         "change_long":  "change_in_prod_merc_long_all",
         "change_short": "change_in_prod_merc_short_all",
+    },
+    "other_reportables": {
+        "long":         "other_rept_positions_long",    # no _all suffix
+        "short":        "other_rept_positions_short",
+        "change_long":  "change_in_other_rept_long_all",
+        "change_short": "change_in_other_rept_short_all",
+    },
+    "non_reportables": {
+        "long":         "nonrept_positions_long_all",
+        "short":        "nonrept_positions_short_all",
+        "change_long":  None,
+        "change_short": None,
     },
 }
 
@@ -180,15 +215,18 @@ def expanding_zscore(series: pd.Series, min_obs=MIN_ZSCORE_OBS) -> pd.Series:
 
 
 def cot_index(series: pd.Series, window: int) -> pd.Series:
-    """Rolling COT Index 0–100."""
-    roll_min = series.rolling(window, min_periods=1).min()
-    roll_max = series.rolling(window, min_periods=1).max()
-    with np.errstate(divide="ignore", invalid="ignore"):
-        idx = np.where(roll_max != roll_min,
-                       (series - roll_min) / (roll_max - roll_min) * 100,
-                       np.nan)
+    """Rolling COT Index strictly 0-100. Requires full window; NaN before that."""
+    roll_min = series.rolling(window, min_periods=window).min()
+    roll_max = series.rolling(window, min_periods=window).max()
+    denom = roll_max - roll_min
+    idx = np.where(
+        denom == 0,
+        50.0,
+        (series - roll_min) / denom * 100
+    )
+    idx = np.clip(idx, 0.0, 100.0)
     result = pd.Series(idx, index=series.index)
-    result[series.expanding().count() < window] = np.nan
+    result[denom.isna()] = np.nan
     return result
 
 
@@ -226,21 +264,52 @@ def seasonal_stats(net: pd.Series, dates):
     return avg_arr, std_arr, dev
 
 
-def composite_score(mm_z, mm_cot, prod_z):
-    """Return integer -3 to +3."""
-    if mm_z is None or np.isnan(mm_z):
+def composite_score(mm_z, mm_cot, prod_z, nonrept_z=None):
+    """Return integer -3 to +3 with non-reportable contrarian logic."""
+    if mm_z is None or (isinstance(mm_z, float) and np.isnan(mm_z)):
         return 0
     score = 0
     if mm_z >= 1.5:  score += 1
     if mm_z >= 2.0:  score += 1
-    if mm_cot is not None and not np.isnan(mm_cot) and mm_cot >= 80: score += 1
+    if mm_cot is not None and not (isinstance(mm_cot, float) and np.isnan(mm_cot)) and mm_cot >= 80: score += 1
     if mm_z <= -1.5: score -= 1
     if mm_z <= -2.0: score -= 1
-    if mm_cot is not None and not np.isnan(mm_cot) and mm_cot <= 20: score -= 1
-    if prod_z is not None and not np.isnan(prod_z):
+    if mm_cot is not None and not (isinstance(mm_cot, float) and np.isnan(mm_cot)) and mm_cot <= 20: score -= 1
+    if prod_z is not None and not (isinstance(prod_z, float) and np.isnan(prod_z)):
         if mm_z > 1.0 and prod_z < -1.0: score += 1
         if mm_z < -1.0 and prod_z > 1.0: score -= 1
+    # Non-reportable contrarian signal (F3)
+    if nonrept_z is not None and not (isinstance(nonrept_z, float) and np.isnan(nonrept_z)):
+        if nonrept_z > 1.5 and mm_z < 0:  score -= 1
+        if nonrept_z < -1.5 and mm_z > 0: score += 1
     return int(np.clip(score, -3, 3))
+
+
+def oi_regime(oi_roc: float, price_roc: float) -> str:
+    """F4: Four-state OI regime."""
+    if   oi_roc >  3 and price_roc >  0: return "Accumulation"
+    elif oi_roc >  3 and price_roc <= 0: return "Distribution"
+    elif oi_roc < -3 and price_roc <= 0: return "Long Liquidation"
+    elif oi_roc < -3 and price_roc >  0: return "Short Covering"
+    return "Neutral"
+
+
+def momentum_score(change_net: pd.Series) -> pd.Series:
+    """F5: Positioning momentum 0-100."""
+    with np.errstate(divide='ignore', invalid='ignore'):
+        raw = change_net.abs() / change_net.rolling(13).std()
+    score = raw.expanding().rank(pct=True) * 100
+    return pd.Series(np.clip(score.values, 0, 100), index=change_net.index)
+
+
+def lagged_corr(net: pd.Series, price: pd.Series, lags=(1, 2, 3, 4), window=20) -> dict:
+    """F6: Rolling correlation of net position with future price changes."""
+    result = {}
+    pct_chg = price.pct_change()
+    for lag in lags:
+        future = pct_chg.shift(-lag)
+        result[f'lag_{lag}w'] = net.rolling(window).corr(future).tolist()
+    return result
 
 # ─── Process One Instrument ────────────────────────────────────────────────────
 
@@ -262,6 +331,17 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
     season = ["Withdrawal" if m in WITHDRAWAL_MONTHS else "Injection"
               for m in dates_raw.dt.month]
 
+    # OI regime (F4)
+    oi_roc_4w = oi.pct_change(4) * 100
+    price_roc_4w = price_series.pct_change(4) * 100
+    oi_regimes = [
+        oi_regime(
+            float(oi_roc_4w.iloc[i]) if not pd.isna(oi_roc_4w.iloc[i]) else 0,
+            float(price_roc_4w.iloc[i]) if not pd.isna(price_roc_4w.iloc[i]) else 0
+        ) if not (pd.isna(oi_roc_4w.iloc[i]) or pd.isna(price_roc_4w.iloc[i])) else "Neutral"
+        for i in range(len(oi_roc_4w))
+    ]
+
     # Concentration (only for nat_gas_nyme)
     concentration = {}
     if inst_key == "nat_gas_nyme":
@@ -274,6 +354,8 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
         "dates":         dates_str,
         "price":         price_series.tolist(),
         "open_interest": oi.tolist(),
+        "oi_roc_4w":     oi_roc_4w.tolist(),
+        "oi_regime":     oi_regimes,
         "season":        season,
     }
     if concentration:
@@ -344,21 +426,44 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
         pr_z_arr   = None
         comp_scores = []
 
+        # Momentum score (F5)
+        mom_score = momentum_score(change_net)
+
+        # Lagged correlation (F6, only for managed_money to keep JSON lean)
+        lagged_c = lagged_corr(net, price_series) if trader == "managed_money" else {}
+
+        # MM Spread (F2)
+        spread_arr = []
+        spread_pct_arr = []
+        if trader == "managed_money":
+            spread_col = cols.get("spread")
+            if spread_col and spread_col in inst_df.columns:
+                sp = pd.to_numeric(inst_df[spread_col], errors="coerce")
+                spread_arr = sp.tolist()
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    spread_pct_arr = np.where(oi > 0, sp / oi * 100, np.nan).tolist()
+
         trader_dict = {
-            "long":         long_s.tolist(),
-            "short":        short_s.tolist(),
-            "net":          net.tolist(),
-            "pct_of_oi":    pct_oi.tolist(),
-            "z_score":      z_score.tolist(),
-            "pct_rank":     pct_rank_s.tolist(),
-            "rolling_corr": rolling_corr.tolist(),
-            "cot_index":    cot_indices,
-            "change_long":  change_long.tolist(),
-            "change_short": change_short.tolist(),
-            "change_net":   change_net.tolist(),
+            "long":             long_s.tolist(),
+            "short":            short_s.tolist(),
+            "net":              net.tolist(),
+            "pct_of_oi":        pct_oi.tolist(),
+            "z_score":          z_score.tolist(),
+            "pct_rank":         pct_rank_s.tolist(),
+            "rolling_corr":     rolling_corr.tolist(),
+            "cot_index":        cot_indices,
+            "change_long":      change_long.tolist(),
+            "change_short":     change_short.tolist(),
+            "change_net":       change_net.tolist(),
+            "momentum_score":   mom_score.tolist(),
             "seasonal_deviation": deviation.tolist(),
-            "extremes":     extremes,
+            "extremes":         extremes,
         }
+        if lagged_c:
+            trader_dict["lagged_corr"] = lagged_c
+        if spread_arr:
+            trader_dict["spread"]     = spread_arr
+            trader_dict["spread_pct"] = spread_pct_arr
 
         if trader == "managed_money":
             edge = (z_score - z_score.shift(1)) - (price_pct_change * 5)
@@ -368,18 +473,21 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
 
         result[trader] = trader_dict
 
-    # Composite score uses last values of MM and Producers z-scores
+    # Composite score uses MM, Producers, Non-Reportables z-scores
     mm  = result.get("managed_money", {})
     pr  = result.get("producers", {})
-    mm_z_list   = mm.get("z_score", [])
-    pr_z_list   = pr.get("z_score", [])
-    cot_list    = mm.get("cot_index", {}).get("w156", [])
+    nr  = result.get("non_reportables", {})
+    mm_z_list   = mm.get("z_score", []) if isinstance(mm, dict) else []
+    pr_z_list   = pr.get("z_score", []) if isinstance(pr, dict) else []
+    nr_z_list   = nr.get("z_score", []) if isinstance(nr, dict) else []
+    cot_list    = (mm.get("cot_index", {}) or {}).get("w156", []) if isinstance(mm, dict) else []
     comp = []
     for i in range(len(dates_str)):
         mz  = mm_z_list[i]  if i < len(mm_z_list)  else None
         pz  = pr_z_list[i]  if i < len(pr_z_list)  else None
-        cot = cot_list[i]   if i < len(cot_list)    else None
-        comp.append(composite_score(mz, cot, pz))
+        nz  = nr_z_list[i]  if i < len(nr_z_list)  else None
+        ct  = cot_list[i]   if i < len(cot_list)    else None
+        comp.append(composite_score(mz, ct, pz, nz))
     result["composite_scores"] = comp
 
     result["_nets"] = {k: v.tolist() for k, v in trader_nets.items()}
