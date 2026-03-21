@@ -1225,11 +1225,13 @@
                 <th onclick="sortTable(6)" id="th6" data-tooltip="Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.">Momentum</th>
                 <th onclick="sortTable(7)" id="th7" data-tooltip="Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.">Swap Net</th>
                 <th onclick="sortTable(8)" id="th8" data-tooltip="Swap Dealer weekly change in net position.">Swap &Delta;</th>
-                <th onclick="sortTable(9)" id="th9" data-tooltip="Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.">Other Net</th>
-                <th onclick="sortTable(10)" id="th10" data-tooltip="Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.">Retail Net</th>
-                <th onclick="sortTable(11)" id="th11" data-tooltip="Most recent settlement price for the contract.">Price</th>
-                <th onclick="sortTable(12)" id="th12" data-tooltip="Percentage change in price from the previous week.">Price &Delta;%</th>
-                <th onclick="sortTable(13)" id="th13" data-tooltip="Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.">OI Regime</th>
+                <th onclick="sortTable(9)" id="th9" data-tooltip="Producer/Merchant/Processor/User net — commercial hedgers. Typically hold offsetting short positions against physical exposure.">Prod Net</th>
+                <th onclick="sortTable(10)" id="th10" data-tooltip="Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.">Other Net</th>
+                <th onclick="sortTable(11)" id="th11" data-tooltip="Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.">Retail Net</th>
+                <th onclick="sortTable(12)" id="th12" data-tooltip="Most recent settlement price for the contract.">Price</th>
+                <th onclick="sortTable(13)" id="th13" data-tooltip="Percentage change in price from the previous week.">Price &Delta;%</th>
+                <th onclick="sortTable(14)" id="th14" data-tooltip="Open Interest 4-week rate of change %. Positive = market participation growing; negative = participation contracting. Above +5% or below -5% is notable.">OI 4wk%</th>
+                <th onclick="sortTable(15)" id="th15" data-tooltip="Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.">OI Regime</th>
               </tr>
             </thead>
             <tbody id="weekly-tbody"></tbody>
@@ -2059,8 +2061,10 @@
           const cell = document.createElement('div');
           cell.className = 'corr-cell';
           cell.style.background = corrColour(val);
+          if (k1 !== k2 && val != null && Math.abs(val) > 0.7) cell.style.boxShadow = `inset 0 0 0 1px ${val > 0 ? '#22c55e' : '#ef4444'}90`;
           cell.textContent = val != null ? val.toFixed(2) : '';
-          cell.setAttribute('data-tooltip', `<strong>${INSTRUMENT_LABELS[k1]} × ${INSTRUMENT_LABELS[k2]}</strong><br>52w MM Net Correlation: ${val != null ? val.toFixed(2) : '—'}<br>${val != null ? (Math.abs(val) > 0.7 ? '⚠ Strong relationship' : Math.abs(val) > 0.4 ? 'Moderate relationship' : 'Weak / no relationship') : ''}`);
+          const periodLabel = corrPeriod === 13 ? '13w' : corrPeriod === 26 ? '26w' : corrPeriod === 52 ? '52w' : '3yr';
+          cell.setAttribute('data-tooltip', `<strong>${INSTRUMENT_LABELS[k1]} × ${INSTRUMENT_LABELS[k2]}</strong><br>${periodLabel} MM Net Correlation: ${val != null ? val.toFixed(2) : '—'}<br>${val != null ? (Math.abs(val) > 0.7 ? '⚠ Strong relationship' : Math.abs(val) > 0.4 ? 'Moderate relationship' : 'Weak / no relationship') : ''}`);
           row.appendChild(cell);
         });
         matBody.appendChild(row);
@@ -2097,22 +2101,28 @@
       const maxOI = Math.max(...items.filter(i => i.val !== -Infinity).map(i => i.oi));
       const maxValAbs = Math.max(0.0001, ...items.filter(i => i.val !== -Infinity).map(i => Math.abs(i.val)));
 
-      items.forEach(({ key, label, displayVal, col, oi, val }) => {
+      items.forEach(({ key, label, displayVal, col, oi, val }, idx) => {
         let pct = 0;
         if (oiMode === '52hi') { pct = val === -Infinity ? 0 : val; }
         else if (oiMode === '4wchg') { pct = val === -Infinity ? 0 : (Math.abs(val) / maxValAbs * 100); }
         else { pct = maxOI > 0 ? oi / maxOI * 100 : 0; }
         pct = Math.min(100, Math.max(0, pct));
+        // 4wk change badge for thisweek mode
+        const chg4 = (() => { const inst = CFTC_DATA.instruments[key]; if (!inst) return null; const o = inst.open_interest || []; const c = last(o); const p = o.length >= 5 ? o[o.length-5] : null; return c && p && p > 0 ? (c - p) / p * 100 : null; })();
+        const chgBadge = oiMode === 'thisweek' && chg4 != null ? `<span style="font-size:8px;font-weight:600;color:${chg4 >= 0 ? '#22c55e' : '#ef4444'};margin-left:4px">${chg4 >= 0 ? '+' : ''}${chg4.toFixed(1)}%</span>` : '';
 
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer';
         row.onclick = () => { switchTab('instrument'); setActiveInst(key); };
         row.innerHTML = `
-        <div style="width:110px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
-        <div style="flex:1;background:var(--bg4);border-radius:2px;height:14px;position:relative;overflow:hidden">
+        <div style="width:18px;font-size:8px;color:var(--text3);font-family:var(--mono);text-align:right;flex-shrink:0">#${idx+1}</div>
+        <div style="width:106px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
+        <div style="flex:1;background:var(--bg4);border-radius:2px;height:16px;position:relative;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${col}50;border-radius:2px"></div>
         </div>
-        <div style="width:54px;font-size:9px;font-family:var(--mono);font-weight:600;color:${col};text-align:right;flex-shrink:0">${displayVal}</div>`;
+        <div style="display:flex;align-items:center;justify-content:flex-end;width:80px;flex-shrink:0">
+          <span style="font-size:9px;font-family:var(--mono);font-weight:600;color:${col}">${displayVal}</span>${chgBadge}
+        </div>`;
         el.appendChild(row);
       });
     }
@@ -2125,7 +2135,7 @@
       for (const key of instKeys) {
         const inst = CFTC_DATA.instruments[key]; if (!inst) continue;
         const mm = inst.managed_money || {}, sw = inst.swap_dealers || {};
-        const or_ = inst.other_reportables || {}, nr = inst.non_reportables || {};
+        const pr = inst.producers || {}, or_ = inst.other_reportables || {}, nr = inst.non_reportables || {};
         const scores = inst.composite_scores || [];
         tableData.push({
           label: inst.label, key,
@@ -2134,37 +2144,45 @@
           score: scores.length ? scores[scores.length - 1] : 0,
           momentum: last(mm.momentum_score),
           swNet: last(sw.net), swDelta: last(sw.change_net) ?? wow(sw.net),
+          prNet: last(pr.net),
           orNet: last(or_.net), nrNet: last(nr.net),
           price: last(inst.price), priceWow: wowPct(inst.price),
           regime: last(inst.oi_regime) || 'Neutral',
+          oiRoc: last(inst.oi_roc_4w),
         });
       }
       sortAndBuildTable();
     }
     function sortAndBuildTable() {
-      const fields = ['label', 'mmNet', 'mmDelta', 'mmZ', 'mmCot', 'score', 'momentum', 'swNet', 'swDelta', 'orNet', 'nrNet', 'price', 'priceWow', 'regime'];
+      const fields = ['label', 'mmNet', 'mmDelta', 'mmZ', 'mmCot', 'score', 'momentum', 'swNet', 'swDelta', 'prNet', 'orNet', 'nrNet', 'price', 'priceWow', 'oiRoc', 'regime'];
       tableData.sort((a, b) => {
         const va = a[fields[sortCol]] ?? -Infinity, vb = b[fields[sortCol]] ?? -Infinity;
-        return sortCol === 0 || sortCol === 13 ? (String(va) < String(vb) ? -1 : 1) * sortDir : (va - vb) * sortDir;
+        return sortCol === 0 || sortCol === 15 ? (String(va) < String(vb) ? -1 : 1) * sortDir : (va - vb) * sortDir;
       });
       const tbody = document.getElementById('weekly-tbody');
       tbody.innerHTML = tableData.map(r => {
         const mom = r.momentum != null ? Math.round(r.momentum) : null;
         const momCls = mom != null && mom > 80 ? 'mom-hi' : mom != null && mom < 20 ? 'mom-lo' : '';
+        const mmZC = r.mmZ == null ? '' : r.mmZ > 1.5 ? 'color:#22c55e' : r.mmZ < -1.5 ? 'color:#ef4444' : r.mmZ > 0.5 ? 'color:#86efac' : r.mmZ < -0.5 ? 'color:#fca5a5' : 'color:var(--text2)';
+        const cotV = r.mmCot != null ? Math.round(r.mmCot) : null;
+        const cotC = cotV == null ? '' : cotV >= 80 ? 'color:#22c55e' : cotV <= 20 ? 'color:#ef4444' : 'color:#f59e0b';
+        const oiRocC = r.oiRoc == null ? '' : r.oiRoc > 5 ? 'color:#22c55e' : r.oiRoc < -5 ? 'color:#ef4444' : 'color:#f59e0b';
         return `<tr onclick="switchTab('instrument');setActiveInst('${r.key}')">
       <td data-tooltip="${INSTRUMENT_TOOLTIPS[r.key] || r.label}">${r.label}</td>
       <td>${fmt(r.mmNet)}</td>
       <td class="${(r.mmDelta || 0) >= 0 ? 'd-pos' : 'd-neg'}">${fmtChg(r.mmDelta)}</td>
-      <td>${fmtZ(r.mmZ)}</td>
-      <td>${r.mmCot != null ? Math.round(r.mmCot) + '%' : '&mdash;'}</td>
+      <td style="${mmZC}">${fmtZ(r.mmZ)}</td>
+      <td style="${cotC}">${cotV != null ? cotV + '%' : '&mdash;'}</td>
       <td style="color:${getSignalColour(r.score)};font-weight:600">${r.score >= 0 ? '+' : ''}${r.score}</td>
       <td><span class="${momCls}">${mom != null ? mom : '&mdash;'}</span></td>
       <td>${fmt(r.swNet)}</td>
       <td class="${(r.swDelta || 0) >= 0 ? 'd-pos' : 'd-neg'}">${fmtChg(r.swDelta)}</td>
+      <td>${fmt(r.prNet)}</td>
       <td>${fmt(r.orNet)}</td>
       <td>${fmt(r.nrNet)}</td>
       <td>$${fmt(r.price, 2)}</td>
       <td class="${(r.priceWow || 0) >= 0 ? 'd-pos' : 'd-neg'}">${fmtPctChg(r.priceWow)}</td>
+      <td style="${oiRocC}">${r.oiRoc != null ? (r.oiRoc >= 0 ? '+' : '') + r.oiRoc.toFixed(1) + '%' : '&mdash;'}</td>
       <td>${oiBadge(r.regime)}</td>
     </tr>`;
       }).join('');
