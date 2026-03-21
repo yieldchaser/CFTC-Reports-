@@ -1,93 +1,128 @@
 # CFTC Natural Gas Positioning Dashboard 📊
 
-A definitive, professional-grade terminal for visualizing and analyzing Commitment of Traders (COT) data for US Natural Gas markets. Built as a blazing-fast Single Page Application (SPA), this dashboard transforms raw weekly CFTC reports into actionable, institutional-grade visual analytics.
+A professional-grade terminal for visualizing and analyzing Commitment of Traders (COT) data across US Natural Gas markets. Built as a single-page application, it transforms raw weekly CFTC reports into institutional-grade visual analytics — no backend, no build step, no dependencies beyond a browser.
 
-[**Launch the Live Dashboard**](https://yieldchaser.github.io/CFTC-Reports-/)
-
----
-
-## 🌟 Comprehensive Feature Set
-
-### 1. The Overview Hub
-The command center for macroeconomic positioning logic across 10 correlated instruments.
-*   **Conviction Signal Banner:** Algorithmic banner highlighting standard-deviation shocks and extreme accumulations based on a custom `Composite Score`.
-*   **Open Interest Leaderboard:** Real-time ranking of the most actively traded variants, normalized by absolute size, 4-week change percentage, or 52-week highs.
-*   **Z-Score Heatmap:** Instant visualization of extreme positioning stretching back across a 3-year lookback period. Toggle between 5 trader categories on the fly.
-*   **Correlation Matrix:** Active 10x10 matrix identifying dynamic lead/lag relationship breakdowns between the various ICE, NYME, and Regional basis markets.
-*   **Weekly Change Summary:** Highly sortable core metrics reporting net flows, standard deviations, and Open Interest Regimes (e.g., Short Covering, Long Liquidation).
-*   **Data Freshness Constraints:** Red/Yellow/Green dot indicators warn users if external API feeds are lagging beyond typical reporting intervals.
-
-### 2. The Instrument Drill-Down
-Click any dataset to instantly generate 8 specialized forensic sub-charts.
-*   **Net Position vs. Price:** Overlaid historical time-series highlighting divergence between fundamental pricing and speculative positioning.
-*   **Price vs. Net Long Scatter:** Seasonally color-coded (Withdrawal vs. Injection) scatter plot revealing clustering behavior regimes.
-*   **20-Week Rolling Correlation:** Highlights periods of trending relationships (>0.4) versus mean-reversion anomalies (<-0.4).
-*   **Weekly Flow Momentum:** Pinpoints exact weeks featuring top-quartile aggressive speculative accumulation or dumping (annotated with ▲ / ▼).
-*   **COT Index Bounds:** 3-year historical percentile ranking mechanism (0 = Min, 100 = Max) demonstrating terminal exhaustion points.
-*   **Seasonal Overlays:** Evaluates current positioning explicitly against the 5-year historical average and ±1 standard deviation bounds.
-*   **Lead/Lag Analysis:** Determines if Managed Money positioning is actively leading price action by 1 to 4 weeks.
-*   **Smart vs. Dumb Money:** Directly contrasts Managed Money accumulation against Non-Reportable (retail) exposure.
-
-### 3. The Multi-Trader Matrix
-A synchronized global grid allowing macro comparison across the entire instrument ecosystem.
-*   Tracks Managed Money, Swap Dealers, Producers, and Other Reportables identically.
-*   Features **Normalization Toggles**: instantly switch between raw contract thresholds and "Percentage of Total Open Interest" scaling to accurately compare micro-contracts alongside Henry Hub benchmarks.
-
-### 4. Interactive & Performance Architecture
-Optimized to handle 10,000+ localized data points at 60 FPS without DOM blocking.
-*   **Selective Crosshair Sync:** Performance-optimized cursor tracking that intelligently filters visible canvases. Drastically reduces CPU overhead by only redrawing active tab charts, maintaining 60 FPS even with 50+ total chart instances.
-*   **Deep Zoom Analytics:** Fully scrollable Hammer.js viewport zooming and horizontal panning with persistent "Reset Zoom" anchors.
-*   **Robust Tooltip Engine:** A specialized DATA-aware projection system that eliminates "undefined" values and dashed results. Supports aggregate multi-trader views, regime status lookups, and parameter-safe 3-year historical context.
-*   **Performance GC Wrapper:** Employs advanced `safeCreateChart` GC wrapping, Tab Teardown handlers, and async request queues to aggressively eliminate stray `Chart.instances` and prevent browser memory leaks.
+[**Launch the Live Dashboard →**](https://yieldchaser.github.io/CFTC-Reports-/)
 
 ---
 
-## 🛠 Project Architecture & Data Pipeline
+## Features
 
-The frontend is a completely static, serverless Vanilla JS + HTML asset hosted via GitHub Pages, while the backend relies on a deterministic Python data pipeline integrated via GitHub Actions.
+### Overview Tab
+The command center across 10 correlated instruments.
 
-```text
-├── .github/workflows/    # CD: Automatic Friday data updates via GH Actions
-├── data/                 # Processed JSON storage ingested natively by frontend UI
-├── scripts/              # Python data pipeline
-│   └── update_cftc_data.py # The quantitative normalization engine
-├── index.html            # Main SPA Dashboard (Vanilla JS + Chart.js)
-├── favicon.png           # Custom dashboard branding
+- **Top Signals Banner** — algorithmic highlight of the highest composite-score instruments this week
+- **Signal Cards** — per-instrument summary cards showing MM net, Z-score, COT index, OI regime, and score, grouped by contract family with collapsible groups
+- **Z-Score Heatmap** — extreme positioning across a selectable lookback (13w / 26w / 52w / All), togglable across all 5 trader categories
+- **Correlation Matrix** — live 10×10 Pearson correlation matrix across instruments, selectable over 13w / 26w / 52w / 3yr windows
+- **Open Interest Leaderboard** — ranked by this week's OI, 4-week change %, or 52-week high %
+- **Weekly Change Table** — sortable table of all key metrics: MM net / delta / Z, COT index, score, momentum, Swap net, price, OI regime
+
+### By Instrument Tab
+Click any instrument pill (or signal card) to load 8 forensic sub-charts:
+
+- **Net Position vs. Price** — bar/line overlay with ATH long/short annotations and momentum arrows
+- **Price vs. Net Long Scatter** — season-coded (Withdrawal / Injection) clustering view
+- **20-Week Rolling Correlation** — identifies trending (>0.4) and mean-reversion (<−0.4) regimes
+- **Weekly Flow** — week-over-week net position change, signed and color-coded
+- **COT Index** — 3-year percentile index (0 = min, 100 = max) with selectable 26w / 52w / 3yr lookback
+- **Seasonal Overlay** — current year vs. 5-year historical avg ± 1σ, with per-year toggles
+- **Lead/Lag Analysis** — rolling correlation at +1 to +4 week lags to detect positioning lead on price
+- **Smart vs. Dumb Money** — MM net vs. Non-Reportable (retail) net overlaid
+- **Percentile Rank Bars** — all 5 traders, current-week pct rank + COT index in a single visual
+
+### Multi-Trader View Tab
+All 10 instruments side-by-side with MM, Swap, Producers, and Other Reportables on one chart each.
+
+- Toggle between **% of Open Interest** (normalized, single Y-axis) and **Raw (independent axes)**
+- Price overlaid as a secondary axis on every chart
+
+### Interactive Controls
+- **Date range** — dropdown presets (1y / 2y / 3y / 5y / all) + drag slider for precise start date
+- **Trader filter** — per-instrument tab filter (MM / Swap / Prod / Other / Retail)
+- **Zoom + pan** — mouse-wheel zoom and horizontal pan on every chart; Reset button per chart
+- **Crosshair** — per-chart vertical crosshair on hover; activates on exactly one chart at a time
+- **Tooltips** — data-aware, context-sensitive: date, net, long, short, Z-score, COT index, price, regime
+- **Instrument search** — fuzzy-filter instrument pills by name
+- **Keyboard navigation** — Arrow keys / 1–9 to cycle instruments in the By Instrument tab
+- **CSV export** — download current instrument + trader as CSV
+
+---
+
+## Project Structure
+
+```
+CFTC-Reports/
+├── .github/
+│   └── workflows/
+│       └── update_cftc.yml     # Runs every Friday after CFTC release (21:30 UTC)
+├── data/
+│   └── cftc_processed.json     # Auto-generated data payload (~1.7 MB)
+├── scripts/
+│   └── update_cftc_data.py     # Data pipeline: fetch → process → write JSON
+├── index.html                  # Entire dashboard UI (Vanilla JS + Chart.js, ~92 KB)
+├── favicon.png
+├── .nojekyll                   # Required for GitHub Pages to serve correctly
 └── README.md
 ```
 
-### The Data Engine (`scripts/update_cftc_data.py`)
-Deployed automatically every Friday at 21:30 UTC directly following the CFTC bulletin drop.
-1.  **Ingestion:** Scrapes the public endpoint `publicreporting.cftc.gov`.
-2.  **Harmonization:** Joins arbitrary CFTC format nomenclature (NYME vs ICE) with contiguous Henry Hub continuous pricing metrics imported from secondary historical datasets.
-3.  **Quantitative Analysis:** Constructs and computes standard deviation baselines (52w/3yr), COT Indices, 20-week rolling correlations, and percentile extremes entirely offline.
-4.  **Payload Output:** Minifies arrays and dictionaries into `cftc_processed.json`, heavily reducing client-side computation latency.
+---
+
+## Data Pipeline
+
+`scripts/update_cftc_data.py` runs automatically every Friday at 21:30 UTC via GitHub Actions, immediately after the CFTC report is published.
+
+1. **Fetch** — pulls the public COT disaggregated futures data from `publicreporting.cftc.gov`
+2. **Filter** — selects the 10 Natural Gas instrument codes by CFTC market name
+3. **Compute** — calculates for each trader category: net position, weekly change, Z-scores (52w/3yr), percentile rank, COT index, 20-week rolling correlation, lagged correlations (1–4w), seasonal aggregates
+4. **Output** — writes `data/cftc_processed.json` with pre-computed arrays; GitHub Actions commits and pushes, which triggers GitHub Pages re-deployment
 
 ---
 
-## 🚀 Deployment & Local Development
+## Local Development
 
-No Node.js or heavy bundlers are required for frontend development. The entire UI is packed cleanly inside `index.html`.
+No Node.js, no bundler, no build step needed.
 
-### Local Setup
-1. Clone the repository natively.
-2. (Optional) Rebuild the data pipeline:
-   ```bash
-   pip install requests pandas numpy
-   python scripts/update_cftc_data.py
-   ```
-3. Use any live server extension or double-click `index.html` in an arbitrary modern browser.
+```bash
+# 1. Clone
+git clone https://github.com/yieldchaser/CFTC-Reports-.git
+cd CFTC-Reports-
 
-### GitHub Pages
-Data automation and deployment rely completely on Git architecture. No external DB hosts are necessary. The pipeline overwrites the JSON array payload, and GitHub Actions effortlessly pushes the resulting commit back to the `main` branch, triggering GitHub Pages propagation.
+# 2. (Optional) Refresh data locally
+pip install requests pandas numpy
+python scripts/update_cftc_data.py
 
----
+# 3. Serve (required for CORS — can't open index.html directly as file://)
+python -m http.server 8000
+# then open http://localhost:8000
+```
 
-## 📊 Covered Instruments (10 Contracts)
-*   **Core Hubs:** Nat Gas NYME (Henry Hub), Nat Gas LD1, NAT GAS ICE PEN.
-*   **Financial Variants:** Henry Hub NYME Swap, HH Last Day Fin, HH Penultimate Fin/Nat Gas.
-*   **Basis & Index:** HH Index ICE, HH Basis ICE, NG LD1 Texok (Regional).
+> **Note:** Opening `index.html` directly as a `file://` URL will fail to load the JSON due to browser CORS restrictions. Use any local HTTP server.
 
 ---
 
-*Disclaimer: This specific dashboard framework, pipeline layout, and quantitative representation schema are for informational / open source research purposes only and do not constitute direct financial advisement.*
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI | Vanilla HTML + CSS + JavaScript (no framework) |
+| Charts | [Chart.js 4.4](https://www.chartjs.org/) |
+| Zoom/Pan | [chartjs-plugin-zoom 2.0](https://www.chartjs.org/chartjs-plugin-zoom/) + Hammer.js |
+| Annotations | [chartjs-plugin-annotation 3.0](https://www.chartjs.org/chartjs-plugin-annotation/) |
+| Data | Python 3.11 · requests · pandas · numpy |
+| CI/CD | GitHub Actions → GitHub Pages |
+| Hosting | GitHub Pages (static, free) |
+
+---
+
+## Covered Instruments (10 Contracts)
+
+| Group | Contracts |
+|-------|-----------|
+| NYME Futures | Nat Gas NYME (Henry Hub benchmark), Nat Gas LD1, NAT GAS ICE PEN |
+| Henry Hub Variants | Henry Hub NYME Swap, HH Last Day Fin, HH Penultimate Fin, HH Penultimate Nat Gas, HH Index ICE, HH Basis ICE |
+| Regional Basis | NG LD1 Texok (Texoma/Oklahoma vs Henry Hub) |
+
+---
+
+*For informational and open-source research purposes only. Does not constitute financial advice.*
