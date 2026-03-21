@@ -519,12 +519,12 @@
       color: var(--text2);
       font-family: var(--font);
       font-weight: 500;
-      width: 130px;
+      width: 140px; /* Slightly wider for better legibility */
       flex-shrink: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      padding-right: 8px;
+      padding-right: 16px; /* Larger gap to prevent merging into the grid */
     }
 
     .corr-cell {
@@ -557,21 +557,17 @@
 
     .corr-col-header {
       flex: 1;
-      min-width: 40px;
+      min-width: 50px;
       font-size: 10px;
       color: var(--text2);
       font-family: var(--font);
       font-weight: 500;
       text-align: center;
-      overflow: hidden;
-      white-space: nowrap;
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      height: 90px;
-      padding-bottom: 8px;
+      padding-bottom: 16px; /* Larger gap between top headers and the grid */
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
+      /* Removed rotation to maintain horizontal orientation */
     }
 
     /* === Table === */
@@ -2031,9 +2027,9 @@
         pairs.forEach(([x, y]) => { num += (x - ax) * (y - ay); dx += (x - ax) ** 2; dy += (y - ay) ** 2; });
         return dx && dy ? num / Math.sqrt(dx * dy) : null;
       }
-      // Rotated column headers
+      // Column headers
       const hdrSpacer = document.createElement('div');
-      hdrSpacer.style.cssText = `width:130px;flex-shrink:0`;
+      hdrSpacer.style.cssText = `width:140px;flex-shrink:0`;
       colLabels.appendChild(hdrSpacer);
       instKeys.forEach(k => {
         const el = document.createElement('div'); el.className = 'corr-col-header';
