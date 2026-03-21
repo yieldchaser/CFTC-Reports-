@@ -1,3 +1,9 @@
+# Project-specific ignores
+build_chunks/
+*_prompt*.md
+cftc_*_prompt.md
+crosshair_*_prompt.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

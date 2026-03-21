@@ -60,7 +60,7 @@ select:focus{border-color:var(--accent)}
 .section-title{font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* === Signal Cards Grid === BUG 5 FIX: auto-fill no gaps === */
+/* === Signal Cards Grid === */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .signal-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
 .signal-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--border2)}
@@ -254,7 +254,7 @@ canvas { cursor: crosshair !important; }
 <!-- OVERVIEW TAB -->
 <div id="panel-overview" class="tab-panel active">
 
-  <!-- Top Signals Banner (Improvement 2) -->
+  <!-- Top Signals Banner -->
   <div id="top-signals-banner" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;margin-bottom:2px">
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">&#9889; Top Signals This Week</div>
     <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -365,7 +365,6 @@ canvas { cursor: crosshair !important; }
 </div>
 
 <script>
-// === BEGIN CHUNK 3: Data loading, constants, utilities ===
 
 let CFTC_DATA = null;
 let filterFromDate = null;
@@ -401,13 +400,7 @@ const TRADER_COLOURS = {
 };
 
 
-function getVisibleCharts() {
-    return ALL_CHARTS.filter(c => {
-        const canvas = c.canvas;
-        return canvas && canvas.offsetParent !== null;
-    });
-}
-
+// Crosshair: only draws on the chart being hovered — no cross-chart sync to prevent lag
 const crosshairPlugin = {
     id: 'crosshair',
     afterDraw(chart) {
@@ -427,22 +420,15 @@ const crosshairPlugin = {
     afterEvent(chart, args) {
         const event = args.event;
         if (event.type === 'mousemove') {
+            const prev = chart._crosshairX;
             chart._crosshairX = event.x;
-            const visibleCharts = getVisibleCharts();
-            visibleCharts.forEach(c => {
-                if (c !== chart) {
-                    c._crosshairX = chart._crosshairX;
-                    c.update('none');
-                }
-            });
-            chart.update('none');
-        }
-        if (event.type === 'mouseout') {
-            chart._crosshairX = null;
-            getVisibleCharts().forEach(c => {
-                c._crosshairX = null;
-                c.update('none');
-            });
+            // Only redraw THIS chart — never touch other charts
+            if (prev !== chart._crosshairX) chart.update('none');
+        } else if (event.type === 'mouseout') {
+            if (chart._crosshairX !== null) {
+                chart._crosshairX = null;
+                chart.update('none');
+            }
         }
     }
 };
@@ -691,7 +677,7 @@ function applyDateFilter(dates,...arrays){
 }
 
 
-// --- Performance Fixes ---
+// ── Chart helpers ─────────────────────────────────────────────
 function safeCreateChart(canvasId, config) {
     const canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
     if (!canvas) return null;
@@ -778,9 +764,6 @@ function posTip(e){const t=document.getElementById('tooltip');let x=e.clientX+12
 function hideTip(){document.getElementById('tooltip').style.display='none';}
 document.addEventListener('mousemove',e=>{if(document.getElementById('tooltip').style.display==='block')posTip(e);});
 
-// ── Chart destroy ─────────────────────────────────────────────
-function destroyAll(){ALL_CHARTS.forEach(c=>{try{c.destroy();}catch(e){}});ALL_CHARTS.length=0;}
-
 // ── Heatmap controls ──────────────────────────────────────────
 function setHmTrader(t){
   hmTrader=t;
@@ -806,20 +789,17 @@ function setCorrPeriod(p){
 // ── Tab switching ──
 function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  
-  // Performance fix: destroy charts in currently active tab before hiding
-  document.querySelectorAll('.tab-panel.active').forEach(p => {
-      destroyChartsInTab(p.id);
-      p.classList.remove('active');
-  });
 
-  // PROFESSIONAL FIX: Clear crosshair state globally to prevent ghost lines
-  ALL_CHARTS.forEach(c => { c._crosshairX = null; });
+  // Hide all panels (no chart destruction needed — safeCreateChart handles cleanup on re-render)
+  document.querySelectorAll('.tab-panel.active').forEach(p => p.classList.remove('active'));
 
   document.getElementById('tab-'+name).classList.add('active');
   const panelId={overview:'panel-overview',instrument:'panel-instrument',three:'panel-three'}[name];
   document.getElementById(panelId).classList.add('active');
   document.getElementById('trader-wrap').style.display=name==='instrument'?'flex':'none';
+
+  // Render the new tab's content
+  if(name==='overview')   { renderSignalCards();renderHeatmap();renderCorrelationMatrix();renderOILeaderboard();renderWeeklyTable(); }
   if(name==='instrument') renderByInstrument();
   if(name==='three')      renderThreeTraderGrid();
 }
@@ -832,12 +812,9 @@ function redrawAll(){
   if(active.id==='panel-three') renderThreeTraderGrid();
 }
 
-// === END CHUNK 3 ===
+// ── Overview tab renderers ────────────────────────────────────
 
-
-// === BEGIN CHUNK 4: Overview tab renderers ===
-
-// ── Instrument Groups (Improvement 1) ────────────────────────
+// ── Instrument Groups ────────────────────────
 const INST_GROUPS = [
   {id:'g-nyme', label:'NYME Futures',       keys:['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen']},
   {id:'g-hh',   label:'Henry Hub Variants', keys:['henry_hub_nyme','hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice']},
@@ -1014,7 +991,7 @@ function renderCorrelationMatrix(){
     pairs.forEach(([x,y])=>{num+=(x-ax)*(y-ay);dx+=(x-ax)**2;dy+=(y-ay)**2;});
     return dx&&dy?num/Math.sqrt(dx*dy):null;
   }
-  // Rotated column headers (Bug 2 fix)
+  // Rotated column headers
   const hdrSpacer=document.createElement('div');
   hdrSpacer.style.cssText=`width:130px;flex-shrink:0`;
   colLabels.appendChild(hdrSpacer);
@@ -1041,7 +1018,7 @@ function renderCorrelationMatrix(){
   });
 }
 
-// ── OI Leaderboard (Improvement 3 / Bug 3 replacement) ────────
+// ── OI Leaderboard ────────
 let oiMode='thisweek';
 function setOIMode(m){
   oiMode=m;
@@ -1147,10 +1124,7 @@ function sortAndBuildTable(){
 }
 function sortTable(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=-1;}sortAndBuildTable();}
 
-// === END CHUNK 4 ===
-
-
-// === BEGIN CHUNK 5: By Instrument tab renderers ===
+// ── By Instrument tab renderers ───────────────────────────────
 
 const INSTRUMENT_DESCRIPTIONS = {
     nat_gas_nyme:      "Henry Hub front-month futures \u2014 the benchmark US natural gas contract",
@@ -1190,7 +1164,7 @@ function renderInstrumentPills(){
   });
 }
 
-// Improvement 5: pill search filter
+// Pill search filter
 function filterPills(q){
   const ql=q.toLowerCase();
   document.querySelectorAll('#instrument-pills .pill').forEach(p=>{
@@ -1377,7 +1351,7 @@ function renderFlowChart(inst,traderKey){
   chart.userData = { type: 'weekly_flow', instrumentKey: inst.key, traderKey: traderKey };
 }
 
-// ── COT Index (Improvement 6: lookback selector + dual line) ──
+// ── COT Index (lookback selector + dual line) ──
 let cotLookback='w156'; // persists between instrument navigations
 function setCOTLookback(w){
   cotLookback=w;
@@ -1405,14 +1379,13 @@ function renderCOTChart(inst,traderKey){
   const secondary=cotLookback!=='w26'?(td.cot_index?.w26||[]):null;
   const{dates,arrays}=applyDateFilter(inst.dates,primary,secondary);
   const[cot,cot26]=arrays;
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
   const datasets=[
     {label:'COT '+({'w26':'26w','w52':'52w','w156':'3yr'}[cotLookback]||'3yr'),data:cot,borderColor:'#a855f7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
     {label:'80',data:dates.map(()=>80),borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1',backgroundColor:'rgba(34,197,94,.07)'},
     {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
   ];
   if(secondary&&cot26) datasets.unshift({label:'COT 26w',data:cot26,borderColor:'rgba(168,85,247,.4)',borderWidth:1,pointRadius:0,tension:.3,fill:false,borderDash:[2,2]});
-  const chart = safeCreateChart(canvas,{
+  const chart = safeCreateChart(canvas, {
     type:'line',
     data:{labels:dates,datasets},
     options:{...CHART_BASE,
@@ -1481,7 +1454,6 @@ function renderLaggedCorrChart(inst,traderKey){
   const{dates,arrays}=applyDateFilter(inst.dates,lc.lag_1w,lc.lag_2w,lc.lag_3w,lc.lag_4w);
   const[l1,l2,l3,l4]=arrays;
   const lagCols=['#4f8ef7','#22c55e','#f59e0b','#a855f7'];
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
   // Determine dominant current lag
   const currLags=[l1,l2,l3,l4].map(a=>last(a));
   const maxLag=currLags.reduce((best,v,i)=>Math.abs(v??0)>Math.abs(best.val??0)?{val:v,lag:i+1}:best,{val:0,lag:0});
@@ -1522,7 +1494,7 @@ function renderSmartDumbChart(inst){
   chart.userData = { type: 'smart_dumb', instrumentKey: inst.key, traderKey: 'managed_money' };
 }
 
-// ── Percentile bars (Bug 4 fix: labelled sub-bars, MM naming) ─
+// ── Percentile bars ─
 function renderPercentileBars(inst){
   const area=document.getElementById('pct-bars-area'); if(!area) return;
   area.innerHTML='';
@@ -1562,7 +1534,7 @@ function renderPercentileBars(inst){
   area.appendChild(wrap);
 }
 
-// ── CSV Download (E7) ─────────────────────────────────────────
+// ── CSV Download ─────────────────────────────────────────────
 function downloadCSV(instrumentKey,traderKey){
   const inst=CFTC_DATA.instruments[instrumentKey]; if(!inst) return;
   const td=inst[traderKey]||{};
@@ -1576,10 +1548,7 @@ function downloadCSV(instrumentKey,traderKey){
   a.download=`${instrumentKey}_${traderKey}_cftc.csv`; a.click(); URL.revokeObjectURL(a.href);
 }
 
-// === END CHUNK 5 ===
-
-
-// === BEGIN CHUNK 6: Multi-Trader View (F1: 4 traders) + crosshair ===
+// ── Multi-Trader View ─────────────────────────────────────────
 
 function setNormalise(val){
   normaliseByOI=val;
@@ -1595,7 +1564,7 @@ function renderThreeTraderGrid(){
     const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
     const panel=document.createElement('div'); panel.className='chart-panel';
     const cid='cv-three-'+key;
-    // F1: 4 trader lines (MM, Swap, Prod, Other)
+    // 4 trader lines (MM, Swap, Prod, Other)
     panel.innerHTML=`
       <div class="chart-header">
         <div><div class="chart-title">${inst.label}</div><div class="chart-sub">MM &middot; Swap &middot; Prod &middot; Other &middot; Price</div></div>
@@ -1622,7 +1591,7 @@ function renderThreeTraderGrid(){
     let datasets,scalesCfg;
 
     if(normaliseByOI){
-      // Bug 3 fix: % of OI — all traders on same scale
+      // normalise to % of OI — all traders on same scale
       mmD=(mmNet||[]).map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
       swD=(swNet||[]).map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
       prD=(prNet||[]).map((v,i)=>oiArr[i]>0&&v!=null?v/oiArr[i]*100:null);
@@ -1640,7 +1609,7 @@ function renderThreeTraderGrid(){
         {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.4)',borderWidth:1,pointRadius:0,tension:.3,yAxisID:'y2',borderDash:[3,3]},
       ];
     } else {
-      // Bug 3 fix: independent axes — no scale crushing
+      // independent axes — no scale crushing
       scalesCfg={
         x:{...CHART_BASE.scales.x},
         y:{position:'left',...CHART_BASE.scales.y,title:{display:true,text:'MM Net',color:'#3b82f6',font:{size:8}}},
@@ -1669,19 +1638,20 @@ function renderThreeTraderGrid(){
   }
 }
 
-// === END CHUNK 6 ===
-
-
-// === BEGIN CHUNK 7: Init, keyboard nav (F8e), event wiring, closing tags ===
+// ── Initialisation & event wiring ────────────────────────────
 
 function initDashboard(){
+  // Start on overview tab (set active states without triggering full switchTab re-render)
+  document.getElementById('tab-overview').classList.add('active');
+  document.getElementById('panel-overview').classList.add('active');
+  document.getElementById('trader-wrap').style.display='none';
+
+  renderInstrumentPills();
   renderSignalCards();
   renderHeatmap();
   renderCorrelationMatrix();
   renderOILeaderboard();
   renderWeeklyTable();
-  renderInstrumentPills();
-  switchTab('overview');
 }
 
 // ── Feature 8e: Keyboard navigation for By Instrument tab ─────
@@ -1701,8 +1671,6 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('DOMContentLoaded', loadData);
-
-// === END CHUNK 7 ===
 </script>
 </body>
 </html>
