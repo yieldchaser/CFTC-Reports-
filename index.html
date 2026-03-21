@@ -1012,6 +1012,11 @@
       z-index: 9999;
       display: none;
     }
+    .tt-header { font-weight: 700; color: #fff; margin-bottom: 6px; font-size: 14px; }
+    .tt-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 4px; }
+    .tt-row span:first-child { color: var(--text2); font-size: 11px; }
+    .tt-row span:last-child { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+    .tt-divider { height: 1px; background: rgba(255, 255, 255, 0.1); margin: 8px 0; }
 
     /* === Loading / Error === */
     #loading {
@@ -1464,18 +1469,28 @@
     };
 
 
-    function buildTooltipHTML(type, instKey, trader, idx) {
+    function buildTooltipHTML(type, instKey, traderKey, idx, tooltip) {
       const instLabel = INSTRUMENT_LABELS[instKey] ?? instKey ?? 'Unknown';
-      const d = getTooltipData(instKey, trader, idx);
+
+      if (type === 'seasonal') {
+        const dp = tooltip?.dataPoints?.[0];
+        if (!dp) return '';
+        const week = dp.label || '';
+        const datasetLabel = dp.dataset?.label || 'Value';
+        const val = dp.raw;
+        return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${week}</div><div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>${datasetLabel}</span><span>${fmt(val)}</span></div>`;
+      }
+
+      const d = getTooltipData(instKey, traderKey, idx);
       if (!d) return `<div class="tt-header">${instLabel}</div><div class="tt-row">No data available</div>`;
 
       if (type === 'multi_trader') {
         const inst = CFTC_DATA.instruments[instKey];
-        const traders = ['managed_money', 'swap_dealers', 'producers', 'other_reportables', 'non_reportables'];
-        const lines = traders.map(tk => {
-          const net = inst?.[tk]?.net?.[idx];
-          const pct = inst?.[tk]?.pct_of_oi?.[idx];
-          return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmt(net)} (${fmt(pct, 1, '', '%')})</span></div>` : '';
+        const lines = TRADER_KEYS.map(tk => {
+          const net = inst?.[tk]?.net?.[idx] ?? null;
+          const oi = inst?.open_interest?.[idx] || 1;
+          const pct = net !== null ? (net / oi) * 100 : 0;
+          return net !== null ? `<div class="tt-row"><span style="color:${TRADER_COLOURS[tk]}">${TRADER_LABELS[tk]}</span><span style="color:${TRADER_COLOURS[tk]}">${fmt(net)} (${fmt(pct, 1, '', '%')})</span></div>` : '';
         }).join('');
         return `
             <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
@@ -1506,8 +1521,15 @@
       }
 
       const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>`;
-      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>20w Corr</span><span>${fmt(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
-      if (type === 'seasonal') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Pos</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>5Y Avg</span><span>${fmt(d.long)}</span></div>`;
+      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>20w Corr</span><span>${fmt(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
+      if (type === 'weekly_flow') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Weekly Flow</span><span>${fmtChg(d.change_net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      if (type === 'scatter') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div><div class="tt-row"><span>Season</span><span>${d.season}</span></div>`;
+      if (type === 'cot_index') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>COT Index</span><span>${fmt(d.cot_3yr, 1)}%</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      if (type === 'lagged_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>Log Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      if (type === 'smart_dumb') {
+        const inst = CFTC_DATA.instruments[instKey];
+        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span style="color:#3b82f6">Managed Money</span><span style="color:#3b82f6">${fmt(inst?.managed_money?.net?.[idx])}</span></div><div class="tt-row"><span style="color:#ef4444">Retail Net</span><span style="color:#ef4444">${fmt(inst?.non_reportables?.net?.[idx])}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      }
 
       return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmt(d.net)}</span></div>`;
     }
@@ -1515,10 +1537,25 @@
     function externalTooltipHandler(context) {
       const { chart, tooltip } = context;
       if (tooltip.opacity === 0) { tooltipEl.style.display = 'none'; return; }
-      const idx = tooltip.dataPoints?.[0]?.dataIndex; if (idx === undefined) return;
+      
       const ut = chart.userData || {};
+      const inst = CFTC_DATA.instruments[ut.instrumentKey];
+      if (!inst) return;
 
-      tooltipEl.innerHTML = buildTooltipHTML(ut.type, ut.instrumentKey, ut.traderKey, idx);
+      let idx;
+      if (ut.type === 'scatter') {
+        idx = tooltip.dataPoints?.[0]?.raw?.rawIdx;
+      } else if (ut.type === 'seasonal') {
+        // Fallback for seasonal: dataIndex is the week number. To link it back, we just display the raw value. No true historic index exists.
+        idx = tooltip.dataPoints?.[0]?.dataIndex;
+      } else {
+        const rawDate = tooltip.dataPoints?.[0]?.label;
+        if (rawDate) idx = inst.dates?.indexOf(rawDate);
+      }
+
+      if (idx === undefined || idx === -1) return;
+
+      tooltipEl.innerHTML = buildTooltipHTML(ut.type, ut.instrumentKey, ut.traderKey, idx, tooltip);
       tooltipEl.style.display = 'block';
       const canvasRect = chart.canvas.getBoundingClientRect();
       const x = canvasRect.left + tooltip.caretX + 24;
@@ -2294,8 +2331,9 @@
       const td = inst[traderKey] || {};
       const { dates, arrays } = applyDateFilter(inst.dates, td.long, inst.price, inst.season);
       const [longs, prices, seasons] = arrays;
+      const s = filterFromDate ? Math.max(0, inst.dates.findIndex(d => new Date(d) >= new Date(filterFromDate))) : 0;
       const wData = [], iData = [];
-      dates.forEach((_, i) => { if (longs[i] == null || prices[i] == null) return; const pt = { x: longs[i], y: prices[i] }; (seasons[i] === 'Withdrawal' ? wData : iData).push(pt); });
+      dates.forEach((_, i) => { if (longs[i] == null || prices[i] == null) return; const pt = { x: longs[i], y: prices[i], rawIdx: s + i }; (seasons[i] === 'Withdrawal' ? wData : iData).push(pt); });
       const chart = safeCreateChart(canvas, {
         type: 'scatter',
         data: {
