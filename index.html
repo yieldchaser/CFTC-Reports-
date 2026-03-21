@@ -1212,19 +1212,19 @@
             <thead>
               <tr>
                 <th onclick="sortTable(0)" id="th0">Instrument</th>
-                <th onclick="sortTable(1)" id="th1" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</th>
+                <th onclick="sortTable(1)" id="th1" data-tooltip="Managed Money net position (longs minus shorts). Positive = speculative funds are net long.">MM Net</th>
                 <th onclick="sortTable(2)" id="th2">MM &Delta;</th>
-                <th onclick="sortTable(3)" id="th3" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">MM Z</th>
-                <th onclick="sortTable(4)" id="th4" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</th>
+                <th onclick="sortTable(3)" id="th3" data-tooltip="Standard deviations from the expanding historical mean. Above +1.5 = extended long, below -1.5 = extended short.">MM Z</th>
+                <th onclick="sortTable(4)" id="th4" data-tooltip="COT Index over a 3-year lookback. 0 = minimum positioning of last 3 years, 100 = maximum. Above 80 = historically extended.">COT 3yr</th>
                 <th onclick="sortTable(5)" id="th5">Score</th>
-                <th onclick="sortTable(6)" id="th6" data-tooltip="${METRIC_TOOLTIPS['Momentum']}">Momentum</th>
-                <th onclick="sortTable(7)" id="th7" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap Net</th>
+                <th onclick="sortTable(6)" id="th6" data-tooltip="Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.">Momentum</th>
+                <th onclick="sortTable(7)" id="th7" data-tooltip="Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.">Swap Net</th>
                 <th onclick="sortTable(8)" id="th8">Swap &Delta;</th>
-                <th onclick="sortTable(9)" id="th9" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other Net</th>
-                <th onclick="sortTable(10)" id="th10" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail Net</th>
+                <th onclick="sortTable(9)" id="th9" data-tooltip="Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.">Other Net</th>
+                <th onclick="sortTable(10)" id="th10" data-tooltip="Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.">Retail Net</th>
                 <th onclick="sortTable(11)" id="th11">Price</th>
                 <th onclick="sortTable(12)" id="th12">Price &Delta;%</th>
-                <th onclick="sortTable(13)" id="th13" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</th>
+                <th onclick="sortTable(13)" id="th13" data-tooltip="Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.">OI Regime</th>
               </tr>
             </thead>
             <tbody id="weekly-tbody"></tbody>
@@ -1449,7 +1449,7 @@
       'HIGH ACTIVITY': 'Momentum score > 80 — unusually large repositioning this week. Pay attention.',
     };
 
-    const fmtCharTooltip = (v, dec = 0, pre = '', suf = '') => {
+    const fmt = (v, dec = 0, pre = '', suf = '') => {
       if (v === null || v === undefined || isNaN(Number(v))) return '—';
       return pre + Number(v).toLocaleString('en-US', {
         minimumFractionDigits: dec,
@@ -1468,7 +1468,7 @@
         const lines = traders.map(tk => {
           const net = inst?.[tk]?.net?.[idx];
           const pct = inst?.[tk]?.pct_of_oi?.[idx];
-          return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmtCharTooltip(net)} (${fmtCharTooltip(pct, 1, '', '%')})</span></div>` : '';
+          return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmt(net)} (${fmt(pct, 1, '', '%')})</span></div>` : '';
         }).join('');
         return `
             <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
@@ -1476,7 +1476,7 @@
             <div class="tt-divider"></div>
             ${lines}
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Price</span><span>${fmtCharTooltip(d.price, 2, '$')}</span></div>
+            <div class="tt-row"><span>Price</span><span>${fmt(d.price, 2, '$')}</span></div>
             <div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>
        `;
       }
@@ -1486,23 +1486,23 @@
             <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
             <div class="tt-header">${instLabel}</div>
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Net Position</span><span>${fmtCharTooltip(d.net)}</span></div>
-            <div class="tt-row"><span>Long</span><span>${fmtCharTooltip(d.long)}</span></div>
-            <div class="tt-row"><span>Short</span><span>${fmtCharTooltip(d.short)}</span></div>
+            <div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div>
+            <div class="tt-row"><span>Long</span><span>${fmt(d.long)}</span></div>
+            <div class="tt-row"><span>Short</span><span>${fmt(d.short)}</span></div>
             <div class="tt-divider"></div>
             <div class="tt-row"><span>Z-Score</span><span>${fmtZ(d.z_score)} (${fmtPct(d.pct_rank)})</span></div>
-            <div class="tt-row"><span>COT Index</span><span>${fmtCharTooltip(d.cot_3yr, 0, '', '%')}</span></div>
+            <div class="tt-row"><span>COT Index</span><span>${fmt(d.cot_3yr, 0, '', '%')}</span></div>
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Price</span><span>$${fmtCharTooltip(d.price, 2)}</span></div>
+            <div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>
             <div class="tt-row"><span>OI Regime</span><span>${d.oi_regime}</span></div>
         `;
       }
 
       const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>`;
-      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>20w Corr</span><span>${fmtCharTooltip(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
-      if (type === 'seasonal') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Pos</span><span>${fmtCharTooltip(d.net)}</span></div><div class="tt-row"><span>5Y Avg</span><span>${fmtCharTooltip(d.long)}</span></div>`;
+      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>20w Corr</span><span>${fmt(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
+      if (type === 'seasonal') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Pos</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>5Y Avg</span><span>${fmt(d.long)}</span></div>`;
 
-      return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmtCharTooltip(d.net)}</span></div>`;
+      return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmt(d.net)}</span></div>`;
     }
 
     function externalTooltipHandler(context) {
