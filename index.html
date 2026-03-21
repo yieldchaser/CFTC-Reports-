@@ -1096,24 +1096,24 @@
     </div>
     <div class="header-meta">
       <div class="meta-item">
-        <div class="meta-label">Latest Report</div>
+        <div class="meta-label" data-tooltip="The official 'as of' date for the applicable CFTC positioning data.">Latest Report</div>
         <div class="meta-val" id="latest-report">&mdash;</div>
       </div>
       <div class="meta-item">
-        <div class="meta-label">Last Updated</div>
+        <div class="meta-label" data-tooltip="Timestamp of when this dashboard was last rebuilt and refreshed with new data.">Last Updated</div>
         <div class="meta-val" id="last-updated">&mdash;</div>
       </div>
     </div>
   </header>
 
   <div class="tabs" role="tablist">
-    <button class="tab-btn active" id="tab-overview" onclick="switchTab('overview')" role="tab">Overview</button>
-    <button class="tab-btn" id="tab-instrument" onclick="switchTab('instrument')" role="tab">By Instrument</button>
-    <button class="tab-btn" id="tab-three" onclick="switchTab('three')" role="tab">Multi-Trader View</button>
+    <button class="tab-btn active" id="tab-overview" onclick="switchTab('overview')" role="tab" data-tooltip="High-level dashboard with top signals, heatmaps, and weekly positioning summary across all variants.">Overview</button>
+    <button class="tab-btn" id="tab-instrument" onclick="switchTab('instrument')" role="tab" data-tooltip="Detailed time-series positioning charts and momentum metrics for individual natural gas variants.">By Instrument</button>
+    <button class="tab-btn" id="tab-three" onclick="switchTab('three')" role="tab" data-tooltip="Comparative view displaying multiple trader categories side-by-side for a specific instrument.">Multi-Trader View</button>
   </div>
 
   <div class="toolbar">
-    <label for="date-filter">Show data from:</label>
+    <label for="date-filter" data-tooltip="Limit the historical lookback range applied to all charts and metric calculations globally.">Show data from:</label>
     <select id="date-filter" onchange="onDateFilterChange()"></select>
     <div id="date-range-slider-container"
       style="display:flex;align-items:center;gap:8px;margin-left:12px;flex:1;max-width:300px">
@@ -1122,7 +1122,7 @@
       <span id="slider-end-label" style="font-size:10px;font-family:var(--mono)">-</span>
     </div>
     <div id="trader-wrap" style="display:none">
-      <label for="trader-filter">Trader:</label>
+      <label for="trader-filter" data-tooltip="Select the specific trader category (e.g. Managed Money) to view across the filtered charts.">Trader:</label>
       <select id="trader-filter" onchange="onTraderFilterChange()">
         <option value="managed_money">Managed Money</option>
         <option value="swap_dealers">Swap Dealers</option>
@@ -1211,19 +1211,19 @@
           <table id="weekly-table">
             <thead>
               <tr>
-                <th onclick="sortTable(0)" id="th0">Instrument</th>
+                <th onclick="sortTable(0)" id="th0" data-tooltip="Specific natural gas futures or options contract variant.">Instrument</th>
                 <th onclick="sortTable(1)" id="th1" data-tooltip="Managed Money net position (longs minus shorts). Positive = speculative funds are net long.">MM Net</th>
-                <th onclick="sortTable(2)" id="th2">MM &Delta;</th>
+                <th onclick="sortTable(2)" id="th2" data-tooltip="Managed Money weekly change in net position.">MM &Delta;</th>
                 <th onclick="sortTable(3)" id="th3" data-tooltip="Standard deviations from the expanding historical mean. Above +1.5 = extended long, below -1.5 = extended short.">MM Z</th>
                 <th onclick="sortTable(4)" id="th4" data-tooltip="COT Index over a 3-year lookback. 0 = minimum positioning of last 3 years, 100 = maximum. Above 80 = historically extended.">COT 3yr</th>
-                <th onclick="sortTable(5)" id="th5">Score</th>
+                <th onclick="sortTable(5)" id="th5" data-tooltip="Composite positioning score ranging from -3 (Strong Bearish) to +3 (Strong Bullish), aggregating Z-score, COT metric, and regime factors.">Score</th>
                 <th onclick="sortTable(6)" id="th6" data-tooltip="Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.">Momentum</th>
                 <th onclick="sortTable(7)" id="th7" data-tooltip="Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.">Swap Net</th>
-                <th onclick="sortTable(8)" id="th8">Swap &Delta;</th>
+                <th onclick="sortTable(8)" id="th8" data-tooltip="Swap Dealer weekly change in net position.">Swap &Delta;</th>
                 <th onclick="sortTable(9)" id="th9" data-tooltip="Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.">Other Net</th>
                 <th onclick="sortTable(10)" id="th10" data-tooltip="Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.">Retail Net</th>
-                <th onclick="sortTable(11)" id="th11">Price</th>
-                <th onclick="sortTable(12)" id="th12">Price &Delta;%</th>
+                <th onclick="sortTable(11)" id="th11" data-tooltip="Most recent settlement price for the contract.">Price</th>
+                <th onclick="sortTable(12)" id="th12" data-tooltip="Percentage change in price from the previous week.">Price &Delta;%</th>
                 <th onclick="sortTable(13)" id="th13" data-tooltip="Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.">OI Regime</th>
               </tr>
             </thead>
@@ -1245,12 +1245,11 @@
       <div id="inst-charts-area" class="inst-grid"></div>
     </div>
 
-    <!-- MULTI-TRADER TAB -->
     <div id="panel-three" class="tab-panel">
       <div class="normalise-bar">
-        <span style="font-size:11px;color:var(--text2)">Scale:</span>
-        <button class="toggle-btn active" id="btn-pct-oi" onclick="setNormalise(true)">% of Open Interest</button>
-        <button class="toggle-btn" id="btn-raw" onclick="setNormalise(false)">Raw (Independent Axes)</button>
+        <span style="font-size:11px;color:var(--text2)" data-tooltip="Toggle the chart's y-axis scaling method.">Scale:</span>
+        <button class="toggle-btn active" id="btn-pct-oi" onclick="setNormalise(true)" data-tooltip="Normalize positions as a percentage of total Open Interest to easily compare relative conviction across different contract sizes.">% of Open Interest</button>
+        <button class="toggle-btn" id="btn-raw" onclick="setNormalise(false)" data-tooltip="View raw nominal contract quantities on independent axes. Useful for spotting pure volumetric changes.">Raw (Independent Axes)</button>
       </div>
       <div id="three-trader-grid" class="three-grid"></div>
     </div>
@@ -1281,6 +1280,18 @@
       hh_penult_fin: 'HH Penultimate Fin', hh_penult_nat_gas: 'HH Penultimate Nat Gas',
       hh_index_ice: 'HH Index ICE', hh_basis_ice: 'HH Basis ICE',
       nat_gas_ld1_texok: 'NG LD1 Texok',
+    };
+    const INSTRUMENT_TOOLTIPS = {
+      nat_gas_nyme: 'Primary physical delivery Henry Hub contract traded on NYMEX. The high-liquidity global benchmark.',
+      nat_gas_ld1: 'ICE Henry Hub Look-Alike Financial. Financially settled mirroring the NYMEX NG physical contract.',
+      nat_gas_ice_pen: 'ICE Penultimate Financial. Settles on the penultimate day instead of final day to avoid expiration volatility.',
+      henry_hub_nyme: 'NYMEX Henry Hub Last Day Financial. Cash-settled futures based on the final settlement price.',
+      hh_last_day: 'Henry Hub Last Day Financial. Cash-settled based on the final settlement price of the NYMEX NG contract.',
+      hh_penult_fin: 'Henry Hub Penultimate Financial. Cash-settled based on penultimate trading day pricing.',
+      hh_penult_nat_gas: 'Henry Hub Penultimate Nat Gas. Financial settlement specifically tracking natural gas indices.',
+      hh_index_ice: 'ICE index tracking Henry Hub spot or near-term delivery pricing differentials.',
+      hh_basis_ice: 'ICE Basis contract trading the differential between local spot and the Henry Hub benchmark.',
+      nat_gas_ld1_texok: 'ICE LD1 Financial contract specific to Texas/Oklahoma (Texok) regional pricing basis.'
     };
     const TRADER_KEYS = ['managed_money', 'swap_dealers', 'producers', 'other_reportables', 'non_reportables'];
     const TRADER_LABELS = {
@@ -1429,6 +1440,8 @@
       'Retail Net': 'Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.',
       'OI Regime': 'Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.',
       'Momentum': 'Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.',
+      'Price': 'Most recent settlement price for the contract, with percentage change from the previous week.',
+      'Season': 'Current historical seasonality phase or defined seasonal trend for this time of year.'
     };
 
     const REGIME_TOOLTIPS = {
@@ -1884,8 +1897,8 @@
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
-        <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
-        <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Price']}">Price</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
         <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
           <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
@@ -1924,7 +1937,9 @@
         const row = document.createElement('div'); row.className = 'heatmap-row';
         row.style.gridTemplateColumns = colTemplate;
         const lbl = document.createElement('div'); lbl.className = 'hm-row-label';
-        lbl.textContent = inst.label; row.appendChild(lbl);
+        lbl.textContent = inst.label; 
+        lbl.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[key] || inst.label);
+        row.appendChild(lbl);
         for (let i = NCOLS; i > 0; i--) {
           const di = allDates.length - i;
           const z = di >= 0 ? allZ[di] : null;
@@ -1971,13 +1986,15 @@
       instKeys.forEach(k => {
         const el = document.createElement('div'); el.className = 'corr-col-header';
         el.textContent = INSTRUMENT_LABELS[k] || k;
-        el.title = INSTRUMENT_LABELS[k] || k;
+        el.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[k] || INSTRUMENT_LABELS[k] || k);
         colLabels.appendChild(el);
       });
       instKeys.forEach((k1) => {
         const row = document.createElement('div'); row.className = 'corr-row';
         const lbl = document.createElement('div'); lbl.className = 'corr-row-label';
-        lbl.textContent = INSTRUMENT_LABELS[k1] || k1; row.appendChild(lbl);
+        lbl.textContent = INSTRUMENT_LABELS[k1] || k1; 
+        lbl.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[k1] || INSTRUMENT_LABELS[k1] || k1);
+        row.appendChild(lbl);
         instKeys.forEach((k2) => {
           const val = k1 === k2 ? 1.0 : pearson(seriesMap[k1] || [], seriesMap[k2] || []);
           const cell = document.createElement('div');
@@ -2076,7 +2093,7 @@
         const mom = r.momentum != null ? Math.round(r.momentum) : null;
         const momCls = mom != null && mom > 80 ? 'mom-hi' : mom != null && mom < 20 ? 'mom-lo' : '';
         return `<tr onclick="switchTab('instrument');setActiveInst('${r.key}')">
-      <td>${r.label}</td>
+      <td data-tooltip="${INSTRUMENT_TOOLTIPS[r.key] || r.label}">${r.label}</td>
       <td>${fmt(r.mmNet)}</td>
       <td class="${(r.mmDelta || 0) >= 0 ? 'd-pos' : 'd-neg'}">${fmtChg(r.mmDelta)}</td>
       <td>${fmtZ(r.mmZ)}</td>
@@ -2131,6 +2148,7 @@
         const btn = document.createElement('button');
         btn.className = 'pill' + (key === activeInstrument ? ' active' : '');
         btn.id = 'pill-' + key; btn.textContent = inst.label;
+        btn.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[key] || inst.label);
         btn.dataset.label = inst.label.toLowerCase();
         btn.onclick = () => setActiveInst(key);
         wrap.appendChild(btn);
