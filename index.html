@@ -1521,11 +1521,19 @@
       }
 
       const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>`;
-      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>20w Corr</span><span>${fmt(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
+      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>20w Corr</span><span>${fmt(tooltip?.dataPoints?.[0]?.raw, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
       if (type === 'weekly_flow') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Weekly Flow</span><span>${fmtChg(d.change_net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
       if (type === 'scatter') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div><div class="tt-row"><span>Season</span><span>${d.season}</span></div>`;
-      if (type === 'cot_index') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>COT Index</span><span>${fmt(d.cot_3yr, 1)}%</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
-      if (type === 'lagged_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>Log Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      if (type === 'cot_index') {
+        const dps = tooltip?.dataPoints || [];
+        const rows = dps.map(dp => ['80', '20'].includes(dp.dataset?.label) ? '' : `<div class="tt-row"><span style="color:${dp.dataset?.borderColor || '#fff'}">${dp.dataset?.label || 'COT'}</span><span style="color:${dp.dataset?.borderColor || '#fff'}">${fmt(dp.raw, 1)}%</span></div>`).join('');
+        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      }
+      if (type === 'lagged_corr') {
+        const dps = tooltip?.dataPoints || [];
+        const rows = dps.map(dp => `<div class="tt-row"><span style="color:${dp.dataset?.borderColor || '#fff'}">Corr (${dp.dataset?.label || 'Lead'})</span><span style="color:${dp.dataset?.borderColor || '#fff'}">${fmt(dp.raw, 2)}</span></div>`).join('');
+        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Log Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+      }
       if (type === 'smart_dumb') {
         const inst = CFTC_DATA.instruments[instKey];
         return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span style="color:#3b82f6">Managed Money</span><span style="color:#3b82f6">${fmt(inst?.managed_money?.net?.[idx])}</span></div><div class="tt-row"><span style="color:#ef4444">Retail Net</span><span style="color:#ef4444">${fmt(inst?.non_reportables?.net?.[idx])}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
