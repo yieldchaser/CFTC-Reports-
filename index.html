@@ -515,14 +515,16 @@
     }
 
     .corr-row-label {
-      font-size: 9px;
+      font-size: 10px;
       color: var(--text2);
-      font-family: var(--mono);
+      font-family: var(--font);
+      font-weight: 500;
       width: 130px;
       flex-shrink: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap
+      white-space: nowrap;
+      padding-right: 8px;
     }
 
     .corr-cell {
@@ -556,18 +558,20 @@
     .corr-col-header {
       flex: 1;
       min-width: 40px;
-      font-size: 8px;
-      color: var(--text3);
+      font-size: 10px;
+      color: var(--text2);
+      font-family: var(--font);
+      font-weight: 500;
       text-align: center;
       overflow: hidden;
       white-space: nowrap;
       writing-mode: vertical-rl;
       transform: rotate(180deg);
-      height: 72px;
-      padding-bottom: 4px;
+      height: 90px;
+      padding-bottom: 8px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
     }
 
     /* === Table === */
