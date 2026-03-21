@@ -1481,17 +1481,17 @@
     }
 
     const METRIC_TOOLTIPS = {
-      'MM Net': '<strong>Managed Money Net Position</strong><br>Longs minus shorts held by leveraged funds (hedge funds, CTAs). Positive = net long. The primary speculative flow signal — extremes often precede mean-reversion moves. Watch for divergence from price.',
-      'Z-Score': '<strong>Z-Score (Expanding Window)</strong><br>Standard deviations from the full historical mean. <span style="color:#22c55e">Above +1.5</span> = historically extended long. <span style="color:#ef4444">Below −1.5</span> = historically extended short. Readings beyond ±2 are rare and high-conviction reversal zones.',
-      'COT 3yr': '<strong>COT Index (3-Year Lookback)</strong><br>Percentile rank of current net position within the prior 3-year range. <span style="color:#22c55e">≥80%</span> = near 3yr highs (crowded long). <span style="color:#ef4444">≤20%</span> = near 3yr lows (crowded short). Complements Z-score by anchoring to recent history.',
-      'Swap Net': '<strong>Swap Dealer Net Position</strong><br>Typically the structural counterparty to speculative longs. When Swap net is deeply negative while spec net is deeply positive, the positioning setup is "classic" — specs long, dealers short. A narrowing spread can precede momentum shifts.',
-      'Prod Net': '<strong>Producer / Merchant Net Position</strong><br>Commercial hedgers (producers, processors, utilities). Producers lock in prices by selling forward — deeply negative Prod net = heavy physical hedging, often at cycle price highs. Watch Prod net vs price for hedging pressure signals.',
-      'Other Net': '<strong>Other Reportables Net</strong><br>Includes CTAs, commodity pools, and hedge funds not classified as Managed Money. Often a leading or coincident signal — this category tends to respond quickly to momentum shifts before Managed Money reacts.',
-      'Retail Net': '<strong>Non-Reportable (Small Speculator) Net</strong><br>Positions too small to meet CFTC reporting thresholds. Classic contrarian signal — when retail is maximally net long, large participants are typically on the other side. Extreme retail positioning historically precedes reversals.',
-      'OI Regime': '<strong>Open Interest Regime</strong><br>Classifies market structure using OI trend + price direction. <strong>Accumulation</strong>: OI↑ + Price↑ (new longs building). <strong>Distribution</strong>: OI↑ + Price↓ (new shorts building). <strong>Short Covering</strong>: OI↓ + Price↑ (shorts exiting, not new longs). <strong>Long Liquidation</strong>: OI↓ + Price↓ (longs exiting). Regime context is critical for interpreting net position changes.',
-      'Momentum': '<strong>Positioning Momentum Score (0–100)</strong><br>Measures how large this week\'s repositioning is relative to the trailing 13-week standard deviation. <span style="color:#f59e0b">Above 80</span> = statistically unusual — large repositioning that often precedes or accompanies trend breakouts. Below 20 = positioning stagnation.',
-      'Price': '<strong>Settlement Price</strong><br>Most recent weekly settlement price for this contract. WoW % shown alongside — used to cross-reference with positioning flow for directional confirmation or divergence detection.',
-      'Season': '<strong>Seasonal Phase</strong><br>Withdrawal season (Nov–Mar): demand-driven inventory drawdowns, typically more price-sensitive. Injection season (Apr–Oct): storage rebuilding phase, typically structurally oversupplied. Seasonal regime affects how positioning extremes should be interpreted.'
+      'MM Net': 'Managed Money net (longs minus shorts). Positive = net long. Primary speculative flow signal — extremes often precede mean-reversion. Watch for divergence from price.',
+      'Z-Score': 'Standard deviations from full historical mean. Above +1.5 = historically extended long. Below −1.5 = historically extended short. Beyond ±2 = rare, high-conviction reversal zone.',
+      'COT 3yr': 'COT Index: percentile rank within prior 3-year range. ≥80% = crowded long (near 3yr high). ≤20% = crowded short (near 3yr low). Anchors Z-score to recent history.',
+      'Swap Net': 'Swap Dealer net. Structural counterparty to speculative longs — deeply negative Swap + positive MM net = classic crowded setup. Narrowing spread can precede momentum shifts.',
+      'Prod Net': 'Producer/Merchant net. Producers hedge by selling forward — deeply negative = heavy physical hedging, often at cycle price highs. Watch vs price for hedging pressure signals.',
+      'Other Net': 'Other Reportables net (CTAs, commodity pools, non-MM hedge funds). Fast-moving leading/coincident indicator — responds to technical signals before Managed Money.',
+      'Retail Net': 'Non-Reportable (small speculator) net. Classic contrarian signal — peak retail long aligns with large-participant shorts. Extremes historically precede reversals.',
+      'OI Regime': 'Market structure via OI trend + price. Accumulation: OI↑+Price↑ (new longs). Distribution: OI↑+Price↓ (new shorts). Short Covering: OI↓+Price↑. Long Liquidation: OI↓+Price↓.',
+      'Momentum': 'Flow momentum score 0–100. Above 80 = statistically outsized repositioning vs trailing 13w volatility — often precedes trend breakouts. Below 20 = positioning stagnation.',
+      'Price': 'Most recent weekly settlement price. WoW % change shown — cross-reference with positioning flow for directional confirmation or divergence.',
+      'Season': 'Withdrawal (Nov–Mar): demand-driven drawdowns, price-sensitive. Injection (Apr–Oct): storage rebuilding, structurally oversupplied. Season context shapes how positioning extremes read.'
     };
 
     const REGIME_TOOLTIPS = {
@@ -1503,14 +1503,14 @@
     };
 
     const SIGNAL_TOOLTIPS = {
-      'STRONG BEARISH SETUP': '<strong>Score −3: Strong Bearish Setup</strong><br>Z-score ≤ −2.0 <em>and</em> COT Index ≤ 20% <em>and</em> at least one confirming factor (Distribution regime or elevated short momentum). Rare, high-conviction setup — positioning is at multi-year extremes on the short side.',
-      'BEARISH POSITIONING': '<strong>Score −2: Bearish Positioning</strong><br>Z-score ≤ −1.5 <em>and</em> COT Index ≤ 20%. Speculative positioning is historically extended short with no immediate catalyst for reversal. Structurally meaningful but awaiting a confirming regime signal.',
-      'MILD BEARISH BIAS': '<strong>Score −1: Mild Bearish Bias</strong><br>One bearish factor present (low Z-score or low COT Index) but not both confirmed at extremes. Directional lean, not a high-conviction signal. Monitor for the second factor to trigger.',
-      'NEUTRAL': '<strong>Score 0: Neutral</strong><br>No statistically meaningful positioning signal this week. Z-score and COT Index are within normal historical ranges. Market structure is balanced — no edge from positioning alone.',
-      'MILD BULLISH BIAS': '<strong>Score +1: Mild Bullish Bias</strong><br>One bullish factor present (elevated Z-score or high COT Index) but not both confirmed at extremes. Directional lean — watch for the second factor or a regime change to upgrade the signal.',
-      'BULLISH POSITIONING': '<strong>Score +2: Bullish Positioning</strong><br>Z-score ≥ +1.5 <em>and</em> COT Index ≥ 80%. Speculative positioning is historically extended long. Structurally meaningful — particularly powerful if accompanied by an Accumulation OI regime.',
-      'STRONG BULLISH SETUP': '<strong>Score +3: Strong Bullish Setup</strong><br>Z-score ≥ +2.0 <em>and</em> COT Index ≥ 80% <em>and</em> at least one confirming factor (Accumulation regime or elevated long momentum). Rare, high-conviction setup — positioning is at multi-year extremes on the long side.',
-      'HIGH ACTIVITY': '<strong>High Activity — Momentum Score &gt;80</strong><br>This week\'s repositioning is statistically outsized relative to the trailing 13-week volatility of flows. Large flow events often precede or accompany trend inflections. Cross-reference with Z-score direction and OI regime.',
+      'STRONG BEARISH SETUP': 'Score −3: Z ≤ −2.0 AND COT ≤ 20% AND confirming factor (Distribution regime or short momentum). Rare multi-year extreme — highest conviction bearish setup.',
+      'BEARISH POSITIONING': 'Score −2: Z ≤ −1.5 AND COT Index ≤ 20%. Positioning historically extended short. Structurally meaningful — awaiting a regime confirming signal.',
+      'MILD BEARISH BIAS': 'Score −1: One bearish factor (low Z or low COT) but not both at extremes. Directional lean only — monitor for second factor to trigger.',
+      'NEUTRAL': 'Score 0: No significant positioning signal. Z-score and COT Index within normal historical range. No structural edge from positioning this week.',
+      'MILD BULLISH BIAS': 'Score +1: One bullish factor (elevated Z or high COT) but not both confirmed. Directional lean — watch for second factor or regime change to upgrade.',
+      'BULLISH POSITIONING': 'Score +2: Z ≥ +1.5 AND COT Index ≥ 80%. Historically extended long. Most powerful when combined with Accumulation OI regime.',
+      'STRONG BULLISH SETUP': 'Score +3: Z ≥ +2.0 AND COT ≥ 80% AND confirming factor (Accumulation regime or long momentum). Rare multi-year extreme — highest conviction bullish setup.',
+      'HIGH ACTIVITY': 'Momentum score > 80 — statistically outsized repositioning vs trailing 13w flow volatility. Large flow events often precede trend inflections. Cross-ref with Z-score and regime.',
     };
 
 
