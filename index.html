@@ -100,10 +100,10 @@ select:focus{border-color:var(--accent)}
 .hm-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* === Correlation Matrix === */
-.corr-matrix-wrap{overflow-x:auto}
+.corr-matrix-wrap{overflow-x:auto; width:100%}
 .corr-row{display:flex;gap:2px;align-items:center}
-.corr-row-label{font-size:8px;color:var(--text2);font-family:var(--mono);width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.corr-cell{width:38px;height:32px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:rgba(255,255,255,.8);transition:transform .1s;flex-shrink:0}
+.corr-row-label{font-size:8px;color:var(--text2);font-family:var(--mono);width:100px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.corr-cell{width:44px;height:32px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:rgba(255,255,255,.8);transition:transform .1s;flex-shrink:0}
 .corr-cell:hover{transform:scale(1.1);z-index:10;position:relative}
 .corr-period-bar{display:flex;gap:6px;align-items:center;margin-bottom:8px}
 
@@ -267,37 +267,32 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:12px">
-    <div>
-      <div class="section-title">Instrument Correlation Matrix</div>
-      <div class="chart-panel" style="padding:10px">
-        <div class="corr-period-bar">
-          <span style="font-size:10px;color:var(--text3)">Period:</span>
-          <button class="hm-btn" id="crrb-13"  onclick="setCorrPeriod(13)">13w</button>
-          <button class="hm-btn" id="crrb-26"  onclick="setCorrPeriod(26)">26w</button>
-          <button class="hm-btn active" id="crrb-52"  onclick="setCorrPeriod(52)">52w</button>
-          <button class="hm-btn" id="crrb-156" onclick="setCorrPeriod(156)">3yr</button>
-        </div>
-        <div class="corr-matrix-wrap">
-          <div id="corr-col-labels" style="display:flex;gap:2px;margin-left:92px;margin-bottom:2px;flex-wrap:nowrap"></div>
-          <div id="corr-matrix-body"></div>
-        </div>
-      </div>
+  <div class="section-title">Instrument Correlation Matrix</div>
+  <div class="chart-panel" style="padding:10px; margin-bottom: 12px;">
+    <div class="corr-period-bar">
+      <span style="font-size:10px;color:var(--text3)">Period:</span>
+      <button class="hm-btn" id="crrb-13"  onclick="setCorrPeriod(13)">13w</button>
+      <button class="hm-btn" id="crrb-26"  onclick="setCorrPeriod(26)">26w</button>
+      <button class="hm-btn active" id="crrb-52"  onclick="setCorrPeriod(52)">52w</button>
+      <button class="hm-btn" id="crrb-156" onclick="setCorrPeriod(156)">3yr</button>
     </div>
-    <div>
-      <div class="section-title">Market Concentration &mdash; Nat Gas NYME</div>
-      <div class="chart-panel">
-        <div class="chart-header">
-          <div><div class="chart-title">Top-4 Trader Concentration</div><div class="chart-sub">% of Open Interest held by top 4 longs and shorts</div></div>
-        </div>
-        <div class="chart-legend">
-          <div class="leg-item"><div class="leg-line" style="background:#4f8ef7"></div>Top-4 Long</div>
-          <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Top-4 Short</div>
-        </div>
-        <div class="chart-container h240"><canvas id="cv-concentration"></canvas></div>
-        <div id="concentration-fallback" style="display:none" class="no-data">Concentration data unavailable for this instrument</div>
-      </div>
+    <div class="corr-matrix-wrap">
+      <div id="corr-col-labels" style="display:flex;gap:2px;margin-left:92px;margin-bottom:2px;flex-wrap:nowrap"></div>
+      <div id="corr-matrix-body"></div>
     </div>
+  </div>
+
+  <div class="section-title">Market Concentration &mdash; Nat Gas NYME</div>
+  <div class="chart-panel" style="margin-bottom: 12px;">
+    <div class="chart-header">
+      <div><div class="chart-title">Top-4 Trader Concentration</div><div class="chart-sub">% of Open Interest held by top 4 longs and shorts</div></div>
+    </div>
+    <div class="chart-legend">
+      <div class="leg-item"><div class="leg-line" style="background:#4f8ef7"></div>Top-4 Long</div>
+      <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Top-4 Short</div>
+    </div>
+    <div class="chart-container h240"><canvas id="cv-concentration"></canvas></div>
+    <div id="concentration-fallback" style="display:none" class="no-data">Concentration data unavailable for this instrument</div>
   </div>
 
   <div class="section-title">Weekly Change Summary</div>
@@ -690,7 +685,7 @@ function renderCorrelationMatrix(){
   // Column labels
   instKeys.forEach(k=>{
     const el=document.createElement('div');
-    el.style.cssText='width:38px;font-size:7px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;flex-shrink:0';
+    el.style.cssText='width:44px;font-size:7px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;flex-shrink:0';
     el.textContent=(INSTRUMENT_LABELS[k]||k).split(' ').slice(-1)[0];
     colLabels.appendChild(el);
   });
