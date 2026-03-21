@@ -965,20 +965,52 @@
       accent-color: var(--accent)
     }
 
-    /* === Tooltip === */
-    #tooltip {
+    #global-tooltip {
       position: fixed;
+      background: rgba(22, 27, 34, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      max-width: 280px;
       pointer-events: none;
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: var(--r);
-      padding: 8px 10px;
-      font-size: 10px;
-      line-height: 1.9;
+      z-index: 99999;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 150ms ease, transform 150ms ease;
+    }
+
+    #global-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    [data-tooltip] {
+      cursor: default;
+    }
+
+    #chart-tooltip {
+      position: fixed;
+      background: rgba(22, 27, 34, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      min-width: 220px;
+      max-width: 300px;
+      pointer-events: none;
       z-index: 9999;
-      max-width: 200px;
-      box-shadow: var(--shadow);
-      display: none
+      display: none;
     }
 
     /* === Loading / Error === */
@@ -1050,7 +1082,6 @@
     <p style="color:var(--text2);font-size:12px">Loading CFTC data&hellip;</p>
   </div>
   <div id="error-banner"></div>
-  <div id="tooltip"></div>
   <div id="stale-banner"></div>
 
   <header>
@@ -1181,19 +1212,19 @@
             <thead>
               <tr>
                 <th onclick="sortTable(0)" id="th0">Instrument</th>
-                <th onclick="sortTable(1)" id="th1">MM Net</th>
+                <th onclick="sortTable(1)" id="th1" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</th>
                 <th onclick="sortTable(2)" id="th2">MM &Delta;</th>
-                <th onclick="sortTable(3)" id="th3">MM Z</th>
-                <th onclick="sortTable(4)" id="th4">COT 3yr</th>
+                <th onclick="sortTable(3)" id="th3" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">MM Z</th>
+                <th onclick="sortTable(4)" id="th4" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</th>
                 <th onclick="sortTable(5)" id="th5">Score</th>
-                <th onclick="sortTable(6)" id="th6">Momentum</th>
-                <th onclick="sortTable(7)" id="th7">Swap Net</th>
+                <th onclick="sortTable(6)" id="th6" data-tooltip="${METRIC_TOOLTIPS['Momentum']}">Momentum</th>
+                <th onclick="sortTable(7)" id="th7" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap Net</th>
                 <th onclick="sortTable(8)" id="th8">Swap &Delta;</th>
-                <th onclick="sortTable(9)" id="th9">Other Net</th>
-                <th onclick="sortTable(10)" id="th10">Retail Net</th>
+                <th onclick="sortTable(9)" id="th9" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other Net</th>
+                <th onclick="sortTable(10)" id="th10" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail Net</th>
                 <th onclick="sortTable(11)" id="th11">Price</th>
                 <th onclick="sortTable(12)" id="th12">Price &Delta;%</th>
-                <th onclick="sortTable(13)" id="th13">OI Regime</th>
+                <th onclick="sortTable(13)" id="th13" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</th>
               </tr>
             </thead>
             <tbody id="weekly-tbody"></tbody>
@@ -1296,22 +1327,74 @@
     };
     Chart.register(crosshairPlugin);
 
+    (function initGlobalTooltip() {
+      const tt = document.createElement('div');
+      tt.id = 'global-tooltip';
+      document.body.appendChild(tt);
+
+      let hideTimer = null;
+
+      function positionTooltip(trigger) {
+        const ttRect = tt.getBoundingClientRect();
+        const rect = trigger.getBoundingClientRect();
+
+        // Center above trigger
+        let left = rect.left + rect.width / 2 - ttRect.width / 2;
+        let top = rect.top - ttRect.height - 8;
+
+        // Flip below if too close to top
+        if (top < 8) top = rect.bottom + 8;
+
+        // Horizontal guardrails
+        left = Math.max(8, Math.min(left, window.innerWidth - ttRect.width - 8));
+
+        tt.style.left = left + 'px';
+        tt.style.top = top + 'px';
+      }
+
+      function show(trigger) {
+        clearTimeout(hideTimer);
+        const content = trigger.dataset.tooltip;
+        if (!content) return;
+        tt.innerHTML = content;
+        tt.classList.add('visible');
+        positionTooltip(trigger);
+      }
+
+      function hide() {
+        hideTimer = setTimeout(() => tt.classList.remove('visible'), 80);
+      }
+
+      // Desktop
+      document.addEventListener('mouseover', e => {
+        const t = e.target.closest('[data-tooltip]');
+        if (t) show(t);
+      });
+      document.addEventListener('mouseout', e => {
+        if (e.target.closest('[data-tooltip]')) hide();
+      });
+
+      // Mobile touch
+      document.addEventListener('touchstart', e => {
+        const t = e.target.closest('[data-tooltip]');
+        if (!t) {
+          tt.classList.remove('visible');
+          return;
+        }
+        // e.preventDefault(); // Removed to allow scrolling if needed, but the request asked for it. 
+        // Actually, request says: e.preventDefault();
+        // But if I prevent default on touchstart, links and buttons won't work.
+        // Let's stick to the request but be careful.
+        e.preventDefault();
+        show(t);
+        setTimeout(() => tt.classList.remove('visible'), 16000);
+      }, {
+        passive: false
+      });
+    })();
+
     const tooltipEl = document.createElement('div');
     tooltipEl.id = 'chart-tooltip';
-    tooltipEl.style.cssText = `
-    position: fixed;
-    background: #1a1f2e;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 12px 16px;
-    pointer-events: none;
-    z-index: 9999;
-    font-size: 12px;
-    color: #e2e8f0;
-    min-width: 220px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    display: none;
-`;
     document.body.appendChild(tooltipEl);
 
     function getTooltipData(instrumentKey, traderKey, idx) {
@@ -1335,17 +1418,49 @@
       };
     }
 
+    const METRIC_TOOLTIPS = {
+      'MM Net': 'Managed Money net position (longs minus shorts). Positive = speculative funds are net long.',
+      'Z-Score': 'Standard deviations from the expanding historical mean. Above +1.5 = extended long, below -1.5 = extended short.',
+      'COT 3yr': 'COT Index over a 3-year lookback. 0 = minimum positioning of last 3 years, 100 = maximum. Above 80 = historically extended.',
+      'Swap Net': 'Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.',
+      'Prod Net': 'Producer/Merchant net. Producers hedge by going short — an extremely negative Prod net signals heavy hedging, often at price highs.',
+      'Other Net': 'Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.',
+      'Retail Net': 'Non-Reportable (small speculator) net. Classically a contrarian indicator — extreme retail longs often precede price declines.',
+      'OI Regime': 'Open Interest trend regime. Accumulation = OI rising + price rising (strong trend). Distribution = OI rising + price falling (caution). Short Covering / Long Liquidation = OI falling.',
+      'Momentum': 'Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.',
+    };
+
+    const REGIME_TOOLTIPS = {
+      'Accumulation': 'Open interest growing while price rises — large traders building new longs. Historically bullish continuation signal.',
+      'Distribution': 'Open interest growing while price falls — large traders building new shorts. Historically bearish continuation signal.',
+      'Short Covering': 'Open interest falling while price rises — shorts being closed, not new longs being built. Rally may lack conviction.',
+      'Long Liquidation': 'Open interest falling while price falls — longs being closed. Decline may lack conviction if shorts not building.',
+      'Neutral': 'No clear OI trend vs price direction this week.',
+    };
+
+    const SIGNAL_TOOLTIPS = {
+      'STRONG BEARISH SETUP': 'Composite score -3: z-score ≤ -2.0, COT index ≤ 20%, and at least one additional bearish factor confirmed.',
+      'BEARISH POSITIONING': 'Composite score -2: z-score ≤ -1.5 and COT index ≤ 20%.',
+      'MILD BEARISH BIAS': 'Composite score -1: one bearish factor present but not yet extreme.',
+      'NEUTRAL': 'No significant positioning signal this week.',
+      'MILD BULLISH BIAS': 'Composite score +1: one bullish factor present but not yet extreme.',
+      'BULLISH POSITIONING': 'Composite score +2: z-score ≥ +1.5 and COT index ≥ 80%.',
+      'STRONG BULLISH SETUP': 'Composite score +3: z-score ≥ +2.0, COT index ≥ 80%, and at least one additional bearish factor confirmed.', // The user provided "STRONG BULLISH SETUP" twice in signals, I'll use the unique ones.
+      'HIGH ACTIVITY': 'Momentum score > 80 — unusually large repositioning this week. Pay attention.',
+    };
+
+    const fmtCharTooltip = (v, dec = 0, pre = '', suf = '') => {
+      if (v === null || v === undefined || isNaN(Number(v))) return '—';
+      return pre + Number(v).toLocaleString('en-US', {
+        minimumFractionDigits: dec,
+        maximumFractionDigits: dec
+      }) + suf;
+    };
+
     function buildTooltipHTML(type, instKey, trader, idx) {
       const instLabel = INSTRUMENT_LABELS[instKey] ?? instKey ?? 'Unknown';
       const d = getTooltipData(instKey, trader, idx);
       if (!d) return `<div class="tt-header">${instLabel}</div><div class="tt-row">No data available</div>`;
-
-      // Updated fmt to handle date strings and NaN without casting to Number
-      const fmt = (v, dec = 0, pre = '', suf = '') => {
-        if (v === null || v === undefined || isNaN(v) && typeof v !== 'string') return '—';
-        if (typeof v === 'string') return v;
-        return `${pre}${Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })}${suf}`;
-      };
 
       if (type === 'multi_trader') {
         const inst = CFTC_DATA.instruments[instKey];
@@ -1353,7 +1468,7 @@
         const lines = traders.map(tk => {
           const net = inst?.[tk]?.net?.[idx];
           const pct = inst?.[tk]?.pct_of_oi?.[idx];
-          return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmt(net)} (${fmt(pct, 1, '', '%')})</span></div>` : '';
+          return net !== null ? `<div class="tt-row" style="color:${TRADER_COLOURS[tk]}"><span>${TRADER_LABELS[tk]}</span><span>${fmtCharTooltip(net)} (${fmtCharTooltip(pct, 1, '', '%')})</span></div>` : '';
         }).join('');
         return `
             <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
@@ -1361,7 +1476,7 @@
             <div class="tt-divider"></div>
             ${lines}
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Price</span><span>${fmt(d.price, 2, '$')}</span></div>
+            <div class="tt-row"><span>Price</span><span>${fmtCharTooltip(d.price, 2, '$')}</span></div>
             <div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>
        `;
       }
@@ -1371,40 +1486,39 @@
             <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
             <div class="tt-header">${instLabel}</div>
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div>
-            <div class="tt-row"><span>Long</span><span>${fmt(d.long)}</span></div>
-            <div class="tt-row"><span>Short</span><span>${fmt(d.short)}</span></div>
+            <div class="tt-row"><span>Net Position</span><span>${fmtCharTooltip(d.net)}</span></div>
+            <div class="tt-row"><span>Long</span><span>${fmtCharTooltip(d.long)}</span></div>
+            <div class="tt-row"><span>Short</span><span>${fmtCharTooltip(d.short)}</span></div>
             <div class="tt-divider"></div>
             <div class="tt-row"><span>Z-Score</span><span>${fmtZ(d.z_score)} (${fmtPct(d.pct_rank)})</span></div>
-            <div class="tt-row"><span>COT Index</span><span>${fmt(d.cot_3yr, 0, '', '%')}</span></div>
+            <div class="tt-row"><span>COT Index</span><span>${fmtCharTooltip(d.cot_3yr, 0, '', '%')}</span></div>
             <div class="tt-divider"></div>
-            <div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>
+            <div class="tt-row"><span>Price</span><span>$${fmtCharTooltip(d.price, 2)}</span></div>
             <div class="tt-row"><span>OI Regime</span><span>${d.oi_regime}</span></div>
         `;
       }
 
-      if (type === 'rolling_corr') return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div><div class="tt-header">${instLabel}</div><div class="tt-row"><span>20w Corr</span><span>${fmt(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
-      if (type === 'seasonal') return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div><div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Pos</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>5Y Avg</span><span>${fmt(d.long)}</span></div>`;
+      const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>`;
+      if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>20w Corr</span><span>${fmtCharTooltip(d.net, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
+      if (type === 'seasonal') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Pos</span><span>${fmtCharTooltip(d.net)}</span></div><div class="tt-row"><span>5Y Avg</span><span>${fmtCharTooltip(d.long)}</span></div>`;
 
-      return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div><div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmt(d.net)}</span></div>`;
+      return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmtCharTooltip(d.net)}</span></div>`;
     }
 
     function externalTooltipHandler(context) {
       const { chart, tooltip } = context;
       if (tooltip.opacity === 0) { tooltipEl.style.display = 'none'; return; }
       const idx = tooltip.dataPoints?.[0]?.dataIndex; if (idx === undefined) return;
-      const type = chart.userData?.type || 'net_pos_vs_price';
-      const inst = chart.userData?.instrumentKey || activeInstrument;
-      const trader = chart.userData?.traderKey || activeTrader;
+      const ut = chart.userData || {};
 
-      tooltipEl.innerHTML = buildTooltipHTML(type, inst, trader, idx);
+      tooltipEl.innerHTML = buildTooltipHTML(ut.type, ut.instrumentKey, ut.traderKey, idx);
       tooltipEl.style.display = 'block';
       const canvasRect = chart.canvas.getBoundingClientRect();
-      const x = canvasRect.left + tooltip.caretX;
-      const y = canvasRect.top + tooltip.caretY;
-      const left = x + 240 > window.innerWidth - 20 ? x - 240 - 10 : x + 15;
+      const x = canvasRect.left + tooltip.caretX + 24;
+      const y = canvasRect.top + tooltip.caretY - 40;
+      let left = x; if (left + 260 > window.innerWidth) left = x - 280;
       tooltipEl.style.left = left + 'px';
-      tooltipEl.style.top = Math.max(10, y - 60) + 'px';
+      tooltipEl.style.top = Math.max(8, y) + 'px';
     }
 
     function resetChartZoom(id) {
@@ -1607,7 +1721,7 @@
         'Accumulation': 'badge-accumulation', 'Distribution': 'badge-distribution',
         'Long Liquidation': 'badge-long-liquidation', 'Short Covering': 'badge-short-covering', 'Neutral': 'badge-neutral'
       };
-      return `<span class="badge ${cls[regime] || 'badge-neutral'}">${regime}</span>`;
+      return `<span class="badge ${cls[regime] || 'badge-neutral'}" data-tooltip="${REGIME_TOOLTIPS[regime] ?? ''}">${regime}</span>`;
     }
 
     // ── Colour helpers ────────────────────────────────────────────
@@ -1624,11 +1738,7 @@
       else { const t = -v; return `hsl(0,${Math.round(50 * t + 10)}%,${Math.round(16 + t * 24)}%)`; }
     }
 
-    // ── Tooltip ───────────────────────────────────────────────────
-    function showTip(e, html) { const t = document.getElementById('tooltip'); t.innerHTML = html; t.style.display = 'block'; posTip(e); }
-    function posTip(e) { const t = document.getElementById('tooltip'); let x = e.clientX + 12, y = e.clientY - 8; if (x + 220 > window.innerWidth) x = e.clientX - 224; if (y + 130 > window.innerHeight) y = e.clientY - 130; t.style.left = x + 'px'; t.style.top = y + 'px'; }
-    function hideTip() { document.getElementById('tooltip').style.display = 'none'; }
-    document.addEventListener('mousemove', e => { if (document.getElementById('tooltip').style.display === 'block') posTip(e); });
+    // ── Global Tooltips removed in favor of data-tooltip system ──
 
     // ── Heatmap controls ──────────────────────────────────────────
     function setHmTrader(t) {
@@ -1769,25 +1879,25 @@
           card.innerHTML = `
         <div class="card-title">
           <span>${inst.label}</span>
-          ${isHighActivity ? '<span class="high-activity">HIGH ACTIVITY</span>' : ''}
+          ${isHighActivity ? `<span class="high-activity" data-tooltip="${SIGNAL_TOOLTIPS['HIGH ACTIVITY']}">HIGH ACTIVITY</span>` : ''}
           <span class="score-pill" style="background:${sigCol}20;color:${sigCol}">${score >= 0 ? '+' : ''}${score}</span>
         </div>
-        <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(mmDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(mmDelta || 0))}</span></span></div>
-        <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
-        <div class="card-row"><span class="card-key">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct != null ? cotPct + '%' : '&mdash;'}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(mmDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(mmDelta || 0))}</span></span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct != null ? cotPct + '%' : '&mdash;'}</span></div>
         <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct ?? 0}%;background:${cotC}80"></div></div>
-        <div class="card-row" style="margin-top:4px"><span class="card-key">Swap</span><span class="card-val">${fmt(swNet)}</span></div>
-        <div class="card-row"><span class="card-key">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
-        <div class="card-row"><span class="card-key">Other</span><span class="card-val">${fmt(orNet)}</span></div>
-        <div class="card-row"><span class="card-key">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
+        <div class="card-row" style="margin-top:4px"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap</span><span class="card-val">${fmt(swNet)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
         <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
         <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
-        <div class="card-row"><span class="card-key">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
         <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
           <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
           Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
         </div>
-        <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
+        <span class="card-signal" style="background:${sigCol}18;color:${sigCol}" data-tooltip="${SIGNAL_TOOLTIPS[sigLabel] ?? ''}">${sigLabel}</span>`;
           cardWrap.appendChild(card);
         });
       });
@@ -1825,11 +1935,14 @@
           const di = allDates.length - i;
           const z = di >= 0 ? allZ[di] : null;
           const dateStr = di >= 0 ? allDates[di] : '—';
-          const cell = document.createElement('div'); cell.className = 'hm-cell';
+          const cell = document.createElement('div');
+          cell.className = 'hm-cell';
           cell.style.background = zColour(z);
-          cell.onmouseenter = e => showTip(e, `<b>${inst.label}</b><br>${dateStr}<br>Trader: ${TRADER_LABELS[hmTrader] || hmTrader}<br>Z-Score: ${z != null ? (+z).toFixed(2) : 'n/a'}`);
-          cell.onmouseleave = hideTip;
-          cell.onclick = () => { switchTab('instrument'); setActiveInst(key); };
+          cell.setAttribute('data-tooltip', `<strong>${inst.label}</strong><br>${dateStr}<br>Trader: ${TRADER_LABELS[hmTrader] || hmTrader}<br>Z-Score: ${z != null ? (+z).toFixed(2) : '—'}`);
+          cell.onclick = () => {
+            switchTab('instrument');
+            setActiveInst(key);
+          };
           row.appendChild(cell);
         }
         body.appendChild(row);
@@ -1873,11 +1986,11 @@
         lbl.textContent = INSTRUMENT_LABELS[k1] || k1; row.appendChild(lbl);
         instKeys.forEach((k2) => {
           const val = k1 === k2 ? 1.0 : pearson(seriesMap[k1] || [], seriesMap[k2] || []);
-          const cell = document.createElement('div'); cell.className = 'corr-cell';
+          const cell = document.createElement('div');
+          cell.className = 'corr-cell';
           cell.style.background = corrColour(val);
           cell.textContent = val != null ? val.toFixed(2) : '';
-          cell.onmouseenter = e => showTip(e, `<b>${INSTRUMENT_LABELS[k1]}</b> vs <b>${INSTRUMENT_LABELS[k2]}</b><br>Corr (${corrPeriod}w): ${val != null ? val.toFixed(3) : 'n/a'}`);
-          cell.onmouseleave = hideTip;
+          cell.setAttribute('data-tooltip', `<strong>${INSTRUMENT_LABELS[k1]} × ${INSTRUMENT_LABELS[k2]}</strong><br>52w MM Net Correlation: ${val != null ? val.toFixed(2) : '—'}<br>${val != null ? (Math.abs(val) > 0.7 ? '⚠ Strong relationship' : Math.abs(val) > 0.4 ? 'Moderate relationship' : 'Weak / no relationship') : ''}`);
           row.appendChild(cell);
         });
         matBody.appendChild(row);
