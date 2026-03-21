@@ -22,6 +22,17 @@ import numpy as np
 import pandas as pd
 import requests
 
+# ─── GitHub Actions helpers ────────────────────────────────────────────────────
+
+def _set_gha_output(name: str, value: str):
+    """Write a step output for GitHub Actions (GITHUB_OUTPUT env file)."""
+    gha_output = os.environ.get("GITHUB_OUTPUT")
+    if gha_output:
+        with open(gha_output, "a") as f:
+            f.write(f"{name}={value}\n")
+    else:
+        print(f"[GHA] {name}={value}")  # local dev fallback
+
 # ─── Configuration ─────────────────────────────────────────────────────────────
 
 CFTC_URL = (
@@ -523,6 +534,26 @@ def main():
     warnings_list = []
 
     cftc_df = fetch_cftc()
+
+    # ── Staleness check: skip processing if CFTC hasn't published new data ──
+    incoming_latest = str(cftc_df["report_date_as_yyyy_mm_dd"].max())
+    existing_latest = None
+    if os.path.exists(OUTPUT_PATH):
+        try:
+            with open(OUTPUT_PATH, "r") as f:
+                existing = json.load(f)
+            existing_latest = existing.get("meta", {}).get("latest_report_date")
+        except Exception:
+            pass
+    print(f"  Existing latest date : {existing_latest or 'none'}")
+    print(f"  Incoming latest date : {incoming_latest}")
+    if existing_latest and incoming_latest <= existing_latest:
+        print("\n[Skip] CFTC has not published new data yet. No update needed.")
+        _set_gha_output("new_data", "false")
+        return
+    print("  New data detected — proceeding with full pipeline.\n")
+    _set_gha_output("new_data", "true")
+
     price_s = fetch_prices()
 
     # Build price alignment map
