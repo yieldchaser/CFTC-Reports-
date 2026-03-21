@@ -2568,7 +2568,7 @@
         options: {
           ...CHART_BASE,
           plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 8 }, boxWidth: 8, filter: item => !['80', '20'].includes(item.text) } } },
-          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: 0, max: 100, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v + '%' } } }
+          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -2, max: 102, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => (v >= 0 && v <= 100 && v % 20 === 0) ? v + '%' : '' } } }
         }
       });
       chart.userData = { type: 'cot_index', instrumentKey: activeInstrument, traderKey: traderKey };
