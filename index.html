@@ -85,7 +85,7 @@ select:focus{border-color:var(--accent)}
 .wow-up{color:var(--green);font-size:9px}
 .wow-dn{color:var(--red);font-size:9px}
 
-/* === Heatmap (Bug 1 Fix: CSS grid, all 9 rows) === */
+/* === Heatmap (CSS grid) === */
 .heatmap-outer{overflow-x:auto;width:100%}
 .heatmap-header-row{display:grid;gap:2px;margin-bottom:2px}
 .heatmap-body{display:flex;flex-direction:column;gap:2px}
@@ -100,12 +100,13 @@ select:focus{border-color:var(--accent)}
 .hm-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* === Correlation Matrix === */
-.corr-matrix-wrap{overflow-x:auto; width:100%}
+.corr-matrix-wrap{overflow-x:auto;width:100%}
 .corr-row{display:flex;gap:2px;align-items:center}
-.corr-row-label{font-size:8px;color:var(--text2);font-family:var(--mono);width:100px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.corr-cell{width:44px;height:32px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:rgba(255,255,255,.8);transition:transform .1s;flex-shrink:0}
-.corr-cell:hover{transform:scale(1.1);z-index:10;position:relative}
+.corr-row-label{font-size:9px;color:var(--text2);font-family:var(--mono);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.corr-cell{width:56px;height:36px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:rgba(255,255,255,.85);transition:transform .1s;flex-shrink:0}
+.corr-cell:hover{transform:scale(1.08);z-index:10;position:relative}
 .corr-period-bar{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.corr-col-header{width:56px;font-size:8px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg);height:72px;padding-bottom:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* === Table === */
 .table-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
@@ -156,7 +157,7 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
 .toggle-btn{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .2s}
 .toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* === Percentile bars (Bug 4 fix) === */
+/* === Percentile bars === */
 .pct-bars{display:flex;flex-direction:column;gap:10px;padding:8px 2px}
 .pct-bar-block{margin-bottom:2px}
 .pct-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
@@ -240,8 +241,15 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
 
 <!-- OVERVIEW TAB -->
 <div id="panel-overview" class="tab-panel active">
+
+  <!-- Top Signals Banner (Improvement 2) -->
+  <div id="top-signals-banner" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;margin-bottom:2px">
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">&#9889; Top Signals This Week</div>
+    <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+  </div>
+
   <div class="section-title">Current Week Signal Dashboard</div>
-  <div id="signal-cards-container" class="cards-grid"></div>
+  <div id="signal-cards-container"></div>
 
   <div class="section-title">Positioning Heatmap &mdash; Z-Score (Last N Weeks)</div>
   <div class="chart-panel" style="padding:10px">
@@ -252,6 +260,7 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
         <button class="hm-btn"        id="hmbt-swap_dealers"           onclick="setHmTrader('swap_dealers')">Swap</button>
         <button class="hm-btn"        id="hmbt-producers"              onclick="setHmTrader('producers')">Prod</button>
         <button class="hm-btn"        id="hmbt-other_reportables"      onclick="setHmTrader('other_reportables')">Other</button>
+        <button class="hm-btn"        id="hmbt-non_reportables"        onclick="setHmTrader('non_reportables')">Retail</button>
       </div>
       <div class="hm-range-bar">
         <span style="font-size:10px;color:var(--text3)">Weeks:</span>
@@ -277,22 +286,22 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
       <button class="hm-btn" id="crrb-156" onclick="setCorrPeriod(156)">3yr</button>
     </div>
     <div class="corr-matrix-wrap">
-      <div id="corr-col-labels" style="display:flex;gap:2px;margin-left:92px;margin-bottom:2px;flex-wrap:nowrap"></div>
+      <div id="corr-col-labels" style="display:flex;gap:2px;margin-bottom:2px;flex-wrap:nowrap"></div>
       <div id="corr-matrix-body"></div>
     </div>
   </div>
 
-  <div class="section-title">Market Concentration &mdash; Nat Gas NYME</div>
-  <div class="chart-panel" style="margin-bottom: 12px;">
-    <div class="chart-header">
-      <div><div class="chart-title">Top-4 Trader Concentration</div><div class="chart-sub">% of Open Interest held by top 4 longs and shorts</div></div>
+  <div class="section-title">Open Interest Leaderboard</div>
+  <div class="chart-panel" style="padding:12px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--text2);font-weight:500">All Instruments &middot; Ranked by Open Interest</div>
+      <div style="display:flex;gap:6px">
+        <button class="hm-btn active" id="oibt-thisweek" onclick="setOIMode('thisweek')">This Week</button>
+        <button class="hm-btn" id="oibt-4wchg" onclick="setOIMode('4wchg')">4w Change %</button>
+        <button class="hm-btn" id="oibt-52hi" onclick="setOIMode('52hi')">52w High %</button>
+      </div>
     </div>
-    <div class="chart-legend">
-      <div class="leg-item"><div class="leg-line" style="background:#4f8ef7"></div>Top-4 Long</div>
-      <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Top-4 Short</div>
-    </div>
-    <div class="chart-container h240"><canvas id="cv-concentration"></canvas></div>
-    <div id="concentration-fallback" style="display:none" class="no-data">Concentration data unavailable for this instrument</div>
+    <div id="oi-leaderboard-body"></div>
   </div>
 
   <div class="section-title">Weekly Change Summary</div>
@@ -323,6 +332,10 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
 
 <!-- BY INSTRUMENT TAB -->
 <div id="panel-instrument" class="tab-panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <span style="font-size:15px;color:var(--text3)">&#128269;</span>
+    <input id="pill-search" type="text" placeholder="Filter instruments..." oninput="filterPills(this.value)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:5px 10px;color:var(--text);font-size:11px;font-family:var(--font);outline:none;width:220px;transition:border-color .2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+  </div>
   <div id="instrument-pills" class="pill-wrap"></div>
   <div id="inst-charts-area" class="inst-grid"></div>
 </div>
@@ -537,7 +550,7 @@ function setCorrPeriod(p){
   renderCorrelationMatrix();
 }
 
-// ── Tab switching (Bug 4: hide trader dropdown on non-instrument tabs) ──
+// ── Tab switching ──
 function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -552,7 +565,7 @@ function switchTab(name){
 function redrawAll(){
   const active=document.querySelector('.tab-panel.active');
   if(!active) return;
-  if(active.id==='panel-overview'){renderSignalCards();renderHeatmap();renderCorrelationMatrix();renderConcentrationChart();renderWeeklyTable();}
+  if(active.id==='panel-overview'){renderSignalCards();renderHeatmap();renderCorrelationMatrix();renderOILeaderboard();renderWeeklyTable();}
   if(active.id==='panel-instrument') renderByInstrument();
   if(active.id==='panel-three') renderThreeTraderGrid();
 }
@@ -562,63 +575,124 @@ function redrawAll(){
 
 // === BEGIN CHUNK 4: Overview tab renderers ===
 
-// ── Signal Cards ──────────────────────────────────────────────
+// ── Instrument Groups (Improvement 1) ────────────────────────
+const INST_GROUPS = [
+  {id:'g-nyme',  label:'NYME Futures',    keys:['nat_gas_nyme','nat_gas_ld1','nat_gas_ice_pen']},
+  {id:'g-hh',    label:'Henry Hub Variants', keys:['henry_hub_nyme','hh_last_day','hh_penult_fin','hh_penult_nat_gas','hh_index_ice','hh_basis_ice']},
+  {id:'g-tail',  label:'Tailgate & Legacy', keys:['hh_tailgate_basis','hh_tailgate_index','nat_gas_legacy']},
+  {id:'g-ice',   label:'ICE Fixed/Penult', keys:['nat_gas_ld1_fixed','nat_gas_pen_ice']},
+  {id:'g-reg',   label:'Regional Basis',  keys:['nat_gas_midcon','nat_gas_texok','nat_gas_ventura','nat_gas_ld1_texok','hh_penult_nasdaq']},
+];
+
 function renderSignalCards(){
   const g=document.getElementById('signal-cards-container'); g.innerHTML='';
-  const instKeys=Object.keys(CFTC_DATA.instruments);
-  for(const key of instKeys){
-    const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
-    const mm=inst.managed_money||{}, sw=inst.swap_dealers||{};
-    const pr=inst.producers||{}, or_=inst.other_reportables||{}, nr=inst.non_reportables||{};
+
+  // Top Signals Banner first
+  const signals=[];
+  Object.keys(CFTC_DATA.instruments).forEach(key=>{
+    const inst=CFTC_DATA.instruments[key]; if(!inst) return;
     const scores=inst.composite_scores||[];
     const score=scores.length?scores[scores.length-1]:0;
-    const mmNet=last(mm.net), mmZ=last(mm.z_score), mmPct=last(mm.pct_rank);
-    const mmCot=last(mm.cot_index?.w156);
-    const mmMom=last(mm.momentum_score);
-    const swNet=last(sw.net), prNet=last(pr.net);
-    const orNet=last(or_.net), nrNet=last(nr.net);
-    const price=last(inst.price), priceWow=wowPct(inst.price);
-    const mmDelta=last(mm.change_net)??wow(mm.net);
-    const cotPct=mmCot!=null?Math.round(+mmCot):null;
-    const regime=last(inst.oi_regime)||'Neutral';
-    const cotC=cotPct==null?'#5c6b8a':cotPct>=80?'#22c55e':cotPct<=20?'#ef4444':'#f59e0b';
-    const sigLabel=getSignalLabel(score);
-    const sigCol=getSignalColour(score);
-    const isHighActivity=mmMom!=null&&mmMom>80;
-
-    const card=document.createElement('div');
-    card.className=`signal-card ${scoreClass(score)}`;
-    card.onclick=()=>{switchTab('instrument');setActiveInst(key);};
-    card.innerHTML=`
-      <div class="card-title">
-        <span>${inst.label}</span>
-        ${isHighActivity?'<span class="high-activity">HIGH ACTIVITY</span>':''}
-        <span class="score-pill" style="background:${sigCol}20;color:${sigCol}">${score>=0?'+':''}${score}</span>
-      </div>
-      <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta||0)>=0?'wow-up':'wow-dn'}">${(mmDelta||0)>=0?'&#9650;':'&#9660;'}${fmt(Math.abs(mmDelta||0))}</span></span></div>
-      <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
-      <div class="card-row"><span class="card-key">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct!=null?cotPct+'%':'&mdash;'}</span></div>
-      <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct??0}%;background:${cotC}80"></div></div>
-      <div class="card-row" style="margin-top:4px"><span class="card-key">Swap</span><span class="card-val">${fmt(swNet)}</span></div>
-      <div class="card-row"><span class="card-key">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
-      <div class="card-row"><span class="card-key">Other</span><span class="card-val">${fmt(orNet)}</span></div>
-      <div class="card-row"><span class="card-key">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
-      <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)}&nbsp;<span class="${(priceWow||0)>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
-      <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'&mdash;'}</span></div>
-      <div class="card-row"><span class="card-key">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
-      <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
-    g.appendChild(card);
+    if(score!==0) signals.push({key,label:inst.label,score});
+  });
+  signals.sort((a,b)=>Math.abs(b.score)-Math.abs(a.score));
+  const banner=document.getElementById('top-signals-list');
+  if(banner){
+    if(!signals.length){
+      banner.innerHTML='<span style="color:var(--text3);font-size:11px">No significant signals this week</span>';
+    } else {
+      banner.innerHTML=signals.map(s=>{
+        const c=getSignalColour(s.score);
+        return `<div onclick="switchTab('instrument');setActiveInst('${s.key}')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 10px;background:${c}15;border:1px solid ${c}40;border-radius:6px">
+          <span style="font-size:9px;font-weight:700;color:${c}">${s.score>=0?'+':''}${s.score}</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text)">${s.label}</span>
+          <span style="font-size:8px;color:${c}">${getSignalLabel(s.score)}</span>
+        </div>`;
+      }).join('');
+    }
   }
+
+  // Render grouped cards
+  const instMap=CFTC_DATA.instruments;
+  INST_GROUPS.forEach(grp=>{
+    const keys=grp.keys.filter(k=>instMap[k]);
+    if(!keys.length) return;
+    // Max abs score in group
+    const scores=keys.map(k=>{const sc=(instMap[k].composite_scores||[]);return sc.length?sc[sc.length-1]:0;});
+    const maxAbs=scores.reduce((m,s)=>Math.abs(s)>Math.abs(m)?s:m,0);
+    const maxC=getSignalColour(maxAbs);
+    const collapsed=localStorage.getItem('grp-'+grp.id)==='1';
+    // Group header
+    const hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px;margin-top:4px;user-select:none';
+    hdr.innerHTML=`
+      <span style="font-size:11px;font-weight:700;color:var(--text2)">${grp.label} <span style="color:var(--text3);font-weight:400">(${keys.length})</span></span>
+      ${maxAbs!==0?`<span style="font-size:9px;font-weight:700;color:${maxC};background:${maxC}18;padding:1px 6px;border-radius:3px">Peak ${maxAbs>=0?'+':''}${maxAbs}</span>`:''}
+      <span id="arrow-${grp.id}" style="margin-left:auto;color:var(--text3);font-size:12px">${collapsed?'&#9654;':'&#9660;'}</span>`;
+    const cardWrap=document.createElement('div');
+    cardWrap.id='cards-'+grp.id;
+    cardWrap.className='cards-grid';
+    cardWrap.style.marginBottom='10px';
+    if(collapsed) cardWrap.style.display='none';
+    hdr.onclick=()=>{
+      const isCollapsed=cardWrap.style.display==='none';
+      cardWrap.style.display=isCollapsed?'':'none';
+      document.getElementById('arrow-'+grp.id).innerHTML=isCollapsed?'&#9660;':'&#9654;';
+      localStorage.setItem('grp-'+grp.id,isCollapsed?'0':'1');
+    };
+    g.appendChild(hdr);
+    g.appendChild(cardWrap);
+
+    keys.forEach(key=>{
+      const inst=instMap[key]; if(!inst) return;
+      const mm=inst.managed_money||{}, sw=inst.swap_dealers||{};
+      const pr=inst.producers||{}, or_=inst.other_reportables||{}, nr=inst.non_reportables||{};
+      const sc=(inst.composite_scores||[]);
+      const score=sc.length?sc[sc.length-1]:0;
+      const mmNet=last(mm.net), mmZ=last(mm.z_score), mmPct=last(mm.pct_rank);
+      const mmCot=last(mm.cot_index?.w156), mmMom=last(mm.momentum_score);
+      const swNet=last(sw.net), prNet=last(pr.net);
+      const orNet=last(or_.net), nrNet=last(nr.net);
+      const price=last(inst.price), priceWow=wowPct(inst.price);
+      const mmDelta=last(mm.change_net)??wow(mm.net);
+      const cotPct=mmCot!=null?Math.round(+mmCot):null;
+      const regime=last(inst.oi_regime)||'Neutral';
+      const cotC=cotPct==null?'#5c6b8a':cotPct>=80?'#22c55e':cotPct<=20?'#ef4444':'#f59e0b';
+      const sigLabel=getSignalLabel(score), sigCol=getSignalColour(score);
+      const isHighActivity=mmMom!=null&&mmMom>80;
+      const card=document.createElement('div');
+      card.className=`signal-card ${scoreClass(score)}`;
+      card.onclick=()=>{switchTab('instrument');setActiveInst(key);};
+      card.innerHTML=`
+        <div class="card-title">
+          <span>${inst.label}</span>
+          ${isHighActivity?'<span class="high-activity">HIGH ACTIVITY</span>':''}
+          <span class="score-pill" style="background:${sigCol}20;color:${sigCol}">${score>=0?'+':''}${score}</span>
+        </div>
+        <div class="card-row"><span class="card-key">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta||0)>=0?'wow-up':'wow-dn'}">${(mmDelta||0)>=0?'&#9650;':'&#9660;'}${fmt(Math.abs(mmDelta||0))}</span></span></div>
+        <div class="card-row"><span class="card-key">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+        <div class="card-row"><span class="card-key">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct!=null?cotPct+'%':'&mdash;'}</span></div>
+        <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct??0}%;background:${cotC}80"></div></div>
+        <div class="card-row" style="margin-top:4px"><span class="card-key">Swap</span><span class="card-val">${fmt(swNet)}</span></div>
+        <div class="card-row"><span class="card-key">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
+        <div class="card-row"><span class="card-key">Other</span><span class="card-val">${fmt(orNet)}</span></div>
+        <div class="card-row"><span class="card-key">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
+        <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)}&nbsp;<span class="${(priceWow||0)>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
+        <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'&mdash;'}</span></div>
+        <div class="card-row"><span class="card-key">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
+        <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
+      cardWrap.appendChild(card);
+    });
+  });
 }
 
-// ── Heatmap (Bug 1 fix + F8a trader toggle + F8b week range) ─
+// ── Heatmap ─────────────────────────────────────────────────
 function renderHeatmap(){
   const nWeeks=hmWeeks;
   const header=document.getElementById('heatmap-header-row');
   const body=document.getElementById('heatmap-body');
   header.innerHTML=''; body.innerHTML='';
   const instKeys=Object.keys(CFTC_DATA.instruments);
-  // Determine number of columns: use reference instrument
   const refInst=CFTC_DATA.instruments['nat_gas_nyme']||Object.values(CFTC_DATA.instruments)[0];
   const allRefDates=refInst?.dates||[];
   const refDates=nWeeks?allRefDates.slice(-nWeeks):allRefDates;
@@ -626,14 +700,12 @@ function renderHeatmap(){
   if(!NCOLS) return;
   const colTemplate=`120px repeat(${NCOLS}, 1fr)`;
   header.style.gridTemplateColumns=colTemplate;
-  // Header spacer + date labels
   const spacer=document.createElement('div'); header.appendChild(spacer);
   refDates.forEach((d,i)=>{
     const el=document.createElement('div'); el.className='heatmap-date-lbl';
     el.textContent=i%Math.max(1,Math.round(NCOLS/8))===0?d.slice(5):'';
     header.appendChild(el);
   });
-  // Body rows
   for(const key of instKeys){
     const inst=CFTC_DATA.instruments[key]; if(!inst) continue;
     const td=inst[hmTrader]||{};
@@ -657,22 +729,18 @@ function renderHeatmap(){
   }
 }
 
-// ── Correlation Matrix (F8c: JS-side recompute from time series) ─
+// ── Correlation Matrix ────────────────────────────────────────
 function renderCorrelationMatrix(){
   const instKeys=Object.keys(CFTC_DATA.instruments);
-  const n=instKeys.length;
   const colLabels=document.getElementById('corr-col-labels');
   const matBody=document.getElementById('corr-matrix-body');
   colLabels.innerHTML=''; matBody.innerHTML='';
-  // Build series map truncated to corrPeriod
   const seriesMap={};
   instKeys.forEach(k=>{
     const inst=CFTC_DATA.instruments[k]; if(!inst) return;
     const nets=(inst.managed_money||{}).net||[];
-    const sl=corrPeriod?nets.slice(-corrPeriod):nets;
-    seriesMap[k]=sl;
+    seriesMap[k]=corrPeriod?nets.slice(-corrPeriod):nets;
   });
-  // Compute pairwise correlation
   function pearson(a,b){
     const pairs=a.map((v,i)=>[v,b[i]]).filter(([x,y])=>x!=null&&y!=null&&!isNaN(x)&&!isNaN(y));
     if(pairs.length<5) return null;
@@ -682,20 +750,22 @@ function renderCorrelationMatrix(){
     pairs.forEach(([x,y])=>{num+=(x-ax)*(y-ay);dx+=(x-ax)**2;dy+=(y-ay)**2;});
     return dx&&dy?num/Math.sqrt(dx*dy):null;
   }
-  // Column labels
+  // Rotated column headers (Bug 2 fix)
+  const hdrSpacer=document.createElement('div');
+  hdrSpacer.style.cssText=`width:130px;flex-shrink:0`;
+  colLabels.appendChild(hdrSpacer);
   instKeys.forEach(k=>{
-    const el=document.createElement('div');
-    el.style.cssText='width:44px;font-size:7px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;flex-shrink:0';
-    el.textContent=(INSTRUMENT_LABELS[k]||k).split(' ').slice(-1)[0];
+    const el=document.createElement('div'); el.className='corr-col-header';
+    el.textContent=INSTRUMENT_LABELS[k]||k;
+    el.title=INSTRUMENT_LABELS[k]||k;
     colLabels.appendChild(el);
   });
-  // Matrix rows
-  instKeys.forEach((k1,ri)=>{
+  instKeys.forEach((k1)=>{
     const row=document.createElement('div'); row.className='corr-row';
     const lbl=document.createElement('div'); lbl.className='corr-row-label';
     lbl.textContent=INSTRUMENT_LABELS[k1]||k1; row.appendChild(lbl);
-    instKeys.forEach((k2,ci)=>{
-      const val=k1===k2?1.0:pearson(seriesMap[k1]||[], seriesMap[k2]||[]);
+    instKeys.forEach((k2)=>{
+      const val=k1===k2?1.0:pearson(seriesMap[k1]||[],seriesMap[k2]||[]);
       const cell=document.createElement('div'); cell.className='corr-cell';
       cell.style.background=corrColour(val);
       cell.textContent=val!=null?val.toFixed(2):'';
@@ -707,36 +777,50 @@ function renderCorrelationMatrix(){
   });
 }
 
-// ── Concentration Chart (Bug 2 fix: fallback + null check) ───
-function renderConcentrationChart(){
-  const inst=CFTC_DATA.instruments['nat_gas_nyme'];
-  const canvas=document.getElementById('cv-concentration');
-  const fallback=document.getElementById('concentration-fallback');
-  if(!inst?.concentration||!canvas){if(fallback)fallback.style.display='block';return;}
-  const conc=inst.concentration;
-  const t4l=conc.top4_long, t4s=conc.top4_short;
-  // Check if data actually has non-null values (Bug 2)
-  const hasData=(arr)=>arr&&arr.some(v=>v!=null&&!isNaN(v));
-  if(!hasData(t4l)&&!hasData(t4s)){
-    if(fallback) fallback.style.display='block';
-    canvas.style.display='none'; return;
-  }
-  const{dates,arrays}=applyDateFilter(inst.dates,t4l,t4s);
-  const[t4lF,t4sF]=arrays;
-  const ex=Chart.getChart(canvas); if(ex)ex.destroy();
-  new Chart(canvas.getContext('2d'),{
-    type:'line',
-    data:{labels:dates,datasets:[
-      {label:'Top-4 Long %',data:t4lF,borderColor:'#4f8ef7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-      {label:'Top-4 Short %',data:t4sF,borderColor:'#ef4444',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-    ]},
-    options:{...CHART_BASE,responsive:true,maintainAspectRatio:false,
-      scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:0,max:100,title:{display:true,text:'% of OI',color:'#5c6b8a',font:{size:9}}}}
-    }
+// ── OI Leaderboard (Improvement 3 / Bug 3 replacement) ────────
+let oiMode='thisweek';
+function setOIMode(m){
+  oiMode=m;
+  document.querySelectorAll('[id^=oibt-]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('oibt-'+m); if(btn)btn.classList.add('active');
+  renderOILeaderboard();
+}
+function renderOILeaderboard(){
+  const el=document.getElementById('oi-leaderboard-body'); if(!el) return;
+  el.innerHTML='';
+  const items=[];
+  Object.keys(CFTC_DATA.instruments).forEach(k=>{
+    const inst=CFTC_DATA.instruments[k]; if(!inst) return;
+    const oi=inst.open_interest||[];
+    const cur=last(oi)||0;
+    const prev4=oi.length>=5?oi[oi.length-5]:null;
+    const prev52=oi.length>=53?oi[oi.length-53]:null;
+    const chg4pct=prev4&&prev4>0?(cur-prev4)/prev4*100:null;
+    const pct52=prev52&&prev52>0?(cur/Math.max(...oi.slice(-52).filter(Boolean))*100):null;
+    let val,label,col;
+    if(oiMode==='4wchg'){val=chg4pct;label=chg4pct!=null?(chg4pct>=0?'+':'')+chg4pct.toFixed(1)+'%':'—';col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
+    else if(oiMode==='52hi'){val=pct52;label=pct52!=null?pct52.toFixed(0)+'%':'—';col=pct52==null?'#5c6b8a':pct52>=80?'#22c55e':pct52<50?'#ef4444':'#f59e0b';}
+    else{val=cur;label=fmt(cur);col=chg4pct==null?'#5c6b8a':chg4pct>=0?'#22c55e':'#ef4444';}
+    items.push({key:k,label:inst.label,val:val??-Infinity,displayVal:label,col,oi:cur});
+  });
+  items.sort((a,b)=>b.val-a.val);
+  const maxOI=Math.max(...items.map(i=>i.oi));
+  items.forEach(({key,label,displayVal,col,oi})=>{
+    const pct=maxOI>0?oi/maxOI*100:0;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer';
+    row.onclick=()=>{switchTab('instrument');setActiveInst(key);};
+    row.innerHTML=`
+      <div style="width:110px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
+      <div style="flex:1;background:var(--bg4);border-radius:2px;height:14px;position:relative;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${col}50;border-radius:2px"></div>
+      </div>
+      <div style="width:54px;font-size:9px;font-family:var(--mono);font-weight:600;color:${col};text-align:right;flex-shrink:0">${displayVal}</div>`;
+    el.appendChild(row);
   });
 }
 
-// ── Weekly Table (F5 momentum column, OI regime) ──────────────
+// ── Weekly Table ─────────────────────────────────────────────
 let tableData=[];
 function renderWeeklyTable(){
   tableData=[];
@@ -812,9 +896,24 @@ function renderInstrumentPills(){
     const btn=document.createElement('button');
     btn.className='pill'+(key===activeInstrument?' active':'');
     btn.id='pill-'+key; btn.textContent=inst.label;
+    btn.dataset.label=inst.label.toLowerCase();
     btn.onclick=()=>setActiveInst(key);
     wrap.appendChild(btn);
   });
+}
+
+// Improvement 5: pill search filter
+function filterPills(q){
+  const ql=q.toLowerCase();
+  document.querySelectorAll('#instrument-pills .pill').forEach(p=>{
+    const match=!ql||p.dataset.label.includes(ql);
+    p.style.opacity=match?'1':'0.25';
+    p.style.pointerEvents=match?'':'none';
+  });
+  if(ql){
+    const first=document.querySelector('#instrument-pills .pill[style*="opacity: 1"]')||document.querySelector('#instrument-pills .pill:not([style*="0.25"])');
+    // auto-navigate to first match
+  }
 }
 
 function renderByInstrument(){
@@ -847,26 +946,26 @@ function renderByInstrument(){
   panel('cv-corr','20-Week Rolling Correlation','Price vs Net Position',`
     <div class="leg-item"><div class="leg-line" style="background:#22c55e;opacity:.5"></div>Trending &gt;0.4</div>
     <div class="leg-item"><div class="leg-line" style="background:#ef4444;opacity:.5"></div>Mean-Rev &lt;-0.4</div>`,'h200');
-  panel('cv-flow','Weekly Flow','CFTC-reported change in net position (F3)',null,'h200',true);
-  panel('cv-cot','COT Index','3-year lookback \u2014 Bug 3 fix: strictly 0\u2013100',null,'h180');
+  panel('cv-flow','Weekly Flow','CFTC-reported week-over-week change',null,'h200',true);
+  panel('cv-cot','COT Index','3-year lookback &middot; 0 = Min, 100 = Max',null,'h180');
 
   // Seasonal chart with year checkboxes
   const seasonDiv=document.createElement('div'); seasonDiv.className='chart-panel';
   seasonDiv.innerHTML=`
-    <div class="chart-header"><div><div class="chart-title">Seasonal Overlay (F2)</div><div class="chart-sub">Current year vs historical avg &plusmn; 1&sigma;</div></div></div>
+    <div class="chart-header"><div><div class="chart-title">Seasonal Overlay</div><div class="chart-sub">Current year vs historical avg &plusmn; 1&sigma;</div></div></div>
     <div id="year-toggle-wrap" class="year-toggles"></div>
     <div class="chart-container h200"><canvas id="cv-seasonal"></canvas></div>`;
   area.appendChild(seasonDiv);
 
-  // Lagged corr (F6)
-  panel('cv-lagged','Lead/Lag Analysis (F6)','Does positioning lead or lag price? 1\u20134 week leads',null,'h180');
+  // Lagged corr
+  panel('cv-lagged','Positioning Lead/Lag Analysis','Does MM positioning lead or lag price? 1\u20134 week leads',null,'h180');
 
-  // Smart vs Dumb (F3)
-  panel('cv-smart-dumb','Smart vs Dumb Money (F3)','MM (blue) vs Non-Reportable (red dashed) net position',null,'h200');
+  // Smart vs Dumb
+  panel('cv-smart-dumb','Smart vs Dumb Money','MM (blue) vs Non-Reportable (red dashed) net position',null,'h200');
 
   // Percentile panel
   const pctDiv=document.createElement('div'); pctDiv.className='chart-panel';
-  pctDiv.innerHTML=`<div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-sub">All 5 Traders \u2014 Current Week (Bug 4 fix)</div></div></div><div id="pct-bars-area"></div>`;
+  pctDiv.innerHTML=`<div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-sub">All 5 Traders &middot; Current Week</div></div></div><div id="pct-bars-area"></div>`;
   area.appendChild(pctDiv);
 
   renderNetPosChart(inst,t);
@@ -970,21 +1069,48 @@ function renderFlowChart(inst,traderKey){
   });
 }
 
-// ── COT Index (Bug 3 fix: min:0 max:100) ─────────────────────
+// ── COT Index (Improvement 6: lookback selector + dual line) ──
+let cotLookback='w156'; // persists between instrument navigations
+function setCOTLookback(w){
+  cotLookback=w;
+  document.querySelectorAll('[id^=cotlb-]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('cotlb-'+w); if(btn) btn.classList.add('active');
+  const inst=CFTC_DATA?.instruments[activeInstrument]; if(!inst) return;
+  renderCOTChart(inst, activeTrader);
+}
 function renderCOTChart(inst,traderKey){
   const canvas=document.getElementById('cv-cot'); if(!canvas) return;
   const td=inst[traderKey]||{};
-  const{dates,arrays}=applyDateFilter(inst.dates,td.cot_index?.w156);
-  const[cot]=arrays;
+  // Add lookback selector buttons if not yet present
+  const panel=canvas.closest('.chart-panel');
+  if(panel&&!panel.querySelector('#cotlb-w156')){
+    const bar=document.createElement('div'); bar.style.cssText='display:flex;gap:4px;margin-bottom:6px';
+    [['w26','26w'],['w52','52w'],['w156','3yr']].forEach(([w,l])=>{
+      const b=document.createElement('button'); b.className='hm-btn'+(w===cotLookback?' active':'');
+      b.id='cotlb-'+w; b.textContent=l; b.onclick=()=>setCOTLookback(w);
+      bar.appendChild(b);
+    });
+    canvas.closest('.chart-container').before(bar);
+  }
+  // Dual line: selected lookback (primary) + 26w short-term (secondary if different)
+  const primary=td.cot_index?.[cotLookback]||[];
+  const secondary=cotLookback!=='w26'?(td.cot_index?.w26||[]):null;
+  const{dates,arrays}=applyDateFilter(inst.dates,primary,secondary);
+  const[cot,cot26]=arrays;
   const ex=Chart.getChart(canvas); if(ex)ex.destroy();
+  const datasets=[
+    {label:'COT '+({'w26':'26w','w52':'52w','w156':'3yr'}[cotLookback]||'3yr'),data:cot,borderColor:'#a855f7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+    {label:'80',data:dates.map(()=>80),borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1',backgroundColor:'rgba(34,197,94,.07)'},
+    {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+  ];
+  if(secondary&&cot26) datasets.unshift({label:'COT 26w',data:cot26,borderColor:'rgba(168,85,247,.4)',borderWidth:1,pointRadius:0,tension:.3,fill:false,borderDash:[2,2]});
   new Chart(canvas.getContext('2d'),{
     type:'line',
-    data:{labels:dates,datasets:[
-      {label:'COT 3yr',data:cot,borderColor:'#a855f7',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
-      {label:'80',data:dates.map(()=>80),borderColor:'rgba(34,197,94,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:'+1',backgroundColor:'rgba(34,197,94,.07)'},
-      {label:'20',data:dates.map(()=>20),borderColor:'rgba(239,68,68,.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
-    ]},
-    options:{...CHART_BASE,scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:0,max:100,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v+'%'}}}}
+    data:{labels:dates,datasets},
+    options:{...CHART_BASE,
+      plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:8},boxWidth:8}}},
+      scales:{x:{...CHART_BASE.scales.x},y:{...CHART_BASE.scales.y,min:0,max:100,ticks:{...CHART_BASE.scales.y.ticks,callback:v=>v+'%'}}}
+    }
   });
 }
 
@@ -1254,7 +1380,7 @@ function initDashboard(){
   renderSignalCards();
   renderHeatmap();
   renderCorrelationMatrix();
-  renderConcentrationChart();
+  renderOILeaderboard();
   renderWeeklyTable();
   renderInstrumentPills();
   renderByInstrument();
