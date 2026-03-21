@@ -1923,9 +1923,18 @@
           const orNet = last(or_.net), nrNet = last(nr.net);
           const price = last(inst.price), priceWow = wowPct(inst.price);
           const mmDelta = last(mm.change_net) ?? wow(mm.net);
+          const swDelta = last(sw.change_net) ?? wow(sw.net);
+          const prDelta = last(pr.change_net) ?? wow(pr.net);
+          const orDelta = last(or_.change_net) ?? wow(or_.net);
+          const nrDelta = last(nr.change_net) ?? wow(nr.net);
+          const oi = last(inst.open_interest);
+          const oiRoc = last(inst.oi_roc_4w);
+          const oiRocC = oiRoc == null ? '#5c6b8a' : oiRoc > 5 ? '#22c55e' : oiRoc < -5 ? '#ef4444' : '#f59e0b';
           const cotPct = mmCot != null ? Math.round(+mmCot) : null;
           const regime = last(inst.oi_regime) || 'Neutral';
           const cotC = cotPct == null ? '#5c6b8a' : cotPct >= 80 ? '#22c55e' : cotPct <= 20 ? '#ef4444' : '#f59e0b';
+          const zClamp = Math.min(100, Math.max(0, ((+(mmZ || 0) + 3) / 6) * 100));
+          const zBarC = (mmZ || 0) > 1.5 ? '#22c55e' : (mmZ || 0) < -1.5 ? '#ef4444' : (mmZ || 0) > 0.5 ? '#86efac' : (mmZ || 0) < -0.5 ? '#fca5a5' : '#5c6b8a';
           const sigLabel = getSignalLabel(score), sigCol = getSignalColour(score);
           const isHighActivity = mmMom != null && mmMom > 80;
           const card = document.createElement('div');
@@ -1939,15 +1948,17 @@
         </div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(mmDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(mmDelta || 0))}</span></span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+        <div class="cot-bar-track" style="position:relative;margin-bottom:2px"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);opacity:.4;pointer-events:none"></div><div class="cot-bar-fill" style="width:${zClamp}%;background:${zBarC}80"></div></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct != null ? cotPct + '%' : '&mdash;'}</span></div>
         <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct ?? 0}%;background:${cotC}80"></div></div>
-        <div class="card-row" style="margin-top:4px"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap</span><span class="card-val">${fmt(swNet)}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}</span></div>
+        <div class="card-row" style="margin-top:4px"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap</span><span class="card-val">${fmt(swNet)}&nbsp;<span class="${(swDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(swDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(swDelta || 0))}</span></span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}&nbsp;<span class="${(prDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(prDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(prDelta || 0))}</span></span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}&nbsp;<span class="${(orDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(orDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(orDelta || 0))}</span></span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}${nrDelta != null ? '&nbsp;<span class="' + ((nrDelta || 0) >= 0 ? 'wow-up' : 'wow-dn') + '">' + ((nrDelta || 0) >= 0 ? '&#9650;' : '&#9660;') + fmt(Math.abs(nrDelta || 0)) + '</span>' : ''}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Price']}">Price</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
         <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
+        <div class="card-row"><span class="card-key" data-tooltip="Total open interest across all traders. 4wk ROC shows momentum of market participation.">OI Total</span><span class="card-val">${fmt(oi)}${oiRoc != null ? '&nbsp;<span style="color:' + oiRocC + '">' + (oiRoc >= 0 ? '+' : '') + oiRoc.toFixed(1) + '%</span>' : ''}</span></div>
         <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
           <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
           Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
