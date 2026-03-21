@@ -1473,12 +1473,15 @@
       const instLabel = INSTRUMENT_LABELS[instKey] ?? instKey ?? 'Unknown';
 
       if (type === 'seasonal') {
-        const dp = tooltip?.dataPoints?.[0];
-        if (!dp) return '';
-        const week = dp.label || '';
-        const datasetLabel = dp.dataset?.label || 'Value';
-        const val = dp.raw;
-        return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${week}</div><div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>${datasetLabel}</span><span>${fmt(val)}</span></div>`;
+        const dps = tooltip?.dataPoints || [];
+        if (!dps.length) return '';
+        const week = dps[0].label || '';
+        const rows = dps.map(dp => {
+          if (['Upper 1\u03c3', 'Lower 1\u03c3'].includes(dp.dataset?.label) || dp.raw == null) return '';
+          const col = dp.dataset?.label === 'Hist Avg' ? '#a0aec0' : (dp.dataset?.borderColor || '#fff');
+          return `<div class="tt-row"><span style="color:${col}">${dp.dataset?.label}</span><span style="color:${col}">${fmt(dp.raw)}</span></div>`;
+        }).join('');
+        return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${week}</div><div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}`;
       }
 
       const d = getTooltipData(instKey, traderKey, idx);
