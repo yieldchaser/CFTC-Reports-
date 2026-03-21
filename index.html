@@ -511,6 +511,7 @@ function resetChartZoom(id) {
 
 const CHART_BASE = {
   responsive:true, maintainAspectRatio:false, animation:{duration:200},
+  interaction: { mode: 'index', intersect: false },
   plugins:{
   legend:{display:false},
   tooltip:{enabled:false, external: externalTooltipHandler},
@@ -651,7 +652,7 @@ function safeCreateChart(canvasId, config) {
     
     const chart = new Chart(canvas.getContext('2d'), config);
     if (!ALL_CHARTS.includes(chart)) {
-    
+        ALL_CHARTS.push(chart);
     }
     return chart;
 }
@@ -1276,6 +1277,7 @@ function renderScatterChart(inst,traderKey){
       {label:'Injection',data:iData,backgroundColor:'rgba(251,146,60,.65)',pointRadius:3.5,pointHoverRadius:5},
     ]},
     options:{...CHART_BASE,
+      interaction: { mode: 'point', intersect: true },
       plugins:{...CHART_BASE.plugins,legend:{display:true,labels:{color:'#9ba8c0',font:{size:9},boxWidth:8}}},
       scales:{x:{...CHART_BASE.scales.x,title:{display:true,text:'Net Long',color:'#5c6b8a',font:{size:9}}},y:{...CHART_BASE.scales.y,title:{display:true,text:'Price $',color:'#5c6b8a',font:{size:9}}}}
     }
