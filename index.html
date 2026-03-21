@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
 :root{
   --bg:#06080f;--bg2:#0d1117;--bg3:#161b27;--bg4:#1e2535;--bg5:#242d42;
@@ -132,6 +135,9 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
 .chart-actions{display:flex;gap:5px;align-items:center;flex-shrink:0}
 .icon-btn{background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:3px 7px;color:var(--text2);font-size:10px;cursor:pointer;transition:all .15s}
 .icon-btn:hover{background:var(--bg5);color:var(--text)}
+.reset-zoom-btn{background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:3px 7px;color:var(--text2);font-size:10px;cursor:pointer;transition:all .15s}
+.reset-zoom-btn:hover{background:var(--bg5);color:var(--text)}
+canvas { cursor: crosshair !important; }
 .chart-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .leg-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text2)}
 .leg-dot{width:8px;height:8px;border-radius:50%}
@@ -225,6 +231,11 @@ tr:hover td{background:rgba(79,142,247,.05);cursor:pointer}
 <div class="toolbar">
   <label for="date-filter">Show data from:</label>
   <select id="date-filter" onchange="onDateFilterChange()"></select>
+<div id="date-range-slider-container" style="display:flex;align-items:center;gap:8px;margin-left:12px;flex:1;max-width:300px">
+  <span id="slider-start-label" style="font-size:10px;font-family:var(--mono)">-</span>
+  <div id="date-range-slider" style="position:relative;flex:1;height:20px;display:flex;align-items:center;"></div>
+  <span id="slider-end-label" style="font-size:10px;font-family:var(--mono)">-</span>
+</div>
   <div id="trader-wrap" style="display:none">
     <label for="trader-filter">Trader:</label>
     <select id="trader-filter" onchange="onTraderFilterChange()">
@@ -388,9 +399,117 @@ const TRADER_COLOURS = {
   other_reportables:'#a855f7', non_reportables:'#06b6d4'
 };
 
+
+const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw(chart) {
+        if (!chart._crosshairX) return;
+        const ctx = chart.ctx;
+        const area = chart.chartArea;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chart._crosshairX, area.top);
+        ctx.lineTo(chart._crosshairX, area.bottom);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.restore();
+    },
+    afterEvent(chart, args) {
+        const event = args.event;
+        if (event.type === 'mousemove') {
+            chart._crosshairX = event.x;
+            ALL_CHARTS.forEach(c => {
+                if (c !== chart) {
+                    c._crosshairX = event.x;
+                    c.update('none');
+                }
+            });
+            chart.update('none');
+        }
+        if (event.type === 'mouseout') {
+            chart._crosshairX = null;
+            ALL_CHARTS.forEach(c => {
+                c._crosshairX = null;
+                c.update('none');
+            });
+        }
+    }
+};
+Chart.register(crosshairPlugin);
+
+const tooltipEl = document.createElement('div');
+tooltipEl.id = 'chart-tooltip';
+tooltipEl.style.cssText = `
+    position: fixed;
+    background: #1a1f2e;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 12px;
+    color: #e2e8f0;
+    min-width: 220px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: none;
+`;
+document.body.appendChild(tooltipEl);
+
+function buildTooltipHTML(type, instKey, trader, idx) {
+    const inst = CFTC_DATA.instruments[instKey];
+    if(!inst) return '';
+    const date = inst.dates[idx];
+    const net = inst[trader]?.net?.[idx];
+    if (type === 'net_pos_vs_price') {
+        const longV = inst[trader]?.long?.[idx];
+        const shortV = inst[trader]?.short?.[idx];
+        const z = inst[trader]?.z_score?.[idx];
+        const pct = inst[trader]?.pct_rank?.[idx];
+        const cot = inst[trader]?.cot_index?.w156?.[idx];
+        const pr = inst.price?.[idx];
+        const pr_prev = inst.price?.[idx-1];
+        const pr_wow = pr && pr_prev ? (pr-pr_prev)/pr_prev : 0;
+        const reg = inst.oi_regime?.[idx];
+        return `📅 ${date}<br>──────────────────────────────<br>Net Position &nbsp; ${fmt(net)}<br>Long &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${fmt(longV)}<br>Short &nbsp;&nbsp;&nbsp;&nbsp; ${fmt(shortV)}<br>──────────────────────────────<br>Z-Score &nbsp;&nbsp; ${fmtZ(z)} (${fmtPct(pct)})<br>COT Index &nbsp; ${cot!=null?Math.round(cot):'-'}%<br>──────────────────────────────<br>Price &nbsp;&nbsp;&nbsp;&nbsp; $${fmt(pr,2)} (${fmtPctChg(pr_wow)})<br>OI Regime &nbsp; ${reg||'Neutral'}`;
+    }
+    return `📅 ${date}<br>Value: ${fmt(net)}`;
+}
+
+function externalTooltipHandler(context) {
+    const { chart, tooltip } = context;
+    if (tooltip.opacity === 0) { tooltipEl.style.display = 'none'; return; }
+    const idx = tooltip.dataPoints?.[0]?.dataIndex; if (idx === undefined) return;
+    const type = chart.userData?.type || 'net_pos_vs_price';
+    const inst = chart.userData?.instrumentKey || activeInstrument;
+    const trader = chart.userData?.traderKey || activeTrader;
+    
+    tooltipEl.innerHTML = buildTooltipHTML(type, inst, trader, idx);
+    tooltipEl.style.display = 'block';
+    const canvasRect = chart.canvas.getBoundingClientRect();
+    const x = canvasRect.left + tooltip.caretX;
+    const y = canvasRect.top + tooltip.caretY;
+    const left = x + 240 > window.innerWidth - 20 ? x - 240 - 10 : x + 15;
+    tooltipEl.style.left = left + 'px';
+    tooltipEl.style.top = Math.max(10, y - 60) + 'px';
+}
+
+function resetChartZoom(id) {
+    const chart = Chart.getChart(id);
+    if(chart) chart.resetZoom();
+}
+
 const CHART_BASE = {
   responsive:true, maintainAspectRatio:false, animation:{duration:200},
-  plugins:{legend:{display:false},tooltip:{enabled:false}},
+  plugins:{
+  legend:{display:false},
+  tooltip:{enabled:false, external: externalTooltipHandler},
+  zoom:{
+    zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},
+    pan:{enabled:true,mode:'x'}
+  }
+},
   scales:{
     x:{ticks:{color:'#5c6b8a',maxTicksLimit:7,maxRotation:0,font:{size:9}},grid:{color:'rgba(37,48,71,.4)'}},
     y:{ticks:{color:'#5c6b8a',font:{size:9}},grid:{color:'rgba(37,48,71,.25)'}},
@@ -436,6 +555,42 @@ function checkStaleness(){
 }
 
 // ── Date filter ───────────────────────────────────────────────
+
+let rangeDebounce;
+function initDateSlider(){
+    const dates = CFTC_DATA.instruments['nat_gas_nyme']?.dates || [];
+    if (!dates.length) return;
+    const container = document.getElementById('date-range-slider');
+    container.innerHTML = '';
+    
+    // Add RangeSlider element
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = 0;
+    input.max = dates.length - 1;
+    let currVal = 0;
+    
+    if (filterFromDate) {
+        const idx = dates.findIndex(d => new Date(d) >= new Date(filterFromDate));
+        if (idx !== -1) currVal = idx;
+    }
+    input.value = currVal;
+    input.style.width = '100%';
+    
+    document.getElementById('slider-start-label').textContent = dates[currVal];
+    document.getElementById('slider-end-label').textContent = dates[dates.length-1];
+    
+    input.oninput = () => {
+        document.getElementById('slider-start-label').textContent = dates[input.value];
+        clearTimeout(rangeDebounce);
+        rangeDebounce = setTimeout(() => {
+            filterFromDate = input.value == 0 ? null : dates[input.value];
+            document.getElementById('date-filter').value = filterFromDate || '';
+            redrawAll();
+        }, 150);
+    };
+    container.appendChild(input);
+}
 function populateDateFilter(){
   const dates=CFTC_DATA.instruments['nat_gas_nyme']?.dates||[];
   const last=dates.at(-1)||'';
@@ -451,12 +606,14 @@ function populateDateFilter(){
   const years=[...new Set(dates.map(d=>d.slice(0,4)))].slice(-6);
   years.forEach(y=>opts.push({l:`Since Jan ${y}`,v:`${y}-01-01`}));
   sel.innerHTML=opts.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+if(filterFromDate) sel.value = filterFromDate;
+initDateSlider();
 }
 function wkOffset(iso,weeks){
   const d=new Date(iso); d.setDate(d.getDate()+weeks*7);
   return d.toISOString().slice(0,10);
 }
-function onDateFilterChange(){filterFromDate=document.getElementById('date-filter').value||null;redrawAll();}
+function onDateFilterChange(){filterFromDate=document.getElementById('date-filter').value||null; initDateSlider(); redrawAll();}
 function onTraderFilterChange(){activeTrader=document.getElementById('trader-filter').value;renderByInstrument();}
 
 // ── Date filter application ───────────────────────────────────
@@ -672,6 +829,10 @@ function renderSignalCards(){
         <div class="card-row"><span class="card-key">Price</span><span class="card-val">$${fmt(price,2)}&nbsp;<span class="${(priceWow||0)>=0?'wow-up':'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
         <div class="card-row"><span class="card-key">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season)||'&mdash;'}</span></div>
         <div class="card-row"><span class="card-key">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
+        <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
+          Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
+        </div>
         <span class="card-signal" style="background:${sigCol}18;color:${sigCol}">${sigLabel}</span>`;
       cardWrap.appendChild(card);
     });
@@ -880,7 +1041,23 @@ function sortTable(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=-1
 
 // === BEGIN CHUNK 5: By Instrument tab renderers ===
 
+const INSTRUMENT_DESCRIPTIONS = {
+    nat_gas_nyme:      "Henry Hub front-month futures \u2014 the benchmark US natural gas contract",
+    nat_gas_ld1:       "ICE last-day financial natural gas \u2014 cash-settled vs Henry Hub daily index",
+    nat_gas_ice_pen:   "ICE penultimate financial \u2014 settles vs Henry Hub index, one day prior",
+    henry_hub_nyme:    "CME Henry Hub swap \u2014 OTC-cleared financial swap at Henry Hub",
+    hh_last_day:       "CME Henry Hub last day financial \u2014 cash-settled on final trading day",
+    hh_penult_fin:     "CME Henry Hub penultimate financial \u2014 settles one day before last day",
+    hh_penult_nat_gas: "CME Henry Hub penultimate natural gas \u2014 physical delivery variant",
+    hh_index_ice:      "ICE Henry Hub index \u2014 settles vs Inside FERC published Henry Hub index",
+    hh_basis_ice:      "ICE Henry Hub basis swap \u2014 differential between Henry Hub and other hubs",
+    nat_gas_ld1_texok: "ICE NG LD1 TEXOK \u2014 Texoma/Oklahoma regional basis vs Henry Hub",
+};
+
 function setActiveInst(key){
+  const descEl = document.getElementById('instrument-description');
+  if (descEl) descEl.textContent = INSTRUMENT_DESCRIPTIONS[key] || '';
+
   activeInstrument=key;
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
   const pill=document.getElementById('pill-'+key); if(pill)pill.classList.add('active');
@@ -928,7 +1105,10 @@ function renderByInstrument(){
     div.innerHTML=`
       <div class="chart-header">
         <div><div class="chart-title">${title}${id==='cv-net-price'?titleSuffix:''}</div><div class="chart-sub">${sub||''}</div></div>
-        <div class="chart-actions">${dl?`<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" title="Download CSV">&#11015; CSV</button>`:''}</div>
+        <div class="chart-actions">
+          <button class="reset-zoom-btn" onclick="resetChartZoom('${id}')" title="Reset Zoom">Reset</button>
+          ${dl?`<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" title="Download CSV">&#11015; CSV</button>`:''}
+        </div>
       </div>
       ${legend?`<div class="chart-legend">${legend}</div>`:''}
       <div class="chart-container ${h}"><canvas id="${id}"></canvas></div>`;
@@ -996,7 +1176,7 @@ function renderNetPosChart(inst,traderKey){
       {type:'line',label:'Price',data:price,borderColor:'rgba(248,250,252,.65)',borderWidth:1.5,pointRadius:0,tension:.3,yAxisID:'y2'},
     ]},
     options:{...CHART_BASE,
-      plugins:{...CHART_BASE.plugins,annotation:{annotations:buildExtremeAnnotations(ex)}},
+      plugins:{...CHART_BASE.plugins,annotation:{annotations:{...buildExtremeAnnotations(ex), ...buildMomentumArrows(dates, net, td.momentum_score||[])}}},
       scales:{
         x:{...CHART_BASE.scales.x},
         y:{position:'left',...CHART_BASE.scales.y,title:{display:true,text:'Net Pos',color:'#5c6b8a',font:{size:8}}},
@@ -1008,9 +1188,25 @@ function renderNetPosChart(inst,traderKey){
 }
 function buildExtremeAnnotations(ex){
   const a={};
-  if(ex.max_long_value!=null) a.maxLong={type:'line',yMin:ex.max_long_value,yMax:ex.max_long_value,yScaleID:'y',borderColor:'rgba(34,197,94,.35)',borderWidth:1,borderDash:[4,4]};
-  if(ex.max_short_value!=null) a.maxShort={type:'line',yMin:ex.max_short_value,yMax:ex.max_short_value,yScaleID:'y',borderColor:'rgba(239,68,68,.35)',borderWidth:1,borderDash:[4,4]};
+  if(ex.max_long_value!=null) a.maxLong={type:'line',yMin:ex.max_long_value,yMax:ex.max_long_value,yScaleID:'y',borderColor:'rgba(34,197,94,.35)',borderWidth:1,borderDash:[4,4],label:{content:`ATH Long: ${fmt(ex.max_long_value)} (${ex.max_long_date})`,display:true,position:'start',color:'rgba(34,197,94,0.7)',font:{size:10}}};
+  if(ex.max_short_value!=null) a.maxShort={type:'line',yMin:ex.max_short_value,yMax:ex.max_short_value,yScaleID:'y',borderColor:'rgba(239,68,68,.35)',borderWidth:1,borderDash:[4,4],label:{content:`ATH Short: ${fmt(ex.max_short_value)} (${ex.max_short_date})`,display:true,position:'start',color:'rgba(239,68,68,0.7)',font:{size:10}}};
   return a;
+}
+
+function buildMomentumArrows(dates, net, mom) {
+  const annots = {};
+  const prevNet = [0, ...(net||[]).slice(0, -1)];
+  const n = (net||[]).length;
+  for (let i = Math.max(0, n - 26); i < n; i++) {
+     if (mom[i] > 75 && net[i] != null && prevNet[i] != null) {
+         const isUp = net[i] > prevNet[i];
+         annots['arrow_'+i] = {
+             type: 'label', xValue: dates[i], yValue: isUp ? net[i]*1.05 + 100 : net[i]*0.95 - 100,
+             content: isUp ? '▲' : '▼', color: isUp ? '#22c55e' : '#ef4444', font: {size: 10}
+         };
+     }
+  }
+  return annots;
 }
 
 // ── Scatter ───────────────────────────────────────────────────
