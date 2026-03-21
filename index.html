@@ -783,7 +783,48 @@
       display: flex;
       gap: 5px;
       flex-wrap: wrap;
-      margin-bottom: 12px
+      margin-bottom: 8px
+    }
+
+    #inst-stat-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 6px 12px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      font-family: var(--mono);
+      min-height: 34px
+    }
+
+    .inst-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 10px;
+      border-right: 1px solid var(--border);
+      white-space: nowrap
+    }
+
+    .inst-stat-item:first-child { padding-left: 0 }
+    .inst-stat-item:last-child { border-right: none }
+
+    .inst-stat-lbl {
+      font-size: 8px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-family: var(--font)
+    }
+
+    .inst-stat-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text)
     }
 
     .pill {
@@ -1249,6 +1290,7 @@
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
       <div id="instrument-pills" class="pill-wrap"></div>
+      <div id="inst-stat-strip"></div>
       <div id="inst-charts-area" class="inst-grid"></div>
     </div>
 
@@ -2251,6 +2293,61 @@
       const inst = CFTC_DATA.instruments[activeInstrument]; if (!inst) return;
       const t = activeTrader;
       const td = inst[t] || {};
+
+      // ── Instrument summary strip ──────────────────────────────────
+      const strip = document.getElementById('inst-stat-strip');
+      if (strip) {
+        const mm = inst.managed_money || {};
+        const mmNet = last(mm.net), mmDelta = last(mm.change_net) ?? wow(mm.net);
+        const mmZ = last(mm.z_score), mmPct = last(mm.pct_rank);
+        const mmCot = last(mm.cot_index?.w156), mmMom = last(mm.momentum_score);
+        const price = last(inst.price), priceWow = wowPct(inst.price);
+        const regime = last(inst.oi_regime) || '—';
+        const season = last(inst.season) || '—';
+        const scores = inst.composite_scores || [];
+        const score = scores.length ? scores[scores.length - 1] : 0;
+        const sigCol = getSignalColour(score);
+        const cotV = mmCot != null ? Math.round(+mmCot) : null;
+        const cotC = cotV == null ? 'var(--text2)' : cotV >= 80 ? '#22c55e' : cotV <= 20 ? '#ef4444' : '#f59e0b';
+        const zC = mmZ == null ? 'var(--text2)' : mmZ > 1.5 ? '#22c55e' : mmZ < -1.5 ? '#ef4444' : mmZ > 0.5 ? '#86efac' : mmZ < -0.5 ? '#fca5a5' : 'var(--text2)';
+        const momC = mmMom == null ? 'var(--text2)' : mmMom > 80 ? '#f59e0b' : mmMom < 20 ? 'var(--text3)' : 'var(--text2)';
+        strip.innerHTML = `
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">Signal</span>
+            <span class="inst-stat-val" style="color:${sigCol};background:${sigCol}18;padding:1px 6px;border-radius:3px">${score >= 0 ? '+' : ''}${score} ${getSignalLabel(score)}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">MM Net</span>
+            <span class="inst-stat-val">${fmt(mmNet)}</span>
+            <span style="font-size:9px;font-weight:600;color:${(mmDelta||0)>=0?'#22c55e':'#ef4444'}">${(mmDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(mmDelta||0))}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">Z-Score</span>
+            <span class="inst-stat-val" style="color:${zC}">${fmtZ(mmZ)}</span>
+            <span style="font-size:9px;color:var(--text3)">${fmtPct(mmPct)}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">COT 3yr</span>
+            <span class="inst-stat-val" style="color:${cotC}">${cotV != null ? cotV + '%' : '—'}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">Momentum</span>
+            <span class="inst-stat-val" style="color:${momC}">${mmMom != null ? Math.round(mmMom) : '—'}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">Price</span>
+            <span class="inst-stat-val">$${fmt(price, 2)}</span>
+            <span style="font-size:9px;font-weight:600;color:${(priceWow||0)>=0?'#22c55e':'#ef4444'}">${fmtPctChg(priceWow)}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">OI Regime</span>
+            <span class="inst-stat-val" style="font-size:9px">${oiBadge(regime)}</span>
+          </div>
+          <div class="inst-stat-item">
+            <span class="inst-stat-lbl">Season</span>
+            <span class="inst-stat-val" style="font-size:9px;color:var(--text2)">${season}</span>
+          </div>`;
+      }
       const latestNet = last(td.net), latestPrice = last(inst.price);
       const titleSuffix = latestNet != null && latestPrice != null ? ` \u2014 Net: ${fmt(latestNet)} | Price: $${fmt(latestPrice, 2)}` : '';
 
@@ -2593,8 +2690,20 @@
         const c = cot != null ? Math.round(+cot) : null;
         if (ti > 0) { const div = document.createElement('div'); div.className = 'pct-divider'; wrap.appendChild(div); }
         // Pct rank bar
+        const net = last(td.net);
+        const delta = last(td.change_net) ?? wow(td.net);
+        const z = last(td.z_score);
+        const mom = tk === 'managed_money' ? last(td.momentum_score) : null;
+        const zC = z == null ? 'var(--text3)' : z > 1.5 ? '#22c55e' : z < -1.5 ? '#ef4444' : z > 0.5 ? '#86efac' : z < -0.5 ? '#fca5a5' : 'var(--text3)';
         const block = document.createElement('div'); block.className = 'pct-bar-block';
         block.innerHTML = `
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;padding-left:28px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text2)">${net != null ? fmt(net) : '—'}</span>
+        ${delta != null ? `<span style="font-size:8px;font-weight:600;color:${delta>=0?'#22c55e':'#ef4444'}">${delta>=0?'▲':'▼'}${fmt(Math.abs(delta))}</span>` : ''}
+        <span style="font-size:8px;color:var(--text3)">│</span>
+        <span style="font-size:8px;color:var(--text3)">Z</span><span style="font-size:9px;font-family:var(--mono);color:${zC}">${z != null ? fmtZ(z) : '—'}</span>
+        ${mom != null ? `<span style="font-size:8px;color:var(--text3)">│ Mom</span><span style="font-size:9px;font-family:var(--mono);color:${mom>80?'#f59e0b':'var(--text3)'}">${Math.round(mom)}</span>` : ''}
+      </div>
       <div class="pct-bar-row">
         <span class="pct-bar-lbl" style="color:${col}">${TRADER_LABELS[tk] || tk}</span>
         <div class="pct-bar-track" title="Percentile Rank">
