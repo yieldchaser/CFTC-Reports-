@@ -1105,26 +1105,71 @@
     }
 
     /* === Responsive === */
+    /* ── Tablet (≤ 900px) ──────────────────────────────────────── */
+    @media(max-width:900px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr) }
+      .inst-grid  { grid-template-columns: 1fr }
+      .three-grid { grid-template-columns: 1fr }
+    }
+
+    /* ── Mobile (≤ 640px) ──────────────────────────────────────── */
     @media(max-width:640px) {
 
-      header,
-      .tab-panel {
-        padding: 10px 12px
+      /* Layout padding */
+      header             { padding: 10px 14px; gap: 8px }
+      .tab-panel         { padding: 12px 12px; gap: 10px }
+      .tabs, .toolbar    { padding: 0 10px }
+
+      /* Header: hide meta labels on very small screens to save height */
+      .header-meta       { display: none }
+
+      /* Grids: single column */
+      .inst-grid, .three-grid { grid-template-columns: 1fr }
+      .cards-grid              { grid-template-columns: repeat(2, 1fr) }
+
+      /* Chart heights: reduce to fit portrait screens */
+      .chart-container.h240 { height: 180px }
+      .chart-container.h200 { height: 160px }
+      .chart-container.h180 { height: 140px }
+      .chart-container.h160 { height: 130px }
+
+      /* Stat strip: single scrollable row instead of wrapping */
+      #inst-stat-strip {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px 10px
+      }
+      .inst-stat-item {
+        flex-shrink: 0;
+        min-width: max-content
       }
 
-      .tabs,
-      .toolbar {
-        padding: 0 12px
+      /* Touch targets: pills and buttons need at least 36px height */
+      .pill    { padding: 6px 12px }
+      .hm-btn  { padding: 5px 10px }
+      .tab-btn { padding: 10px 12px }
+
+      /* Normalise/sort bar: wrap tightly */
+      .normalise-bar {
+        gap: 6px;
+        padding: 6px 10px
       }
 
-      .inst-grid,
-      .three-grid {
-        grid-template-columns: 1fr
-      }
+      /* Chart panel: less internal padding */
+      .chart-panel { padding: 10px }
 
-      .cards-grid {
-        grid-template-columns: repeat(2, 1fr)
-      }
+      /* Toolbar: tighten up */
+      .toolbar { gap: 8px }
+
+      /* Table: already scrollable, just nudge font down a touch */
+      table    { font-size: 10px }
+    }
+
+    /* ── Very small (≤ 400px) ──────────────────────────────────── */
+    @media(max-width:400px) {
+      .cards-grid { grid-template-columns: 1fr }
+      .logo h1    { font-size: 14px }
     }
   </style>
 
