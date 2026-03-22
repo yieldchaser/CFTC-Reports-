@@ -1498,16 +1498,9 @@
           tt.classList.remove('visible');
           return;
         }
-        // e.preventDefault(); // Removed to allow scrolling if needed, but the request asked for it. 
-        // Actually, request says: e.preventDefault();
-        // But if I prevent default on touchstart, links and buttons won't work.
-        // Let's stick to the request but be careful.
-        e.preventDefault();
         show(t);
-        setTimeout(() => tt.classList.remove('visible'), 16000);
-      }, {
-        passive: false
-      });
+        setTimeout(() => tt.classList.remove('visible'), 10000);
+      }, { passive: true });
     })();
 
     const tooltipEl = document.createElement('div');
