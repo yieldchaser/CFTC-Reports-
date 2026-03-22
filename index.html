@@ -1162,20 +1162,27 @@
       /* Toolbar: tighten up */
       .toolbar { gap: 8px }
 
-      /* Date slider: full-width row so it's not crammed next to the select */
+      /* Date slider: own full-width row below the select */
       #date-range-slider-container {
-        width: 100%;
-        max-width: 100%;
-        margin-left: 0;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        flex: none !important;
         order: 10;
+        min-width: 0 !important;
+        box-sizing: border-box;
       }
       #slider-start-label,
       #slider-end-label {
-        font-size: 11px;
+        font-size: 11px !important;
         white-space: nowrap;
+      }
+      #date-range-slider {
+        min-width: 0 !important;
       }
       #date-range-slider input[type=range] {
         height: 32px;
+        width: 100%;
       }
 
       /* Table: already scrollable, just nudge font down a touch */
@@ -1229,10 +1236,10 @@
     <label for="date-filter" data-tooltip="Limit the historical lookback range applied to all charts and metric calculations globally.">Show data from:</label>
     <select id="date-filter" onchange="onDateFilterChange()"></select>
     <div id="date-range-slider-container"
-      style="display:flex;align-items:center;gap:8px;margin-left:12px;flex:1;max-width:300px">
-      <span id="slider-start-label" style="font-size:10px;font-family:var(--mono)">-</span>
-      <div id="date-range-slider" style="position:relative;flex:1;height:20px;display:flex;align-items:center;"></div>
-      <span id="slider-end-label" style="font-size:10px;font-family:var(--mono)">-</span>
+      style="display:flex;align-items:center;gap:8px;margin-left:12px;flex:1;min-width:180px">
+      <span id="slider-start-label" style="font-size:10px;font-family:var(--mono);white-space:nowrap">-</span>
+      <div id="date-range-slider" style="position:relative;flex:1;height:20px;display:flex;align-items:center;min-width:80px"></div>
+      <span id="slider-end-label" style="font-size:10px;font-family:var(--mono);white-space:nowrap">-</span>
     </div>
     <div id="trader-wrap" style="display:none">
       <label for="trader-filter" data-tooltip="Select the specific trader category (e.g. Managed Money) to view across the filtered charts.">Trader:</label>
