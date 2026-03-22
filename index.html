@@ -1162,6 +1162,22 @@
       /* Toolbar: tighten up */
       .toolbar { gap: 8px }
 
+      /* Date slider: full-width row so it's not crammed next to the select */
+      #date-range-slider-container {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        order: 10;
+      }
+      #slider-start-label,
+      #slider-end-label {
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      #date-range-slider input[type=range] {
+        height: 32px;
+      }
+
       /* Table: already scrollable, just nudge font down a touch */
       table    { font-size: 10px }
     }
