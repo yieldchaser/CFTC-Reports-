@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>NatGas Structure — COT Positioning Intelligence</title>
+  <title>Blue Pulse</title>
   <meta name="description"
     content="Professional CFTC COT positioning dashboard — Natural Gas instruments, 5 trader categories, composite signals." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,8 +16,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='50%' cy='60%' r='50%' fx='50%' fy='65%'><stop offset='0%' style='stop-color:%230033ff;stop-opacity:0.5' /><stop offset='100%' style='stop-color:%23001a4d;stop-opacity:0' /></radialGradient></defs><circle cx='50' cy='60' r='40' fill='url(%23g)' /><path d='M50 92 C30 92 18 75 18 52 C18 30 50 5 50 5 C50 5 82 30 82 52 C82 75 70 92 50 92 Z' fill='%230066ff' /><path d='M50 80 C40 80 32 68 32 50 C32 35 50 18 50 18 C50 18 68 35 68 50 C68 68 60 80 50 80 Z' fill='white' /></svg>">
   <style>
     :root {
       --bg: #06080f;
@@ -96,13 +95,17 @@
     .logo h1 {
       font-size: 16px;
       font-weight: 700;
-      letter-spacing: -.3px
+      letter-spacing: -.3px;
+      margin: 0;
+      line-height: 1.2
     }
 
     .logo p {
       font-size: 11px;
       color: var(--text2);
-      margin-top: 1px
+      margin: 0;
+      padding: 0;
+      line-height: 1.2
     }
 
     .header-meta {
@@ -1206,10 +1209,10 @@
 
   <header>
     <div class="logo">
-      <div class="logo-icon"><img src="favicon.svg" style="width:100%;height:100%;border-radius:8px;object-fit:cover;" onerror="this.src='favicon.png'">
+      <div class="logo-icon"><img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='50%' cy='60%' r='50%' fx='50%' fy='65%'><stop offset='0%' style='stop-color:%230033ff;stop-opacity:0.5' /><stop offset='100%' style='stop-color:%23001a4d;stop-opacity:0' /></radialGradient></defs><circle cx='50' cy='60' r='40' fill='url(%23g)' /><path d='M50 92 C30 92 18 75 18 52 C18 30 50 5 50 5 C50 5 82 30 82 52 C82 75 70 92 50 92 Z' fill='%230066ff' /><path d='M50 80 C40 80 32 68 32 50 C32 35 50 18 50 18 C50 18 68 35 68 50 C68 68 60 80 50 80 Z' fill='white' /></svg>" style="width:100%;height:100%;border-radius:8px;object-fit:cover;">
       </div>
       <div>
-        <h1>NatGas Structure</h1>
+        <h1>Blue Pulse</h1>
         <p data-tooltip="Weekly COT disaggregated data sourced from publicreporting.cftc.gov — covers futures and options combined across 5 participant categories.">COT Intelligence &middot; <span id="hdr-instruments">10 Instruments</span> &middot; 5 Categories
         </p>
       </div>

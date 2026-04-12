@@ -1,4 +1,4 @@
-# NatGas Structure — COT Positioning Intelligence
+# Blue Pulse — COT Positioning Intelligence
 
 A professional-grade terminal for visualizing and analyzing Commitment of Traders (COT) data across US Natural Gas markets. Built as a single-page application, it transforms raw weekly CFTC reports into institutional-grade visual analytics — no backend, no build step, no dependencies beyond a browser.
 
