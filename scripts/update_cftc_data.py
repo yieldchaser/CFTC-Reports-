@@ -41,10 +41,7 @@ CFTC_URL = (
     "&$limit=20000"
     "&$order=report_date_as_yyyy_mm_dd%20DESC"
 )
-PRICE_URL = (
-    "https://raw.githubusercontent.com/yieldchaser/nat-gas-data-pipeline"
-    "/main/data/nat_gas_continuous.csv"
-)
+PRICE_URL = "https://query2.finance.yahoo.com/v8/finance/chart/NG=F?interval=1d&range=20y"
 OUTPUT_PATH = "data/cftc_processed.json"
 
 INSTRUMENTS = {
@@ -139,8 +136,12 @@ def sanitise(obj):
     return obj
 
 
-def fetch_with_retry(url, label, timeout=60, retries=3):
-    headers = {"Accept": "text/csv"}
+def fetch_with_retry(url, label, timeout=60, retries=3, headers=None):
+    if headers is None:
+        headers = {
+            "Accept": "text/csv",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
     for attempt in range(1, retries + 1):
         try:
             print(f"  [{label}] Attempt {attempt}/{retries}: {url[:80]}...")
@@ -182,17 +183,34 @@ def fetch_cftc() -> pd.DataFrame:
 # ─── Fetch Prices ──────────────────────────────────────────────────────────────
 
 def fetch_prices() -> pd.Series:
-    print("[Phase 1.4] Fetching NG price data...")
-    raw = fetch_with_retry(PRICE_URL, "Prices")
-    df = pd.read_csv(io.StringIO(raw))
-    df.columns = [c.strip() for c in df.columns]
-    date_col  = next((c for c in df.columns if c.lower() == "date"), None)
-    close_col = next((c for c in df.columns if c.lower() in {"close", "price"}), None)
-    assert date_col and close_col
-    df[date_col] = pd.to_datetime(df[date_col], format="%d-%m-%Y", dayfirst=True)
-    df = df.rename(columns={date_col: "date", close_col: "price"})
-    df = df[["date", "price"]].dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    print("[Phase 1.4] Fetching NG price data from Yahoo Finance...")
+    headers = {
+        "Accept": "*/*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    raw = fetch_with_retry(PRICE_URL, "Prices", headers=headers)
+    payload = json.loads(raw)
+    
+    result = payload.get('chart', {}).get('result')
+    if not result:
+        raise RuntimeError("Yahoo Finance returned no data for NG=F")
+        
+    timestamps = result[0].get('timestamp', [])
+    closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
+    
+    dates = []
+    prices = []
+    for ts, close in zip(timestamps, closes):
+        if ts is None or close is None:
+            continue
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc).date()
+        dates.append(pd.to_datetime(dt))
+        prices.append(float(close))
+        
+    df = pd.DataFrame({"date": dates, "price": prices})
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
+    
     price = df.set_index("date")["price"]
     print(f"  Price range: {price.index.min().date()} to {price.index.max().date()}")
     print("[Phase 1.4] Price OK\n")
