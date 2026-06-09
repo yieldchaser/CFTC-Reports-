@@ -183,32 +183,17 @@ def fetch_cftc() -> pd.DataFrame:
 # ─── Fetch Prices ──────────────────────────────────────────────────────────────
 
 def fetch_prices() -> pd.Series:
-    print("[Phase 1.4] Fetching NG price data from Yahoo Finance...")
-    headers = {
-        "Accept": "*/*",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    raw = fetch_with_retry(PRICE_URL, "Prices", headers=headers)
-    payload = json.loads(raw)
+    print("[Phase 1.4] Fetching NG price data from Yahoo Finance via yfinance...")
+    import yfinance as yf
+    ticker = yf.Ticker("NG=F")
+    df = ticker.history(period="20y")
+    if df.empty:
+        raise RuntimeError("yfinance returned no data for NG=F")
     
-    result = payload.get('chart', {}).get('result')
-    if not result:
-        raise RuntimeError("Yahoo Finance returned no data for NG=F")
-        
-    timestamps = result[0].get('timestamp', [])
-    closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
-    
-    dates = []
-    prices = []
-    for ts, close in zip(timestamps, closes):
-        if ts is None or close is None:
-            continue
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc).date()
-        dates.append(pd.to_datetime(dt))
-        prices.append(float(close))
-        
-    df = pd.DataFrame({"date": dates, "price": prices})
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    df = df.reset_index()
+    df['date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+    df = df.rename(columns={'Close': 'price'})
+    df = df[['date', 'price']].dropna(subset=['date']).sort_values('date').reset_index(drop=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
     
     price = df.set_index("date")["price"]
@@ -554,7 +539,7 @@ def main():
     cftc_df = fetch_cftc()
 
     # ── Staleness check: skip processing if CFTC hasn't published new data ──
-    incoming_latest = str(cftc_df["report_date_as_yyyy_mm_dd"].max())
+    incoming_latest = cftc_df["report_date_as_yyyy_mm_dd"].max().strftime("%Y-%m-%d")
     existing_latest = None
     if os.path.exists(OUTPUT_PATH):
         try:
