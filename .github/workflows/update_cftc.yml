@@ -21,7 +21,8 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests pandas numpy yfinance
+        run: pip install requests pandas numpy
+
 
 
       - name: Run CFTC pipeline

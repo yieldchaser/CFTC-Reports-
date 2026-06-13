@@ -183,17 +183,56 @@ def fetch_cftc() -> pd.DataFrame:
 # ─── Fetch Prices ──────────────────────────────────────────────────────────────
 
 def fetch_prices() -> pd.Series:
-    print("[Phase 1.4] Fetching NG price data from Yahoo Finance via yfinance...")
-    import yfinance as yf
-    ticker = yf.Ticker("NG=F")
-    df = ticker.history(period="20y")
-    if df.empty:
-        raise RuntimeError("yfinance returned no data for NG=F")
+    print("[Phase 1.4] Fetching NG price data from Yahoo Finance via urllib...")
+    import urllib.request
+    import urllib.parse
     
-    df = df.reset_index()
-    df['date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
-    df = df.rename(columns={'Close': 'price'})
-    df = df[['date', 'price']].dropna(subset=['date']).sort_values('date').reset_index(drop=True)
+    url = (
+        "https://query2.finance.yahoo.com/v8/finance/chart/"
+        + urllib.parse.quote("NG=F")
+        + "?interval=1d&range=5y"
+    )
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; archive_contract/1.0)"
+    }
+    
+    payload = None
+    retries = 3
+    for attempt in range(1, retries + 1):
+        try:
+            print(f"  [Prices] Attempt {attempt}/{retries}: {url[:80]}...")
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                payload = json.load(resp)
+            print(f"  [Prices] OK")
+            break
+        except Exception as exc:
+            print(f"  [Prices] Error: {exc}")
+            if attempt < retries:
+                time.sleep(2 ** attempt)
+                
+    if not payload:
+        raise RuntimeError("All attempts failed to fetch prices from Yahoo Finance")
+        
+    result = payload.get('chart', {}).get('result')
+    if not result:
+        raise RuntimeError("Yahoo Finance returned no data for NG=F")
+        
+    timestamps = result[0].get('timestamp', [])
+    closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
+    
+    dates = []
+    prices = []
+    for ts, close in zip(timestamps, closes):
+        if ts is None or close is None:
+            continue
+            
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc).date()
+        dates.append(pd.to_datetime(dt))
+        prices.append(float(close))
+        
+    df = pd.DataFrame({"date": dates, "price": prices})
+    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
     
     price = df.set_index("date")["price"]
