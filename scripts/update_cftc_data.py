@@ -159,7 +159,13 @@ def fetch_with_retry(url, label, timeout=60, retries=3, headers=None):
 
 def fetch_cftc() -> pd.DataFrame:
     print("\n[Phase 1.1] Fetching CFTC data...")
-    raw = fetch_with_retry(CFTC_URL, "CFTC")
+    headers = {
+        "Accept": "text/csv",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+    }
+    raw = fetch_with_retry(CFTC_URL, "CFTC", headers=headers)
     df = pd.read_csv(io.StringIO(raw), low_memory=False)
     print(f"  Rows: {len(df):,}  Cols: {len(df.columns)}")
     assert len(df) > 500
