@@ -171,7 +171,7 @@ def fetch_cftc() -> pd.DataFrame:
     assert len(df) > 500
     assert "market_and_exchange_names" in df.columns
     assert "report_date_as_yyyy_mm_dd" in df.columns
-    df["report_date_as_yyyy_mm_dd"] = pd.to_datetime(df["report_date_as_yyyy_mm_dd"])
+    df["report_date_as_yyyy_mm_dd"] = pd.to_datetime(df["report_date_as_yyyy_mm_dd"]).astype("datetime64[ns]")
     if "futonly_or_combined" in df.columns:
         unique_vals = df["futonly_or_combined"].unique().tolist()
         print(f"  futonly_or_combined values: {unique_vals}")
@@ -238,6 +238,7 @@ def fetch_prices() -> pd.Series:
         prices.append(float(close))
         
     df = pd.DataFrame({"date": dates, "price": prices})
+    df["date"] = pd.to_datetime(df["date"]).astype("datetime64[ns]")
     df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
     
@@ -606,9 +607,11 @@ def main():
 
     # Build price alignment map
     price_df_sorted = price_s.reset_index().rename(columns={"date": "price_date"}).sort_values("price_date")
+    price_df_sorted["price_date"] = pd.to_datetime(price_df_sorted["price_date"]).astype("datetime64[ns]")
     cftc_dates_sorted = pd.DataFrame({
         "report_date_as_yyyy_mm_dd": cftc_df["report_date_as_yyyy_mm_dd"].drop_duplicates().sort_values().values
     })
+    cftc_dates_sorted["report_date_as_yyyy_mm_dd"] = pd.to_datetime(cftc_dates_sorted["report_date_as_yyyy_mm_dd"]).astype("datetime64[ns]")
     price_aligned = pd.merge_asof(
         cftc_dates_sorted, price_df_sorted,
         left_on="report_date_as_yyyy_mm_dd", right_on="price_date",
