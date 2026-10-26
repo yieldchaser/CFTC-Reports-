@@ -782,6 +782,246 @@
       font-size: 11px
     }
 
+    /* === Two-Tier Navigation Shelf & Pills === */
+    .nav-shelf {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .nav-shelf-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .shelf-categories {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .shelf-cat-btn {
+      padding: 6px 12px;
+      border-radius: var(--r);
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .shelf-cat-btn:hover {
+      background: var(--bg4);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .shelf-cat-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .shelf-cat-btn.cat-macro.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    .shelf-cat-btn.cat-basis.active {
+      background: rgba(249, 115, 22, 0.2);
+      border-color: #f97316;
+      color: #fdba74;
+    }
+    .shelf-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .shelf-search-wrap .search-icon {
+      position: absolute;
+      left: 10px;
+      display: flex;
+      align-items: center;
+      color: var(--text3);
+      pointer-events: none;
+    }
+    .icon-svg {
+      display: inline-block;
+      vertical-align: -2px;
+      flex-shrink: 0;
+    }
+    .shelf-search-wrap input {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      padding: 6px 34px 6px 30px;
+      color: var(--text);
+      font-size: 11px;
+      font-family: var(--font);
+      outline: none;
+      width: 210px;
+      transition: border-color .2s, width .2s;
+    }
+    .shelf-search-wrap input:focus {
+      border-color: var(--accent);
+      width: 250px;
+    }
+    .shelf-search-wrap .search-kbd {
+      position: absolute;
+      right: 8px;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 9px;
+      font-family: var(--mono);
+      color: var(--text3);
+      padding: 1px 5px;
+      pointer-events: none;
+    }
+    .shelf-pills-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      white-space: nowrap;
+      scrollbar-width: thin;
+    }
+    .shelf-pills-row::-webkit-scrollbar {
+      height: 4px;
+    }
+    .shelf-pills-row::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px;
+    }
+    /* === Type Badges === */
+    .inst-type-badge {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .badge-macro {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .badge-basis {
+      color: #f97316;
+      background: rgba(249, 115, 22, 0.18);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+    .badge-bench {
+      color: #60a5fa;
+      background: rgba(96, 165, 250, 0.15);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+    }
+    .badge-swap {
+      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.15);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+    }
+    /* === Macro Hero Card === */
+    .macro-hero-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(6, 182, 212, 0.08) 50%, var(--bg3) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.08);
+      border-radius: var(--r2);
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .macro-hero-card:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 6px 24px rgba(245, 158, 11, 0.16);
+      transform: translateY(-1px);
+    }
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .hero-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hero-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hero-score-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .hero-metrics-grid {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 8px 12px;
+    }
+    .hero-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .hero-metric-lbl {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text3);
+    }
+    .hero-metric-val {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--text);
+    }
+    .hero-delta {
+      font-size: 9px;
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+    /* === Basis Spread Banner === */
+    .basis-spread-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: var(--r);
+      padding: 9px 14px;
+      margin-bottom: 12px;
+      color: #fbbf24;
+      font-size: 11px;
+    }
     /* === Instrument pills === */
     .pill-wrap {
       display: flex;
@@ -1190,6 +1430,10 @@
 
       /* Table: already scrollable, just nudge font down a touch */
       table    { font-size: 10px }
+      /* Navigation shelf on mobile */
+      .nav-shelf-top { flex-direction: column; align-items: stretch; gap: 8px }
+      .shelf-search-wrap input { width: 100% !important }
+      .hero-metrics-grid { gap: 10px }
     }
 
     /* ── Very small (≤ 400px) ──────────────────────────────────── */
@@ -1213,7 +1457,7 @@
       </div>
       <div>
         <h1>Blue Pulse</h1>
-        <p data-tooltip="Weekly COT disaggregated data sourced from publicreporting.cftc.gov — covers futures and options combined across 5 participant categories.">COT Intelligence &middot; <span id="hdr-instruments">10 Instruments</span> &middot; 5 Categories
+        <p data-tooltip="Weekly COT disaggregated data sourced from publicreporting.cftc.gov — covers futures and options combined across 5 participant categories.">COT Intelligence &middot; <span id="hdr-instruments">15 Instruments &amp; Composites</span> &middot; 5 Categories
         </p>
       </div>
     </div>
@@ -1262,12 +1506,14 @@
     <div id="panel-overview" class="tab-panel active">
 
       <!-- Top Signals Banner -->
-      <div id="top-signals-banner"
-        style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;margin-bottom:2px">
-        <div
-          style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">
-          &#9889; Top Signals This Week</div>
-        <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <!-- Top Signals & Macro Regime Banner -->
+      <div id="top-signals-banner" style="margin-bottom:12px">
+        <div id="macro-regime-hero"></div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center">
+            <svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><polygon points="8,1 3,9 8,9 7,15 13,7 8,7"/></svg>Top Actionable Signals This Week</div>
+          <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
       </div>
 
       <div class="section-title" data-tooltip="Per-instrument summary cards showing composite signal score, net positioning, Z-score, COT Index, and all trader categories for the latest report week. Click any card to open the full By Instrument view.">Current Week Signal Dashboard</div>
@@ -1317,12 +1563,17 @@
       <div class="chart-panel" style="padding:12px;margin-bottom:12px">
         <div
           style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--text2);font-weight:500">All Instruments &middot; Ranked by Open
-            Interest</div>
-          <div style="display:flex;gap:6px">
-            <button class="hm-btn active" id="oibt-thisweek" onclick="setOIMode('thisweek')" data-tooltip="Rank by absolute open interest this week. Shows where capital is concentrated — larger OI = more liquid, more influential positioning signals.">This Week</button>
-            <button class="hm-btn" id="oibt-4wchg" onclick="setOIMode('4wchg')" data-tooltip="Rank by 4-week OI rate of change %. Positive = growing participation (market attracting new positioning). Negative = capital leaving the market. Strong divergence from price can be a leading signal.">4w Change %</button>
-            <button class="hm-btn" id="oibt-52hi" onclick="setOIMode('52hi')" data-tooltip="Current OI as a % of its 52-week high. 100% = at 52w peak (maximum participation). &lt;50% = significantly below peak — structurally thin market where positioning signals may be less reliable.">52w High %</button>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Scope:</span>
+            <button class="hm-btn active" id="oiflt-all" onclick="setOIFilter('all')" data-tooltip="Show all 15 instruments and composites.">All (15)</button>
+            <button class="hm-btn" id="oiflt-single" onclick="setOIFilter('single')" data-tooltip="Scale Protection: Exclude 14M+ composites so individual contracts (300k-7.8M) are clearly visible.">Single Contracts (13)</button>
+            <button class="hm-btn" id="oiflt-macro" onclick="setOIFilter('macro')" data-tooltip="Show only Macro Synthetic Composites (14.9M+ aggregate OI).">Macro Composites (2)</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Metric:</span>
+            <button class="hm-btn active" id="oibt-thisweek" onclick="setOIMode('thisweek')" data-tooltip="Rank by absolute open interest this week.">This Week</button>
+            <button class="hm-btn" id="oibt-4wchg" onclick="setOIMode('4wchg')" data-tooltip="Rank by 4-week OI rate of change %.">4w Change %</button>
+            <button class="hm-btn" id="oibt-52hi" onclick="setOIMode('52hi')" data-tooltip="Current OI as a % of 52-week high.">52w High %</button>
           </div>
         </div>
         <div id="oi-leaderboard-body"></div>
@@ -1359,27 +1610,45 @@
     </div>
 
     <!-- BY INSTRUMENT TAB -->
+    <!-- BY INSTRUMENT TAB -->
     <div id="panel-instrument" class="tab-panel">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:15px;color:var(--text3)">&#128269;</span>
-        <input id="pill-search" type="text" placeholder="Filter instruments..." oninput="filterPills(this.value)"
-          style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:5px 10px;color:var(--text);font-size:11px;font-family:var(--font);outline:none;width:220px;transition:border-color .2s"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      <!-- Two-Tier Navigation Shelf -->
+      <div class="nav-shelf">
+        <div class="nav-shelf-top">
+          <!-- Tier 1: Category switcher buttons -->
+          <div id="shelf-categories" class="shelf-categories"></div>
+          <!-- Quick-filter search input with '/' keyboard shortcut -->
+          <div class="shelf-search-wrap">
+            <span class="search-icon"><svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="4.5"/><line x1="10.5" y1="10.5" x2="14.5" y2="14.5"/></svg></span>
+            <input id="pill-search" type="text" placeholder="Jump to instrument... [/]" oninput="onPillSearch(this.value)" onkeydown="onPillSearchKey(event)">
+            <kbd class="search-kbd">/</kbd>
+          </div>
+        </div>
+        <!-- Tier 2: Contextual pill shelf showing pills ONLY for currently selected category -->
+        <div id="instrument-pills" class="shelf-pills-row"></div>
       </div>
-      <div id="instrument-pills" class="pill-wrap"></div>
+      <!-- Locational basis spread banner -->
+      <div id="basis-spread-banner" style="display:none"></div>
       <div id="inst-stat-strip"></div>
       <div id="inst-charts-area" class="inst-grid"></div>
     </div>
 
     <div id="panel-three" class="tab-panel">
       <div class="normalise-bar">
+        <span style="font-size:11px;color:var(--text2)">Category:</span>
+        <button class="toggle-btn active" id="btn-three-cat-all" onclick="setThreeCategory('all')">All (15)</button>
+        <button class="toggle-btn" id="btn-three-cat-g-macro" onclick="setThreeCategory('g-macro')"><svg class="icon-svg" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><polygon points="8,1 15,8 8,15 1,8"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/></svg>Macro (2)</button>
+        <button class="toggle-btn" id="btn-three-cat-g-bench" onclick="setThreeCategory('g-bench')"><svg class="icon-svg" viewBox="0 0 16 16" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><path d="M2 13.5h12v1.5H2zm1-2h2V5H3zm4 0h2V5H7zm4 0h2V5h-2zM1 3.5L8 1.5l7 2v1H1z"/></svg>Benchmarks (4)</button>
+        <button class="toggle-btn" id="btn-three-cat-g-swaps" onclick="setThreeCategory('g-swaps')"><svg class="icon-svg" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><path d="M3 5h10M10 2l3 3-3 3M13 11H3M6 8l-3 3 3 3"/></svg>Swaps (3)</button>
+        <button class="toggle-btn" id="btn-three-cat-g-basis" onclick="setThreeCategory('g-basis')"><svg class="icon-svg" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><circle cx="8" cy="8" r="4.5"/><line x1="8" y1="1" x2="8" y2="3.5"/><line x1="8" y1="12.5" x2="8" y2="15"/><line x1="1" y1="8" x2="3.5" y2="8"/><line x1="12.5" y1="8" x2="15" y2="8"/></svg>Basis (6)</button>
+        <span style="margin-left:8px;font-size:11px;color:var(--text3)">|</span>
         <span style="font-size:11px;color:var(--text2)" data-tooltip="Toggle the chart's y-axis scaling method.">Scale:</span>
-        <button class="toggle-btn active" id="btn-pct-oi" onclick="setNormalise(true)" data-tooltip="Normalize positions as a percentage of total Open Interest to easily compare relative conviction across different contract sizes.">% of Open Interest</button>
-        <button class="toggle-btn" id="btn-raw" onclick="setNormalise(false)" data-tooltip="View raw nominal contract quantities on independent axes. Useful for spotting pure volumetric changes.">Raw (Independent Axes)</button>
-        <span style="margin-left:12px;font-size:11px;color:var(--text3)">|</span>
-        <span style="font-size:11px;color:var(--text2);margin-left:12px" data-tooltip="Sort order for the Multi-Trader grid.">Sort:</span>
-        <button class="toggle-btn active" id="btn-sort-signal" onclick="setThreeSort('signal')" data-tooltip="Sort instruments by absolute composite signal score — most extreme setups first.">Signal Strength</button>
-        <button class="toggle-btn" id="btn-sort-name" onclick="setThreeSort('name')" data-tooltip="Sort instruments alphabetically by name.">A–Z</button>
+        <button class="toggle-btn active" id="btn-pct-oi" onclick="setNormalise(true)" data-tooltip="Normalize positions as a percentage of total Open Interest.">% of OI</button>
+        <button class="toggle-btn" id="btn-raw" onclick="setNormalise(false)" data-tooltip="View raw nominal contract quantities.">Raw</button>
+        <span style="margin-left:8px;font-size:11px;color:var(--text3)">|</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:4px" data-tooltip="Sort order for the Multi-Trader grid.">Sort:</span>
+        <button class="toggle-btn active" id="btn-sort-signal" onclick="setThreeSort('signal')" data-tooltip="Sort instruments by absolute composite signal score.">Signal Strength</button>
+        <button class="toggle-btn" id="btn-sort-name" onclick="setThreeSort('name')" data-tooltip="Sort instruments alphabetically.">A–Z</button>
       </div>
       <div id="three-trader-grid" class="three-grid"></div>
     </div>
@@ -1390,7 +1659,10 @@
 
     let CFTC_DATA = null;
     let filterFromDate = null;
-    let activeInstrument = 'nat_gas_nyme';
+    let activeInstrument = 'comp_hh_prompt';
+    let activeCategory = 'g-macro';
+    let threeCategory = 'all';
+    let oiGroupFilter = 'all'; // 'all' | 'single' | 'macro'
     let activeTrader = 'managed_money';
     let normaliseByOI = true;
     let threeSort = 'signal'; // 'signal' | 'name'
@@ -1400,29 +1672,61 @@
     const ALL_CHARTS = [];
     let sortCol = 6, sortDir = -1;  // default sort by momentum
 
-    const INSTRUMENT_KEYS = [
-      'nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'henry_hub_nyme',
-      'hh_last_day', 'hh_penult_fin', 'hh_penult_nat_gas', 'hh_index_ice', 'hh_basis_ice',
-      'nat_gas_ld1_texok'
-    ];
-    const INSTRUMENT_LABELS = {
-      nat_gas_nyme: 'Nat Gas NYME', nat_gas_ld1: 'Nat Gas LD1', nat_gas_ice_pen: 'NAT GAS ICE PEN',
-      henry_hub_nyme: 'Henry Hub NYME', hh_last_day: 'HH Last Day Fin',
-      hh_penult_fin: 'HH Penultimate Fin', hh_penult_nat_gas: 'HH Penultimate Nat Gas',
-      hh_index_ice: 'HH Index ICE', hh_basis_ice: 'HH Basis ICE',
-      nat_gas_ld1_texok: 'NG LD1 Texok',
+    const COMPOSITE_CONSTITUENTS = {
+      comp_hh_prompt: 'NYME Futures + LD1 + ICE PEN + EUR Options',
+      comp_hh_clean: 'NYME + LD1 + ICE PEN + Last Day + Penult + Index ICE'
     };
+
+        const ICONS = {
+      macro: `<svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1.5px;margin-right:4px"><polygon points="8,1 15,8 8,15 1,8"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/></svg>`,
+      bench: `<svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style="vertical-align:-1.5px;margin-right:4px"><path d="M2 13.5h12v1.5H2zm1-2h2V5H3zm4 0h2V5H7zm4 0h2V5h-2zM1 3.5L8 1.5l7 2v1H1z"/></svg>`,
+      swaps: `<svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1.5px;margin-right:4px"><path d="M3 5h10M10 2l3 3-3 3M13 11H3M6 8l-3 3 3 3"/></svg>`,
+      basis: `<svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1.5px;margin-right:4px"><circle cx="8" cy="8" r="4.5"/><line x1="8" y1="1" x2="8" y2="3.5"/><line x1="8" y1="12.5" x2="8" y2="15"/><line x1="1" y1="8" x2="3.5" y2="8"/><line x1="12.5" y1="8" x2="15" y2="8"/></svg>`,
+      warn: `<svg class="icon-svg" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="1.8" style="vertical-align:-2px;margin-right:5px"><path d="M8 2L1 14h14L8 2z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="12" r="0.8" fill="#f59e0b"/></svg>`,
+      download: `<svg class="icon-svg" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><path d="M8 2v8M4 7l4 4 4-4M2 13h12"/></svg>`
+    };
+
+    const INSTRUMENT_KEYS = [
+      'comp_hh_prompt', 'comp_hh_clean',
+      'nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'opt_eur_nyme',
+      'hh_last_day', 'hh_penult_fin', 'hh_index_ice',
+      'waha_basis', 'hsc_basis', 'dominion_basis', 'aeco_basis', 'chicago_basis', 'ngpl_txok_basis'
+    ];
+
+    const INSTRUMENT_LABELS = {
+      comp_hh_prompt:   'HH Prompt Core Composite',
+      comp_hh_clean:    'HH Clean Outright Curve',
+      nat_gas_nyme:      'Nat Gas NYME',
+      nat_gas_ld1:       'Nat Gas LD1',
+      nat_gas_ice_pen:   'NAT GAS ICE PEN',
+      opt_eur_nyme:      'EUR Options NYME',
+      hh_last_day:       'HH Last Day Fin',
+      hh_penult_fin:     'HH Penultimate Fin',
+      hh_index_ice:      'HH Index ICE',
+      waha_basis:        'Waha Basis',
+      hsc_basis:         'HSC Basis',
+      dominion_basis:    'Dominion South Basis',
+      aeco_basis:        'AECO Basis',
+      chicago_basis:     'Chicago Basis',
+      ngpl_txok_basis:   'NGPL TXOK Basis'
+    };
+
     const INSTRUMENT_TOOLTIPS = {
-      nat_gas_nyme: '<strong>Nat Gas NYME — Henry Hub Physical Futures</strong><br>The global benchmark contract for US natural gas, traded on NYMEX. Physical delivery at Henry Hub, Louisiana. Highest open interest of all variants — the reference price for the entire natural gas complex. Positioning here sets the tone for all related instruments.',
-      nat_gas_ld1: '<strong>Nat Gas LD1 — ICE Last Day Financial</strong><br>ICE financially-settled contract that mirrors the NYMEX NG physical contract but cash-settles on the last trading day. Popular with participants wanting NYMEX exposure without physical delivery obligations. Very high OI — tracks NYME closely but with distinct positioning dynamics.',
-      nat_gas_ice_pen: '<strong>NAT GAS ICE PEN — ICE Penultimate Financial</strong><br>Settles on the <em>penultimate</em> (second-to-last) trading day to avoid final-day expiration volatility. Used extensively by financial participants for roll management. Positioning can diverge from NYME near expiration windows.',
-      henry_hub_nyme: '<strong>Henry Hub NYME — CME Cleared Swap</strong><br>OTC-cleared financial swap at Henry Hub, traded on NYMEX. Used by utilities and producers for long-dated hedging beyond the standard futures curve. Positioning reflects structural commercial hedging demand rather than speculative flows.',
-      hh_last_day: '<strong>HH Last Day Fin — CME Henry Hub Last Day</strong><br>Cash-settled on the <em>final</em> trading day of the NYMEX NG contract. Bridges physical futures and financial swap markets. Often used for precision hedging of month-end exposure. COT positioning reflects a mix of financial and commercial participants.',
-      hh_penult_fin: '<strong>HH Penultimate Fin — CME Penultimate Financial</strong><br>Settles against the penultimate trading day price of Henry Hub. Structurally similar to ICE PEN but cleared through CME. Participants use this to manage rollover basis risk. Useful cross-check with ICE PEN for inter-exchange flow divergence.',
-      hh_penult_nat_gas: '<strong>HH Penultimate Nat Gas — CME Physical Index</strong><br>Financial settlement referencing the natural gas index price at Henry Hub on the penultimate day. Primarily used by physical market participants for index-based exposure. Positioning here often reflects utility and LDC hedging activity.',
-      hh_index_ice: '<strong>HH Index ICE — ICE Henry Hub Spot Index</strong><br>Tracks the daily Henry Hub spot index rather than futures. Used by physical traders and power generators managing real-time gas exposure. Positioning is structurally different from futures — watch for divergences that may signal basis dislocations.',
-      hh_basis_ice: '<strong>HH Basis ICE — ICE Henry Hub Basis</strong><br>Trades the <em>differential</em> between a regional delivery point and the Henry Hub benchmark. Pure basis risk instrument — positioning reflects views on pipeline constraints, storage differentials, and regional supply/demand imbalances rather than outright price direction.',
-      nat_gas_ld1_texok: '<strong>NG LD1 Texok — ICE Texas/Oklahoma Regional Basis</strong><br>Financially-settled contract specific to the Texoma/Oklahoma natural gas hub. Reflects regional supply dynamics in the Permian, Haynesville, and SCOOP/STACK basins vs Henry Hub. Positioning extremes here often lead regional basis moves driven by pipeline capacity or production shifts.'
+      comp_hh_prompt: '<strong>HH Prompt Core Composite — Prompt Speculative Anchor</strong><br>Synthetic composite aggregating NYMEX physical futures, ICE LD1, ICE Penultimate, and NYMEX European Options. Comprehensive proxy for prompt speculative positioning across exchanges and option deltas.',
+      comp_hh_clean: '<strong>HH Clean Outright Curve — Pure Outright Positioning</strong><br>Synthetic composite aggregating NYMEX physical futures, ICE LD1, ICE Penultimate, CME Last Day, CME Penultimate, and ICE Henry Hub Index. Excludes options delta to isolate pure outright curve exposure.',
+      nat_gas_nyme: '<strong>Nat Gas NYME — Henry Hub Physical Futures</strong><br>The benchmark contract for US natural gas, traded on NYMEX. Physical delivery at Henry Hub, Louisiana. The global reference price for natural gas positioning.',
+      nat_gas_ld1: '<strong>Nat Gas LD1 — ICE Last Day Financial</strong><br>ICE financially-settled contract that mirrors the NYMEX NG physical contract but cash-settles on the final trading day. Very high OI — preferred by funds avoiding physical delivery obligations.',
+      nat_gas_ice_pen: '<strong>NAT GAS ICE PEN — ICE Penultimate Financial</strong><br>Settles on the penultimate (second-to-last) trading day of the contract. Extensively used by financial funds for roll management without expiration squeeze risk.',
+      opt_eur_nyme: '<strong>EUR Options NYME — European Style Natural Gas Options</strong><br>NYMEX European-style natural gas options on futures. Positions represent pure option delta positioning — critical for assessing gamma exposure and market tilts.',
+      hh_last_day: '<strong>HH Last Day Fin — CME Henry Hub Last Day Financial</strong><br>CME cleared swap cash-settled on the final trading day. Bridges physical futures and cleared swap markets. Widely used for precision hedging of month-end index exposure.',
+      hh_penult_fin: '<strong>HH Penultimate Fin — CME Penultimate Financial</strong><br>CME cleared swap cash-settled on the penultimate trading day. Structurally analogous to ICE PEN but cleared via CME/NYMEX. Useful for inter-exchange swap arbitrage.',
+      hh_index_ice: '<strong>HH Index ICE — ICE Henry Hub Spot Index Swap</strong><br>Settles against the published Inside FERC spot index. Heavily traded by commercial gas utilities, power generators, and marketing desks managing prompt physical flow risk.',
+      waha_basis: '<strong>Waha Basis — West Texas Permian Basin Differential</strong><br>Financially-settled basis spread reflecting cash/index differential between Waha Hub (Permian Basin) and Henry Hub. Infamous for severe negative price dislocations caused by associated gas flaring and pipeline egress bottlenecks.',
+      hsc_basis: '<strong>HSC Basis — Houston Ship Channel Differential</strong><br>Differential between Houston Ship Channel and Henry Hub. Key pricing benchmark for Gulf Coast industrial demand, LNG liquefaction export feedgas, and petrochemical facilities.',
+      dominion_basis: '<strong>Dominion South Basis — Appalachian Marcellus/Utica Differential</strong><br>Settles on the differential between Dominion South Point (Pennsylvania/Ohio/WV) and Henry Hub. The premier pricing point for northeastern shale production.',
+      aeco_basis: '<strong>AECO Basis — Alberta / Western Canada Sedimentary Basin Differential</strong><br>Differential between NOVA/AECO Hub (Alberta, Canada) and Henry Hub. Reflects Canadian cross-border export dynamics, Empress storage capacity, and TC Energy pipeline tariffs.',
+      chicago_basis: '<strong>Chicago Basis — Midwest Citygate Demand Differential</strong><br>Differential between Chicago Citygate and Henry Hub. Serves the massive Upper Midwest residential heating and power generation market, driven by winter cold snaps.',
+      ngpl_txok_basis: '<strong>NGPL TXOK Basis — Natural Gas Pipeline Co. Texas/Oklahoma Basis</strong><br>Differential between Natural Gas Pipeline Company of America (TXOK zone) and Henry Hub. Critical conduit connecting Mid-Continent and Arkoma production to Midwestern consumption centers.'
     };
     const TRADER_KEYS = ['managed_money', 'swap_dealers', 'producers', 'other_reportables', 'non_reportables'];
     const TRADER_LABELS = {
@@ -1601,7 +1905,7 @@
           const col = dp.dataset?.label === 'Hist Avg' ? '#a0aec0' : (dp.dataset?.borderColor || '#fff');
           return `<div class="tt-row"><span style="color:${col}">${dp.dataset?.label}</span><span style="color:${col}">${fmt(dp.raw)}</span></div>`;
         }).join('');
-        return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${week}</div><div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}`;
+        return `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px; font-family:var(--mono);">Report: ${week}</div><div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}`;
       }
 
       const d = getTooltipData(instKey, traderKey, idx);
@@ -1616,7 +1920,7 @@
           return net !== null ? `<div class="tt-row"><span style="color:${TRADER_COLOURS[tk]}">${TRADER_LABELS[tk]}</span><span style="color:${TRADER_COLOURS[tk]}">${fmt(net)} (${fmt(pct, 1, '', '%')})</span></div>` : '';
         }).join('');
         return `
-            <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
+            <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px; font-family:var(--mono);">Report: ${d.date}</div>
             <div class="tt-header">${instLabel}</div>
             <div class="tt-divider"></div>
             ${lines}
@@ -1628,7 +1932,7 @@
 
       if (type === 'net_pos_vs_price') {
         return `
-            <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>
+            <div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px; font-family:var(--mono);">Report: ${d.date}</div>
             <div class="tt-header">${instLabel}</div>
             <div class="tt-divider"></div>
             <div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div>
@@ -1643,7 +1947,7 @@
         `;
       }
 
-      const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px;">📅 ${d.date}</div>`;
+      const dateLine = `<div class="tt-row" style="justify-content:center; color:var(--text3); font-size:9px; margin-bottom:4px; font-family:var(--mono);">Report: ${d.date}</div>`;
       if (type === 'rolling_corr') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div><div class="tt-row"><span>20w Corr</span><span>${fmt(tooltip?.dataPoints?.[0]?.raw, 2)}</span></div><div class="tt-row"><span>Regime</span><span>${d.oi_regime}</span></div>`;
       if (type === 'weekly_flow') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Weekly Flow</span><span>${fmtChg(d.change_net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
       if (type === 'scatter') return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Net Position</span><span>${fmt(d.net)}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div><div class="tt-row"><span>Season</span><span>${d.season}</span></div>`;
@@ -1729,7 +2033,7 @@
         document.getElementById('last-updated').textContent =
           new Date(CFTC_DATA.meta.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const instCount = Object.keys(CFTC_DATA.instruments).length;
-        document.getElementById('hdr-instruments').textContent = instCount + ' Instruments';
+        document.getElementById('hdr-instruments').textContent = instCount + ' Instruments & Composites';
         checkStaleness();
         populateDateFilter();
         initDashboard();
@@ -1966,16 +2270,87 @@
     // ── Overview tab renderers ────────────────────────────────────
 
     // ── Instrument Groups ────────────────────────
+    // ── Instrument Groups (4-Tier Taxonomy) ────────────────────────
     const INST_GROUPS = [
-      { id: 'g-nyme', label: 'NYME Futures', keys: ['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen'] },
-      { id: 'g-hh', label: 'Henry Hub Variants', keys: ['henry_hub_nyme', 'hh_last_day', 'hh_penult_fin', 'hh_penult_nat_gas', 'hh_index_ice', 'hh_basis_ice'] },
-      { id: 'g-reg', label: 'Regional Basis', keys: ['nat_gas_ld1_texok'] },
+      { id: 'g-macro', label: 'Macro Composites', iconKey: 'macro', keys: ['comp_hh_prompt', 'comp_hh_clean'] },
+      { id: 'g-bench', label: 'Prompt Benchmarks', iconKey: 'bench', keys: ['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'opt_eur_nyme'] },
+      { id: 'g-swaps', label: 'Cleared Swaps', iconKey: 'swaps', keys: ['hh_last_day', 'hh_penult_fin', 'hh_index_ice'] },
+      { id: 'g-basis', label: 'Regional Basis', iconKey: 'basis', keys: ['waha_basis', 'hsc_basis', 'dominion_basis', 'aeco_basis', 'chicago_basis', 'ngpl_txok_basis'] },
     ];
 
     function renderSignalCards() {
-      const g = document.getElementById('signal-cards-container'); g.innerHTML = '';
+      const g = document.getElementById('signal-cards-container'); if (!g) return;
+      g.innerHTML = '';
 
-      // Top Signals Banner first
+      // Permanent top anchor for the macro regime: Hero card for comp_hh_prompt
+      const heroEl = document.getElementById('macro-regime-hero');
+      if (heroEl) {
+        const comp = CFTC_DATA.instruments['comp_hh_prompt'];
+        if (comp) {
+          const scores = comp.composite_scores || [];
+          const score = scores.length ? scores[scores.length - 1] : 0;
+          const sigCol = getSignalColour(score);
+          const sigLbl = getSignalLabel(score);
+          const spec = comp.total_speculative || {};
+          const specNet = last(spec.net);
+          const specDelta = last(spec.change_net) ?? wow(spec.net);
+          const mm = comp.managed_money || {};
+          const mmNet = last(mm.net);
+          const mmDelta = last(mm.change_net) ?? wow(mm.net);
+          const oi = last(comp.open_interest);
+          const oiRoc = last(comp.oi_roc_4w);
+          const regime = last(comp.oi_regime) || 'Neutral';
+          const optDelta = last(mm.option_delta_net || comp.option_delta_net);
+          const reportDate = last(comp.dates);
+
+          heroEl.innerHTML = `
+            <div class="macro-hero-card" onclick="switchTab('instrument');setActiveInst('comp_hh_prompt')" data-tooltip="Permanent Top Anchor: Front-month core speculative positioning across NYMEX Futures, LD1, ICE PEN & EUR Options. Click to inspect full charts.">
+              <div class="hero-top">
+                <div class="hero-title-wrap">
+                  <span class="inst-type-badge badge-macro">${ICONS.macro}MACRO REGIME ANCHOR</span>
+                  <div class="hero-title">${comp.label} <span style="font-size:10px;font-weight:400;color:var(--text3)">[comp_hh_prompt]</span></div>
+                </div>
+                <div class="hero-score-badge" style="background:${sigCol}20;border:1px solid ${sigCol}50;color:${sigCol}">
+                  <span style="font-size:13px;font-weight:800">${score >= 0 ? '+' : ''}${score}</span>
+                  <span style="font-size:9px;font-weight:700;text-transform:uppercase">${sigLbl}</span>
+                </div>
+              </div>
+              <div class="hero-metrics-grid">
+                <div class="hero-metric">
+                  <span class="hero-metric-lbl">Total Spec Net</span>
+                  <span class="hero-metric-val">${fmt(specNet)}</span>
+                  <span class="hero-delta ${(specDelta||0)>=0?'wow-up':'wow-dn'}">${(specDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(specDelta||0))}</span>
+                </div>
+                <div class="hero-metric">
+                  <span class="hero-metric-lbl">Managed Money Net</span>
+                  <span class="hero-metric-val">${fmt(mmNet)}</span>
+                  <span class="hero-delta ${(mmDelta||0)>=0?'wow-up':'wow-dn'}">${(mmDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(mmDelta||0))}</span>
+                </div>
+                <div class="hero-metric">
+                  <span class="hero-metric-lbl">Aggregate OI</span>
+                  <span class="hero-metric-val">${fmt(oi)}</span>
+                  <span class="hero-delta" style="color:${(oiRoc||0)>=0?'#22c55e':'#ef4444'}">${(oiRoc||0)>=0?'+':''}${(oiRoc||0).toFixed(1)}%</span>
+                </div>
+                <div class="hero-metric">
+                  <span class="hero-metric-lbl">OI Regime</span>
+                  <span class="hero-metric-val">${oiBadge(regime)}</span>
+                </div>
+                ${optDelta != null && optDelta !== 0 ? `
+                <div class="hero-metric">
+                  <span class="hero-metric-lbl">Option Delta</span>
+                  <span class="hero-metric-val" style="color:${optDelta>=0?'#22c55e':'#ef4444'}">${optDelta>=0?'+':''}${fmt(optDelta)}</span>
+                </div>` : ''}
+                <div class="hero-metric" style="margin-left:auto;text-align:right">
+                  <span class="hero-metric-lbl">As of Date</span>
+                  <span style="font-size:10px;font-family:var(--mono);color:var(--text2)">${reportDate || '—'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Top Actionable Signals chips
       const signals = [];
       Object.keys(CFTC_DATA.instruments).forEach(key => {
         const inst = CFTC_DATA.instruments[key]; if (!inst) return;
@@ -1991,43 +2366,52 @@
         } else {
           banner.innerHTML = signals.map(s => {
             const c = getSignalColour(s.score);
-            return `<div onclick="switchTab('instrument');setActiveInst('${s.key}')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 10px;background:${c}15;border:1px solid ${c}40;border-radius:6px">
-          <span style="font-size:9px;font-weight:700;color:${c}">${s.score >= 0 ? '+' : ''}${s.score}</span>
-          <span style="font-size:10px;font-weight:600;color:var(--text)">${s.label}</span>
-          <span style="font-size:8px;color:${c}">${getSignalLabel(s.score)}</span>
-        </div>`;
+            let icon = '';
+            if (s.key.startsWith('comp_')) icon = ICONS.macro;
+            else if (s.key.endsWith('_basis')) icon = ICONS.basis;
+            return `<div onclick="switchTab('instrument');setActiveInst('${s.key}')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 10px;background:${c}15;border:1px solid ${c}40;border-radius:6px;transition:all .15s" onmouseover="this.style.borderColor='${c}'" onmouseout="this.style.borderColor='${c}40'">
+              <span style="font-size:9px;font-weight:700;color:${c}">${s.score >= 0 ? '+' : ''}${s.score}</span>
+              <span style="font-size:10px;font-weight:600;color:var(--text)">${icon}${s.label}</span>
+              <span style="font-size:8px;color:${c}">${getSignalLabel(s.score)}</span>
+            </div>`;
           }).join('');
         }
       }
 
-      // Render grouped cards
+      // Render grouped cards by 4-tier taxonomy
       const instMap = CFTC_DATA.instruments;
       INST_GROUPS.forEach(grp => {
         const keys = grp.keys.filter(k => instMap[k]);
         if (!keys.length) return;
-        // Max abs score in group
         const scores = keys.map(k => { const sc = (instMap[k].composite_scores || []); return sc.length ? sc[sc.length - 1] : 0; });
         const maxAbs = scores.reduce((m, s) => Math.abs(s) > Math.abs(m) ? s : m, 0);
         const maxC = getSignalColour(maxAbs);
         const collapsed = localStorage.getItem('grp-' + grp.id) === '1';
-        // Group header
+
+        const isMacroGrp = grp.id === 'g-macro';
+        const isBasisGrp = grp.id === 'g-basis';
+
+        // Group accordion header
         const hdr = document.createElement('div');
-        hdr.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px;margin-top:4px;user-select:none';
+        hdr.style.cssText = `display:flex;align-items:center;gap:10px;padding:7px 12px;background:${isMacroGrp ? 'linear-gradient(90deg, rgba(245,158,11,0.12), var(--bg4))' : 'var(--bg4)'};border:1px solid ${isMacroGrp ? 'rgba(245,158,11,0.4)' : isBasisGrp ? 'rgba(249,115,22,0.3)' : 'var(--border)'};border-radius:6px;cursor:pointer;margin-bottom:6px;margin-top:6px;user-select:none;transition:all .2s`;
         hdr.innerHTML = `
-      <span style="font-size:11px;font-weight:700;color:var(--text2)">${grp.label} <span style="color:var(--text3);font-weight:400">(${keys.length})</span></span>
-      ${maxAbs !== 0 ? `<span style="font-size:9px;font-weight:700;color:${maxC};background:${maxC}18;padding:1px 6px;border-radius:3px" data-tooltip="Highest absolute composite score within this group this week. Indicates which instrument in this group has the most extreme positioning signal.">Peak ${maxAbs >= 0 ? '+' : ''}${maxAbs}</span>` : ''}
-      <span id="arrow-${grp.id}" style="margin-left:auto;color:var(--text3);font-size:12px">${collapsed ? '&#9654;' : '&#9660;'}</span>`;
+          <span style="font-size:11px;font-weight:700;color:${isMacroGrp ? '#fbbf24' : isBasisGrp ? '#fdba74' : 'var(--text2)'};display:inline-flex;align-items:center">${ICONS[grp.iconKey] || ''}${grp.label} <span style="color:var(--text3);font-weight:400;margin-left:4px">(${keys.length})</span></span>
+          ${maxAbs !== 0 ? `<span style="font-size:9px;font-weight:700;color:${maxC};background:${maxC}18;padding:1px 6px;border-radius:3px" data-tooltip="Highest absolute composite score within this group this week.">Peak ${maxAbs >= 0 ? '+' : ''}${maxAbs}</span>` : ''}
+          <span id="arrow-${grp.id}" style="margin-left:auto;color:var(--text3);font-size:12px">${collapsed ? '&#9654;' : '&#9660;'}</span>`;
+
         const cardWrap = document.createElement('div');
         cardWrap.id = 'cards-' + grp.id;
         cardWrap.className = 'cards-grid';
         cardWrap.style.marginBottom = '10px';
         if (collapsed) cardWrap.style.display = 'none';
+
         hdr.onclick = () => {
           const isCollapsed = cardWrap.style.display === 'none';
           cardWrap.style.display = isCollapsed ? '' : 'none';
           document.getElementById('arrow-' + grp.id).innerHTML = isCollapsed ? '&#9660;' : '&#9654;';
           localStorage.setItem('grp-' + grp.id, isCollapsed ? '0' : '1');
         };
+
         g.appendChild(hdr);
         g.appendChild(cardWrap);
 
@@ -2058,52 +2442,81 @@
           const zBarC = (mmZ || 0) > 1.5 ? '#22c55e' : (mmZ || 0) < -1.5 ? '#ef4444' : (mmZ || 0) > 0.5 ? '#86efac' : (mmZ || 0) < -0.5 ? '#fca5a5' : '#5c6b8a';
           const sigLabel = getSignalLabel(score), sigCol = getSignalColour(score);
           const isHighActivity = mmMom != null && mmMom > 80;
+
+          let typeBadgeHtml = '';
+          if (isMacroGrp) {
+            typeBadgeHtml = `<span class="inst-type-badge badge-macro">${ICONS.macro}MACRO</span>`;
+          } else if (isBasisGrp) {
+            typeBadgeHtml = `<span class="inst-type-badge badge-basis">${ICONS.basis}BASIS SPREAD</span>`;
+          } else if (grp.id === 'g-bench') {
+            typeBadgeHtml = '<span class="inst-type-badge badge-bench">BENCHMARK</span>';
+          } else if (grp.id === 'g-swaps') {
+            typeBadgeHtml = '<span class="inst-type-badge badge-swap">SWAP</span>';
+          }
+
           const card = document.createElement('div');
           card.className = `signal-card ${scoreClass(score)}`;
+          if (isMacroGrp) {
+            card.style.borderColor = 'rgba(245,158,11,0.45)';
+            card.style.boxShadow = '0 0 14px rgba(245,158,11,0.08)';
+          } else if (isBasisGrp) {
+            card.style.borderColor = 'rgba(249,115,22,0.35)';
+          }
+
           card.onclick = () => { switchTab('instrument'); setActiveInst(key); };
           card.innerHTML = `
-        <div class="card-title">
-          <span>${inst.label}</span>
-          ${isHighActivity ? `<span class="high-activity" data-tooltip="${SIGNAL_TOOLTIPS['HIGH ACTIVITY']}">HIGH ACTIVITY</span>` : ''}
-          <span class="score-pill" style="background:${sigCol}20;color:${sigCol}">${score >= 0 ? '+' : ''}${score}</span>
-        </div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(mmDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(mmDelta || 0))}</span></span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
-        <div class="cot-bar-track" style="position:relative;margin-bottom:2px"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);opacity:.4;pointer-events:none"></div><div class="cot-bar-fill" style="width:${zClamp}%;background:${zBarC}80"></div></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct != null ? cotPct + '%' : '&mdash;'}</span></div>
-        <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct ?? 0}%;background:${cotC}80"></div></div>
-        <div class="card-row" style="margin-top:4px"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap</span><span class="card-val">${fmt(swNet)}&nbsp;<span class="${(swDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(swDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(swDelta || 0))}</span></span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}&nbsp;<span class="${(prDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(prDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(prDelta || 0))}</span></span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}&nbsp;<span class="${(orDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(orDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(orDelta || 0))}</span></span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}${nrDelta != null ? '&nbsp;<span class="' + ((nrDelta || 0) >= 0 ? 'wow-up' : 'wow-dn') + '">' + ((nrDelta || 0) >= 0 ? '&#9650;' : '&#9660;') + fmt(Math.abs(nrDelta || 0)) + '</span>' : ''}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Price']}">Price</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
-        <div class="card-row"><span class="card-key" data-tooltip="Total open interest across all traders. 4wk ROC shows momentum of market participation.">OI Total</span><span class="card-val">${fmt(oi)}${oiRoc != null ? '&nbsp;<span style="color:' + oiRocC + '">' + (oiRoc >= 0 ? '+' : '') + oiRoc.toFixed(1) + '%</span>' : ''}</span></div>
-        ${mmEdge != null ? `<div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">MM Edge</span><span class="card-val" style="color:${mmEdge > 0.1 ? '#22c55e' : mmEdge < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdge >= 0 ? '+' : ''}${mmEdge.toFixed(2)}</span></div>` : ''}
-        <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
-          Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
-        </div>
-        <span class="card-signal" style="background:${sigCol}18;color:${sigCol}" data-tooltip="${SIGNAL_TOOLTIPS[sigLabel] ?? ''}">${sigLabel}</span>`;
+            <div class="card-title">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span>${inst.label}</span>
+                ${typeBadgeHtml}
+              </div>
+              <div style="display:flex;align-items:center;gap:4px">
+                ${isHighActivity ? `<span class="high-activity" data-tooltip="${SIGNAL_TOOLTIPS['HIGH ACTIVITY']}">HIGH ACTIVITY</span>` : ''}
+                <span class="score-pill" style="background:${sigCol}20;color:${sigCol}">${score >= 0 ? '+' : ''}${score}</span>
+              </div>
+            </div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">MM Net</span><span class="card-val">${fmt(mmNet)}&nbsp;<span class="${(mmDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(mmDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(mmDelta || 0))}</span></span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">Z-Score</span><span class="card-val">${fmtZ(mmZ)}&nbsp;${fmtPct(mmPct)}</span></div>
+            <div class="cot-bar-track" style="position:relative;margin-bottom:2px"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);opacity:.4;pointer-events:none"></div><div class="cot-bar-fill" style="width:${zClamp}%;background:${zBarC}80"></div></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">COT 3yr</span><span class="card-val" style="color:${cotC}">${cotPct != null ? cotPct + '%' : '&mdash;'}</span></div>
+            <div class="cot-bar-track"><div class="cot-bar-fill" style="width:${cotPct ?? 0}%;background:${cotC}80"></div></div>
+            <div class="card-row" style="margin-top:4px"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Swap Net']}">Swap</span><span class="card-val">${fmt(swNet)}&nbsp;<span class="${(swDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(swDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(swDelta || 0))}</span></span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Prod Net']}">Prod</span><span class="card-val">${fmt(prNet)}&nbsp;<span class="${(prDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(prDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(prDelta || 0))}</span></span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Other Net']}">Other</span><span class="card-val">${fmt(orNet)}&nbsp;<span class="${(orDelta || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${(orDelta || 0) >= 0 ? '&#9650;' : '&#9660;'}${fmt(Math.abs(orDelta || 0))}</span></span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Retail Net']}">Retail</span><span class="card-val">${fmt(nrNet)}${nrDelta != null ? '&nbsp;<span class="' + ((nrDelta || 0) >= 0 ? 'wow-up' : 'wow-dn') + '">' + ((nrDelta || 0) >= 0 ? '&#9650;' : '&#9660;') + fmt(Math.abs(nrDelta || 0)) + '</span>' : ''}</span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Price']}">${isBasisGrp ? 'Ref Price' : 'Price'}</span><span class="card-val">$${fmt(price, 2)}&nbsp;<span class="${(priceWow || 0) >= 0 ? 'wow-up' : 'wow-dn'}">${fmtPctChg(priceWow)}</span></span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
+            <div class="card-row"><span class="card-key" data-tooltip="Total open interest across all traders. 4wk ROC shows momentum of market participation.">OI Total</span><span class="card-val">${fmt(oi)}${oiRoc != null ? '&nbsp;<span style="color:' + oiRocC + ' font-weight:600">' + (oiRoc >= 0 ? '+' : '') + oiRoc.toFixed(1) + '%</span>' : ''}</span></div>
+            ${mmEdge != null ? `<div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">MM Edge</span><span class="card-val" style="color:${mmEdge > 0.1 ? '#22c55e' : mmEdge < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdge >= 0 ? '+' : ''}${mmEdge.toFixed(2)}</span></div>` : ''}
+            <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
+              <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
+              Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
+            </div>
+            <span class="card-signal" style="background:${sigCol}18;color:${sigCol}" data-tooltip="${SIGNAL_TOOLTIPS[sigLabel] ?? ''}">${sigLabel}</span>`;
           cardWrap.appendChild(card);
         });
       });
     }
 
-    // ── Heatmap ─────────────────────────────────────────────────
+    // ── Heatmap (Pinned Macro Composite Row) ──────────────────────
     function renderHeatmap() {
       const nWeeks = hmWeeks;
       const header = document.getElementById('heatmap-header-row');
       const body = document.getElementById('heatmap-body');
+      if (!header || !body) return;
       header.innerHTML = ''; body.innerHTML = '';
-      const instKeys = Object.keys(CFTC_DATA.instruments);
-      const refInst = CFTC_DATA.instruments['nat_gas_nyme'] || Object.values(CFTC_DATA.instruments)[0];
+
+      // Pin comp_hh_prompt to top row, followed by remaining instruments
+      const allKeys = Object.keys(CFTC_DATA.instruments);
+      const orderedKeys = ['comp_hh_prompt', ...allKeys.filter(k => k !== 'comp_hh_prompt')];
+
+      const refInst = CFTC_DATA.instruments['nat_gas_nyme'] || CFTC_DATA.instruments['comp_hh_prompt'] || Object.values(CFTC_DATA.instruments)[0];
       const allRefDates = refInst?.dates || [];
       const refDates = nWeeks ? allRefDates.slice(-nWeeks) : allRefDates;
       const NCOLS = refDates.length;
       if (!NCOLS) return;
-      const colTemplate = `120px repeat(${NCOLS}, 1fr)`;
+      const colTemplate = `130px repeat(${NCOLS}, 1fr)`;
       header.style.gridTemplateColumns = colTemplate;
       const spacer = document.createElement('div'); header.appendChild(spacer);
       refDates.forEach((d, i) => {
@@ -2111,16 +2524,33 @@
         el.textContent = i % Math.max(1, Math.round(NCOLS / 8)) === 0 ? d.slice(5) : '';
         header.appendChild(el);
       });
-      for (const key of instKeys) {
+
+      for (const key of orderedKeys) {
         const inst = CFTC_DATA.instruments[key]; if (!inst) continue;
         const td = inst[hmTrader] || {};
         const allDates = inst.dates || [], allZ = td.z_score || [];
+        const isPinned = key === 'comp_hh_prompt';
         const row = document.createElement('div'); row.className = 'heatmap-row';
         row.style.gridTemplateColumns = colTemplate;
+        if (isPinned) {
+          row.style.border = '1px solid #f59e0b';
+          row.style.background = 'rgba(245,158,11,0.08)';
+          row.style.borderRadius = '4px';
+          row.style.marginBottom = '4px';
+        }
+
         const lbl = document.createElement('div'); lbl.className = 'hm-row-label';
-        lbl.textContent = inst.label; 
+        lbl.style.width = '130px';
+        if (isPinned) {
+          lbl.innerHTML = `<span style="color:#f59e0b;font-weight:700;display:inline-flex;align-items:center">${ICONS.macro}${inst.label}</span>`;
+        } else if (key.endsWith('_basis')) {
+          lbl.innerHTML = `<span style="color:var(--text2);display:inline-flex;align-items:center">${ICONS.basis}${inst.label}</span>`;
+        } else {
+          lbl.textContent = inst.label;
+        }
         lbl.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[key] || inst.label);
         row.appendChild(lbl);
+
         for (let i = NCOLS; i > 0; i--) {
           const di = allDates.length - i;
           const z = di >= 0 ? allZ[di] : null;
@@ -2139,18 +2569,25 @@
       }
     }
 
-    // ── Correlation Matrix ────────────────────────────────────────
+    // ── Correlation Matrix (7x7 Inter-Benchmark Matrix) ─────────
     function renderCorrelationMatrix() {
-      const instKeys = Object.keys(CFTC_DATA.instruments);
+      const corrData = CFTC_DATA.correlation_matrix || CFTC_DATA.corr_matrix;
+      const matrixKeys = (corrData && Array.isArray(corrData.instruments) && corrData.instruments.length)
+        ? corrData.instruments
+        : ['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'hh_last_day', 'hh_penult_fin', 'hh_index_ice', 'opt_eur_nyme'];
+
       const colLabels = document.getElementById('corr-col-labels');
       const matBody = document.getElementById('corr-matrix-body');
+      if (!colLabels || !matBody) return;
       colLabels.innerHTML = ''; matBody.innerHTML = '';
+
       const seriesMap = {};
-      instKeys.forEach(k => {
+      matrixKeys.forEach(k => {
         const inst = CFTC_DATA.instruments[k]; if (!inst) return;
         const nets = (inst.managed_money || {}).net || [];
         seriesMap[k] = corrPeriod ? nets.slice(-corrPeriod) : nets;
       });
+
       function pearson(a, b) {
         const pairs = a.map((v, i) => [v, b[i]]).filter(([x, y]) => x != null && y != null && !isNaN(x) && !isNaN(y));
         if (pairs.length < 5) return null;
@@ -2160,38 +2597,53 @@
         pairs.forEach(([x, y]) => { num += (x - ax) * (y - ay); dx += (x - ax) ** 2; dy += (y - ay) ** 2; });
         return dx && dy ? num / Math.sqrt(dx * dy) : null;
       }
+
       // Column headers
       const hdrSpacer = document.createElement('div');
       hdrSpacer.style.cssText = `width:140px;flex-shrink:0`;
       colLabels.appendChild(hdrSpacer);
-      instKeys.forEach(k => {
+
+      matrixKeys.forEach(k => {
         const el = document.createElement('div'); el.className = 'corr-col-header';
         el.textContent = INSTRUMENT_LABELS[k] || k;
         el.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[k] || INSTRUMENT_LABELS[k] || k);
         colLabels.appendChild(el);
       });
-      instKeys.forEach((k1) => {
+
+      // Matrix rows
+      matrixKeys.forEach((k1, i1) => {
         const row = document.createElement('div'); row.className = 'corr-row';
         const lbl = document.createElement('div'); lbl.className = 'corr-row-label';
-        lbl.textContent = INSTRUMENT_LABELS[k1] || k1; 
+        lbl.textContent = INSTRUMENT_LABELS[k1] || k1;
         lbl.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[k1] || INSTRUMENT_LABELS[k1] || k1);
         row.appendChild(lbl);
-        instKeys.forEach((k2) => {
-          const val = k1 === k2 ? 1.0 : pearson(seriesMap[k1] || [], seriesMap[k2] || []);
+
+        matrixKeys.forEach((k2, i2) => {
+          let val = null;
+          if (k1 === k2) {
+            val = 1.0;
+          } else if (corrPeriod === 52 && corrData?.matrix && corrData.matrix[i1] && corrData.matrix[i1][i2] != null) {
+            val = corrData.matrix[i1][i2];
+          } else {
+            val = pearson(seriesMap[k1] || [], seriesMap[k2] || []);
+          }
+
           const cell = document.createElement('div');
           cell.className = 'corr-cell';
           cell.style.background = corrColour(val);
-          if (k1 !== k2 && val != null && Math.abs(val) > 0.7) cell.style.boxShadow = `inset 0 0 0 1px ${val > 0 ? '#22c55e' : '#ef4444'}90`;
+          if (k1 !== k2 && val != null && Math.abs(val) > 0.7) {
+            cell.style.boxShadow = `inset 0 0 0 1px ${val > 0 ? '#22c55e' : '#ef4444'}90`;
+          }
           cell.textContent = val != null ? val.toFixed(2) : '';
           const periodLabel = corrPeriod === 13 ? '13w' : corrPeriod === 26 ? '26w' : corrPeriod === 52 ? '52w' : '3yr';
-          cell.setAttribute('data-tooltip', `<strong>${INSTRUMENT_LABELS[k1]} × ${INSTRUMENT_LABELS[k2]}</strong><br>${periodLabel} MM Net Correlation: ${val != null ? val.toFixed(2) : '—'}<br>${val != null ? (Math.abs(val) > 0.7 ? '⚠ Strong relationship' : Math.abs(val) > 0.4 ? 'Moderate relationship' : 'Weak / no relationship') : ''}`);
+          cell.setAttribute('data-tooltip', `<strong>${INSTRUMENT_LABELS[k1]} × ${INSTRUMENT_LABELS[k2]}</strong><br>${periodLabel} MM Net Correlation: ${val != null ? val.toFixed(2) : '—'}<br>${val != null ? (Math.abs(val) > 0.7 ? 'Strong inter-benchmark relationship' : Math.abs(val) > 0.4 ? 'Moderate relationship' : 'Weak / divergent relationship') : ''}`);
           row.appendChild(cell);
         });
         matBody.appendChild(row);
       });
     }
 
-    // ── OI Leaderboard ────────
+    // ── OI Leaderboard (Scale-Protected) ────────
     let oiMode = 'thisweek';
     function setOIMode(m) {
       oiMode = m;
@@ -2199,11 +2651,25 @@
       const btn = document.getElementById('oibt-' + m); if (btn) btn.classList.add('active');
       renderOILeaderboard();
     }
+    function setOIFilter(f) {
+      oiGroupFilter = f;
+      document.querySelectorAll('[id^=oiflt-]').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById('oiflt-' + f); if (btn) btn.classList.add('active');
+      renderOILeaderboard();
+    }
     function renderOILeaderboard() {
       const el = document.getElementById('oi-leaderboard-body'); if (!el) return;
       el.innerHTML = '';
       const items = [];
-      Object.keys(CFTC_DATA.instruments).forEach(k => {
+
+      let keys = Object.keys(CFTC_DATA.instruments);
+      if (oiGroupFilter === 'single') {
+        keys = keys.filter(k => !k.startsWith('comp_'));
+      } else if (oiGroupFilter === 'macro') {
+        keys = keys.filter(k => k.startsWith('comp_'));
+      }
+
+      keys.forEach(k => {
         const inst = CFTC_DATA.instruments[k]; if (!inst) return;
         const oi = inst.open_interest || [];
         const cur = last(oi) || 0;
@@ -2217,8 +2683,9 @@
         else { val = cur; label = fmt(cur); col = chg4pct == null ? '#5c6b8a' : chg4pct >= 0 ? '#22c55e' : '#ef4444'; }
         items.push({ key: k, label: inst.label, val: val ?? -Infinity, displayVal: label, col, oi: cur });
       });
+
       items.sort((a, b) => b.val - a.val);
-      const maxOI = Math.max(...items.filter(i => i.val !== -Infinity).map(i => i.oi));
+      const maxOI = Math.max(1, ...items.filter(i => i.val !== -Infinity).map(i => i.oi));
       const maxValAbs = Math.max(0.0001, ...items.filter(i => i.val !== -Infinity).map(i => Math.abs(i.val)));
 
       items.forEach(({ key, label, displayVal, col, oi, val }, idx) => {
@@ -2227,27 +2694,34 @@
         else if (oiMode === '4wchg') { pct = val === -Infinity ? 0 : (Math.abs(val) / maxValAbs * 100); }
         else { pct = maxOI > 0 ? oi / maxOI * 100 : 0; }
         pct = Math.min(100, Math.max(0, pct));
-        // 4wk change badge for thisweek mode
+
         const chg4 = (() => { const inst = CFTC_DATA.instruments[key]; if (!inst) return null; const o = inst.open_interest || []; const c = last(o); const p = o.length >= 5 ? o[o.length-5] : null; return c && p && p > 0 ? (c - p) / p * 100 : null; })();
         const chgBadge = oiMode === 'thisweek' && chg4 != null ? `<span style="font-size:8px;font-weight:600;color:${chg4 >= 0 ? '#22c55e' : '#ef4444'};margin-left:4px">${chg4 >= 0 ? '+' : ''}${chg4.toFixed(1)}%</span>` : '';
+
+        let typeBadge = '';
+        if (key.startsWith('comp_')) {
+          typeBadge = '<span class="inst-type-badge badge-macro" style="font-size:7px;padding:1px 3px;margin-left:4px">MACRO</span>';
+        } else if (key.endsWith('_basis')) {
+          typeBadge = '<span class="inst-type-badge badge-basis" style="font-size:7px;padding:1px 3px;margin-left:4px">BASIS</span>';
+        }
 
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer';
         row.onclick = () => { switchTab('instrument'); setActiveInst(key); };
         row.innerHTML = `
         <div style="width:18px;font-size:8px;color:var(--text3);font-family:var(--mono);text-align:right;flex-shrink:0">#${idx+1}</div>
-        <div style="width:106px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${label}</div>
+        <div style="width:130px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;display:flex;align-items:center">${label}${typeBadge}</div>
         <div style="flex:1;background:var(--bg4);border-radius:2px;height:16px;position:relative;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${col}50;border-radius:2px"></div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:flex-end;width:80px;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:flex-end;width:85px;flex-shrink:0">
           <span style="font-size:9px;font-family:var(--mono);font-weight:600;color:${col}">${displayVal}</span>${chgBadge}
         </div>`;
         el.appendChild(row);
       });
     }
 
-    // ── Weekly Table ─────────────────────────────────────────────
+    // ── Weekly Table (15 Entities with Type Badges) ────────────
     let tableData = [];
     function renderWeeklyTable() {
       tableData = [];
@@ -2280,6 +2754,7 @@
         return sortCol === 0 || sortCol === 15 ? (String(va) < String(vb) ? -1 : 1) * sortDir : (va - vb) * sortDir;
       });
       const tbody = document.getElementById('weekly-tbody');
+      if (!tbody) return;
       tbody.innerHTML = tableData.map(r => {
         const mom = r.momentum != null ? Math.round(r.momentum) : null;
         const momCls = mom != null && mom > 80 ? 'mom-hi' : mom != null && mom < 20 ? 'mom-lo' : '';
@@ -2287,8 +2762,20 @@
         const cotV = r.mmCot != null ? Math.round(r.mmCot) : null;
         const cotC = cotV == null ? '' : cotV >= 80 ? 'color:#22c55e' : cotV <= 20 ? 'color:#ef4444' : 'color:#f59e0b';
         const oiRocC = r.oiRoc == null ? '' : r.oiRoc > 5 ? 'color:#22c55e' : r.oiRoc < -5 ? 'color:#ef4444' : 'color:#f59e0b';
+
+        let typeBadge = '';
+        if (r.key.startsWith('comp_')) {
+          typeBadge = '<span class="inst-type-badge badge-macro" style="margin-left:5px">MACRO</span>';
+        } else if (r.key.endsWith('_basis')) {
+          typeBadge = '<span class="inst-type-badge badge-basis" style="margin-left:5px">BASIS</span>';
+        } else if (['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'opt_eur_nyme'].includes(r.key)) {
+          typeBadge = '<span class="inst-type-badge badge-bench" style="margin-left:5px">BENCH</span>';
+        } else {
+          typeBadge = '<span class="inst-type-badge badge-swap" style="margin-left:5px">SWAP</span>';
+        }
+
         return `<tr onclick="switchTab('instrument');setActiveInst('${r.key}')">
-      <td data-tooltip="${INSTRUMENT_TOOLTIPS[r.key] || r.label}">${r.label}</td>
+      <td data-tooltip="${INSTRUMENT_TOOLTIPS[r.key] || r.label}"><div style="display:flex;align-items:center;gap:4px"><span>${r.label}</span>${typeBadge}</div></td>
       <td>${fmt(r.mmNet)}</td>
       <td class="${(r.mmDelta || 0) >= 0 ? 'd-pos' : 'd-neg'}">${fmtChg(r.mmDelta)}</td>
       <td style="${mmZC}">${fmtZ(r.mmZ)}</td>
@@ -2311,68 +2798,165 @@
     }
     function sortTable(col) { if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; } sortAndBuildTable(); }
 
-    // ── By Instrument tab renderers ───────────────────────────────
-
     const INSTRUMENT_DESCRIPTIONS = {
-      nat_gas_nyme: "Henry Hub front-month futures \u2014 the benchmark US natural gas contract",
-      nat_gas_ld1: "ICE last-day financial natural gas \u2014 cash-settled vs Henry Hub daily index",
-      nat_gas_ice_pen: "ICE penultimate financial \u2014 settles vs Henry Hub index, one day prior",
-      henry_hub_nyme: "CME Henry Hub swap \u2014 OTC-cleared financial swap at Henry Hub",
-      hh_last_day: "CME Henry Hub last day financial \u2014 cash-settled on final trading day",
-      hh_penult_fin: "CME Henry Hub penultimate financial \u2014 settles one day before last day",
-      hh_penult_nat_gas: "CME Henry Hub penultimate natural gas \u2014 physical delivery variant",
-      hh_index_ice: "ICE Henry Hub index \u2014 settles vs Inside FERC published Henry Hub index",
-      hh_basis_ice: "ICE Henry Hub basis swap \u2014 differential between Henry Hub and other hubs",
-      nat_gas_ld1_texok: "ICE NG LD1 TEXOK \u2014 Texoma/Oklahoma regional basis vs Henry Hub",
+      comp_hh_prompt: "Primary prompt composite: NYMEX Futures + LD1 + ICE PEN + EUR Options — comprehensive measure of prompt speculative positioning",
+      comp_hh_clean: "Clean outright curve composite: NYMEX + LD1 + ICE PEN + Last Day + Penult + Index ICE — pure outright curve without options delta",
+      nat_gas_nyme: "Henry Hub front-month futures on NYMEX — the benchmark US natural gas contract",
+      nat_gas_ld1: "ICE last-day financial natural gas — cash-settled vs Henry Hub daily index",
+      nat_gas_ice_pen: "ICE penultimate financial — settles vs Henry Hub index one day prior to expiration",
+      opt_eur_nyme: "NYMEX European-style natural gas options — positions represent pure option delta exposure",
+      hh_last_day: "CME Henry Hub last day financial swap — cash-settled on final trading day",
+      hh_penult_fin: "CME Henry Hub penultimate financial swap — settles one day before last day",
+      hh_index_ice: "ICE Henry Hub index swap — settles vs Inside FERC published Henry Hub index",
+      waha_basis: "West Texas Permian Basin cash/index differential vs Henry Hub (Waha Hub)",
+      hsc_basis: "Houston Ship Channel Gulf Coast differential vs Henry Hub",
+      dominion_basis: "Appalachian Basin Marcellus/Utica gas differential vs Henry Hub (Dominion South)",
+      aeco_basis: "Western Canadian Sedimentary Basin (Alberta) differential vs Henry Hub",
+      chicago_basis: "Midwest citygate demand center differential vs Henry Hub",
+      ngpl_txok_basis: "Natural Gas Pipeline Company of America Texas-Oklahoma zone basis vs Henry Hub"
     };
 
-    function setActiveInst(key) {
-      const descEl = document.getElementById('instrument-description');
-      if (descEl) descEl.textContent = INSTRUMENT_DESCRIPTIONS[key] || '';
-
-      activeInstrument = key;
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      const pill = document.getElementById('pill-' + key); if (pill) pill.classList.add('active');
-      destroyChartsInTab('panel-instrument');
-      renderByInstrument();
+    function renderCategoryShelf() {
+      const catWrap = document.getElementById('shelf-categories');
+      if (!catWrap || !CFTC_DATA?.instruments) return;
+      catWrap.innerHTML = '';
+      INST_GROUPS.forEach(grp => {
+        const keys = grp.keys.filter(k => CFTC_DATA.instruments[k]);
+        const btn = document.createElement('button');
+        btn.className = `shelf-cat-btn ${grp.id === 'g-macro' ? 'cat-macro' : grp.id === 'g-basis' ? 'cat-basis' : ''}` + (grp.id === activeCategory ? ' active' : '');
+        btn.id = 'shelf-cat-' + grp.id;
+        btn.innerHTML = `${ICONS[grp.iconKey] || ''}${grp.label} <span style="opacity:.7;font-size:10px">(${keys.length})</span>`;
+        btn.onclick = () => switchCategory(grp.id);
+        catWrap.appendChild(btn);
+      });
     }
 
-    function renderInstrumentPills() {
-      const wrap = document.getElementById('instrument-pills'); wrap.innerHTML = '';
-      const instKeys = Object.keys(CFTC_DATA.instruments);
-      instKeys.forEach(key => {
+    function switchCategory(catId) {
+      activeCategory = catId;
+      document.querySelectorAll('.shelf-cat-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById('shelf-cat-' + catId);
+      if (btn) btn.classList.add('active');
+
+      const grp = INST_GROUPS.find(g => g.id === catId);
+      if (grp && grp.keys.length) {
+        if (!grp.keys.includes(activeInstrument)) {
+          setActiveInst(grp.keys[0]);
+        } else {
+          renderInstrumentPills();
+        }
+      }
+    }
+
+    function renderInstrumentPills(searchQuery = '') {
+      const wrap = document.getElementById('instrument-pills');
+      if (!wrap || !CFTC_DATA?.instruments) return;
+      wrap.innerHTML = '';
+
+      const q = searchQuery.trim().toLowerCase();
+      let keysToShow = [];
+
+      if (q) {
+        // Filter across all 15 instruments when searching
+        keysToShow = Object.keys(CFTC_DATA.instruments).filter(k => {
+          const inst = CFTC_DATA.instruments[k];
+          return inst && (inst.label.toLowerCase().includes(q) || k.toLowerCase().includes(q));
+        });
+        if (!keysToShow.length) {
+          wrap.innerHTML = '<span style="font-size:11px;color:var(--text3);padding:4px 8px">No instruments match "' + searchQuery + '"</span>';
+          return;
+        }
+      } else {
+        const grp = INST_GROUPS.find(g => g.id === activeCategory);
+        keysToShow = grp ? grp.keys.filter(k => CFTC_DATA.instruments[k]) : Object.keys(CFTC_DATA.instruments);
+      }
+
+      keysToShow.forEach(key => {
         const inst = CFTC_DATA.instruments[key]; if (!inst) return;
         const btn = document.createElement('button');
         btn.className = 'pill' + (key === activeInstrument ? ' active' : '');
-        btn.id = 'pill-' + key; btn.textContent = inst.label;
+        btn.id = 'pill-' + key;
+
+        let icon = '';
+        if (key.startsWith('comp_')) icon = ICONS.macro;
+        else if (key.endsWith('_basis')) icon = ICONS.basis;
+
+        btn.innerHTML = `${icon}${inst.label}`;
         btn.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[key] || inst.label);
-        btn.dataset.label = inst.label.toLowerCase();
-        btn.onclick = () => setActiveInst(key);
+        btn.onclick = () => {
+          const sInput = document.getElementById('pill-search');
+          if (sInput && sInput.value) sInput.value = '';
+          setActiveInst(key);
+        };
         wrap.appendChild(btn);
       });
     }
 
-    // Pill search filter
-    function filterPills(q) {
-      const ql = q.toLowerCase();
-      document.querySelectorAll('#instrument-pills .pill').forEach(p => {
-        const match = !ql || p.dataset.label.includes(ql);
-        p.style.opacity = match ? '1' : '0.25';
-        p.style.pointerEvents = match ? '' : 'none';
-      });
-      if (ql) {
-        const first = document.querySelector('#instrument-pills .pill[style*="opacity: 1"]') || document.querySelector('#instrument-pills .pill:not([style*="0.25"])');
-        // auto-navigate to first match
+    function onPillSearch(val) {
+      renderInstrumentPills(val);
+    }
+
+    function onPillSearchKey(e) {
+      if (e.key === 'Enter') {
+        const firstPill = document.querySelector('#instrument-pills .pill');
+        if (firstPill) firstPill.click();
+      } else if (e.key === 'Escape') {
+        e.target.value = '';
+        e.target.blur();
+        renderInstrumentPills();
       }
     }
 
+    function setActiveInst(key) {
+      if (!CFTC_DATA?.instruments?.[key]) return;
+      activeInstrument = key;
+
+      // Ensure Tier 1 category switcher matches active instrument's group
+      const parentGrp = INST_GROUPS.find(g => g.keys.includes(key));
+      if (parentGrp && parentGrp.id !== activeCategory) {
+        activeCategory = parentGrp.id;
+        document.querySelectorAll('.shelf-cat-btn').forEach(b => b.classList.remove('active'));
+        const catBtn = document.getElementById('shelf-cat-' + parentGrp.id);
+        if (catBtn) catBtn.classList.add('active');
+      }
+
+      renderInstrumentPills();
+
+      const descEl = document.getElementById('instrument-description');
+      if (descEl) descEl.textContent = INSTRUMENT_DESCRIPTIONS[key] || '';
+
+      destroyChartsInTab('panel-instrument');
+      renderByInstrument();
+    }
+
     function renderByInstrument() {
-      const area = document.getElementById('inst-charts-area'); area.innerHTML = '';
+      const area = document.getElementById('inst-charts-area'); if (!area) return;
+      area.innerHTML = '';
       const inst = CFTC_DATA.instruments[activeInstrument]; if (!inst) return;
       const t = activeTrader;
       const td = inst[t] || {};
 
-      // ── Instrument summary strip ──────────────────────────────────
+      // Locational basis spread banner
+      const isBasis = activeInstrument.endsWith('_basis');
+      const basisBanner = document.getElementById('basis-spread-banner');
+      if (basisBanner) {
+        if (isBasis) {
+          basisBanner.style.display = 'flex';
+          basisBanner.className = 'basis-spread-banner';
+          basisBanner.innerHTML = `
+            <span style="display:flex;align-items:center">${ICONS.warn}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#fbbf24">LOCATIONAL BASIS SPREAD: Cash / Index differential vs Henry Hub (P_Hub - P_HH)</div>
+              <div style="font-size:10px;font-weight:400;color:var(--text2);margin-top:2px">
+                Settlement reflects regional pipeline bottlenecks, storage differentials, and locational supply/demand imbalances. Price overlays display prompt Henry Hub benchmark price (NG=F).
+              </div>
+            </div>`;
+        } else {
+          basisBanner.style.display = 'none';
+          basisBanner.innerHTML = '';
+        }
+      }
+
+      // ── Instrument summary stat strip ──────────────────────────────────
       const strip = document.getElementById('inst-stat-strip');
       if (strip) {
         const mm = inst.managed_money || {};
@@ -2390,11 +2974,30 @@
         const cotC = cotV == null ? 'var(--text2)' : cotV >= 80 ? '#22c55e' : cotV <= 20 ? '#ef4444' : '#f59e0b';
         const zC = mmZ == null ? 'var(--text2)' : mmZ > 1.5 ? '#22c55e' : mmZ < -1.5 ? '#ef4444' : mmZ > 0.5 ? '#86efac' : mmZ < -0.5 ? '#fca5a5' : 'var(--text2)';
         const momC = mmMom == null ? 'var(--text2)' : mmMom > 80 ? '#f59e0b' : mmMom < 20 ? 'var(--text3)' : 'var(--text2)';
+
+        // Option Delta
+        const optDeltaSeries = td.option_delta_net || inst.managed_money?.option_delta_net || inst.option_delta_net;
+        const optDelta = optDeltaSeries && optDeltaSeries.length ? last(optDeltaSeries) : null;
+
+        // Composite constituents
+        const isComp = activeInstrument.startsWith('comp_');
+        const compConstituents = COMPOSITE_CONSTITUENTS[activeInstrument];
+
         strip.innerHTML = `
           <div class="inst-stat-item" data-tooltip="${SIGNAL_TOOLTIPS[getSignalLabel(score)] ?? 'Composite positioning score from -3 (strong bearish) to +3 (strong bullish).'}">
             <span class="inst-stat-lbl">Signal</span>
             <span class="inst-stat-val" style="color:${sigCol};background:${sigCol}18;padding:1px 6px;border-radius:3px">${score >= 0 ? '+' : ''}${score} ${getSignalLabel(score)}</span>
           </div>
+          ${isComp && compConstituents ? `
+          <div class="inst-stat-item" style="border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.08);border-radius:4px;padding:2px 8px" data-tooltip="Constituents: ${compConstituents}">
+            <span class="inst-stat-lbl" style="color:#f59e0b">Constituents</span>
+            <span class="inst-stat-val" style="color:#f59e0b;font-size:9px">${compConstituents}</span>
+          </div>` : ''}
+          ${optDelta != null && optDelta !== 0 ? `
+          <div class="inst-stat-item" data-tooltip="Option Delta Net: Disaggregated options positioning delta-adjusted into equivalent futures contracts.">
+            <span class="inst-stat-lbl">Option Delta</span>
+            <span class="inst-stat-val" style="color:${optDelta>=0?'#22c55e':'#ef4444'}">${optDelta>=0?'+':''}${fmt(optDelta)} contracts (Net)</span>
+          </div>` : ''}
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">
             <span class="inst-stat-lbl">MM Net</span>
             <span class="inst-stat-val">${fmt(mmNet)}</span>
@@ -2414,7 +3017,7 @@
             <span class="inst-stat-val" style="color:${momC}">${mmMom != null ? Math.round(mmMom) : '—'}</span>
           </div>
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Price']}">
-            <span class="inst-stat-lbl">Price</span>
+            <span class="inst-stat-lbl">${isBasis ? 'Ref Price' : 'Price'}</span>
             <span class="inst-stat-val">$${fmt(price, 2)}</span>
             <span style="font-size:9px;font-weight:600;color:${(priceWow||0)>=0?'#22c55e':'#ef4444'}">${fmtPctChg(priceWow)}</span>
           </div>
@@ -2431,8 +3034,11 @@
             <span class="inst-stat-val" style="color:${mmEdgeV > 0.1 ? '#22c55e' : mmEdgeV < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdgeV >= 0 ? '+' : ''}${mmEdgeV.toFixed(2)}</span>
           </div>` : ''}`;
       }
+
       const latestNet = last(td.net), latestPrice = last(inst.price);
-      const titleSuffix = latestNet != null && latestPrice != null ? ` \u2014 Net: ${fmt(latestNet)} | Price: $${fmt(latestPrice, 2)}` : '';
+      const priceLabel = isBasis ? 'Ref Price (NG=F)' : 'Price';
+      const titleSuffix = latestNet != null && latestPrice != null ? ` — Net: ${fmt(latestNet)} | ${priceLabel}: $${fmt(latestPrice, 2)}` : '';
+      const netPosSub = isBasis ? `${TRADER_LABELS[t] || t} &middot; Reference Price: Henry Hub (NG=F)` : (TRADER_LABELS[t] || t);
 
       function panel(id, title, sub, legend, h, dl) {
         const div = document.createElement('div'); div.className = 'chart-panel';
@@ -2440,8 +3046,8 @@
       <div class="chart-header">
         <div><div class="chart-title">${title}${id === 'cv-net-price' ? titleSuffix : ''}</div><div class="chart-sub">${sub || ''}</div></div>
         <div class="chart-actions">
-          <button class="reset-zoom-btn" onclick="resetChartZoom('${id}')" data-tooltip="Reset chart zoom and pan to the default date range view.">Reset</button>
-          ${dl ? `<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" data-tooltip="Download this instrument's positioning data as a CSV file including longs, shorts, net, Z-score, COT index, and momentum score.">&#11015; CSV</button>` : ''}
+          <button class="reset-zoom-btn" onclick="resetChartZoom('${id}')" data-tooltip="Reset chart zoom and pan to default view.">Reset</button>
+          ${dl ? `<button class="icon-btn" onclick="downloadCSV('${activeInstrument}','${t}')" data-tooltip="Download positioning CSV file.">${ICONS.download}CSV</button>` : ''}
         </div>
       </div>
       ${legend ? `<div class="chart-legend">${legend}</div>` : ''}
@@ -2449,20 +3055,22 @@
         area.appendChild(div); return div;
       }
 
-      panel('cv-net-price', 'Net Position vs Price', TRADER_LABELS[t] || t, `
+      panel('cv-net-price', 'Net Position vs Price', netPosSub, `
     <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>Net Long</div>
     <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Net Short</div>
-    <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>Price</div>`, 'h240', true);
-      panel('cv-scatter', 'Price vs Net Long', 'Scatter by Season', `
+    <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>${isBasis ? 'Ref Price' : 'Price'}</div>`, 'h240', true);
+
+      panel('cv-scatter', 'Price vs Net Long', isBasis ? 'Scatter (Ref Price vs Net)' : 'Scatter by Season', `
     <div class="leg-item"><div class="leg-dot" style="background:#60a5fa"></div>Withdrawal</div>
     <div class="leg-item"><div class="leg-dot" style="background:#fb923c"></div>Injection</div>`, 'h240');
-      panel('cv-corr', '20-Week Rolling Correlation', 'Price vs Net Position', `
+
+      panel('cv-corr', '20-Week Rolling Correlation', isBasis ? 'Ref Price vs Net Position' : 'Price vs Net Position', `
     <div class="leg-item"><div class="leg-line" style="background:#22c55e;opacity:.5"></div>Trending &gt;0.4</div>
     <div class="leg-item"><div class="leg-line" style="background:#ef4444;opacity:.5"></div>Mean-Rev &lt;-0.4</div>`, 'h200');
+
       panel('cv-flow', 'Weekly Flow', 'CFTC-reported week-over-week change', null, 'h200', true);
       panel('cv-cot', 'COT Index', '3-year lookback &middot; 0 = Min, 100 = Max', null, 'h180');
 
-      // Seasonal chart with year checkboxes
       const seasonDiv = document.createElement('div'); seasonDiv.className = 'chart-panel';
       seasonDiv.innerHTML = `
     <div class="chart-header"><div><div class="chart-title">Seasonal Overlay</div><div class="chart-sub">Current year vs historical avg &plusmn; 1&sigma;</div></div></div>
@@ -2470,13 +3078,9 @@
     <div class="chart-container h200"><canvas id="cv-seasonal"></canvas></div>`;
       area.appendChild(seasonDiv);
 
-      // Lagged corr
-      panel('cv-lagged', 'Positioning Lead/Lag Analysis', 'Does MM positioning lead or lag price? 1\u20134 week leads', null, 'h180');
-
-      // Smart vs Dumb
+      panel('cv-lagged', 'Positioning Lead/Lag Analysis', 'Does MM positioning lead or lag price? 1–4 week leads', null, 'h180');
       panel('cv-smart-dumb', 'Smart vs Dumb Money', 'MM (blue) vs Non-Reportable (red dashed) net position', null, 'h200');
 
-      // Percentile panel
       const pctDiv = document.createElement('div'); pctDiv.className = 'chart-panel percentile-rank-container';
       pctDiv.style.cssText = 'height:auto; min-height:400px; overflow:visible;';
       pctDiv.innerHTML = `<div class="chart-header"><div><div class="chart-title">Historical Percentile Rank</div><div class="chart-sub">All 5 Traders &middot; Current Week</div></div></div><div id="pct-bars-area"></div>`;
@@ -2493,7 +3097,6 @@
       renderPercentileBars(inst);
     }
 
-    // ── Net Position vs Price (E8: extremes annotations) ─────────
     function renderNetPosChart(inst, traderKey) {
       const canvas = document.getElementById('cv-net-price'); if (!canvas) return;
       const td = inst[traderKey] || {};
@@ -2720,7 +3323,8 @@
       const currLags = [l1, l2, l3, l4].map(a => last(a));
       const maxLag = currLags.reduce((best, v, i) => Math.abs(v ?? 0) > Math.abs(best.val ?? 0) ? { val: v, lag: i + 1 } : best, { val: 0, lag: 0 });
       const note = maxLag.lag ? `Positioning leads price by ~${maxLag.lag}w (r=${(maxLag.val || 0).toFixed(2)})` : '';
-      canvas.closest('.chart-panel').querySelector('.chart-sub').textContent = note || 'Does MM positioning lead/lag price?';
+      const chartSub = canvas.closest('.chart-panel')?.querySelector('.chart-sub');
+      if (chartSub) chartSub.textContent = note || 'Does MM positioning lead/lag price?';
       const chart = safeCreateChart(canvas, {
         type: 'line',
         data: {
@@ -2830,6 +3434,8 @@
 
     // ── Multi-Trader View ─────────────────────────────────────────
 
+    // ── Multi-Trader View (15 Instruments & Categorized) ─────────
+
     function setNormalise(val) {
       normaliseByOI = val;
       document.getElementById('btn-pct-oi').classList.toggle('active', val);
@@ -2844,24 +3450,40 @@
       renderThreeTraderGrid();
     }
 
+    function setThreeCategory(cat) {
+      threeCategory = cat;
+      document.querySelectorAll('[id^=btn-three-cat-]').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById('btn-three-cat-' + cat); if (btn) btn.classList.add('active');
+      renderThreeTraderGrid();
+    }
+
     function renderThreeTraderGrid() {
-      const grid = document.getElementById('three-trader-grid'); grid.innerHTML = '';
-      const instKeys = Object.keys(CFTC_DATA.instruments);
+      const grid = document.getElementById('three-trader-grid'); if (!grid) return;
+      grid.innerHTML = '';
+
+      let instKeys = Object.keys(CFTC_DATA.instruments);
+
+      // Filter by category if selected
+      if (threeCategory !== 'all') {
+        const grp = INST_GROUPS.find(g => g.id === threeCategory);
+        if (grp) instKeys = instKeys.filter(k => grp.keys.includes(k));
+      }
+
       if (threeSort === 'name') {
         instKeys.sort((a, b) => (CFTC_DATA.instruments[a]?.label || a).localeCompare(CFTC_DATA.instruments[b]?.label || b));
       } else {
-        // Sort by |composite score| descending so most extreme instruments appear first
         instKeys.sort((a, b) => {
           const sa = CFTC_DATA.instruments[a]?.composite_scores || [], sb = CFTC_DATA.instruments[b]?.composite_scores || [];
           const va = sa.length ? Math.abs(sa[sa.length - 1]) : 0, vb = sb.length ? Math.abs(sb[sb.length - 1]) : 0;
           return vb - va;
         });
       }
+
       for (const key of instKeys) {
         const inst = CFTC_DATA.instruments[key]; if (!inst) continue;
         const panel = document.createElement('div'); panel.className = 'chart-panel';
         const cid = 'cv-three-' + key;
-        // Build mini stats for header
+
         const mm = inst.managed_money || {}, sw = inst.swap_dealers || {};
         const pr = inst.producers || {}, or_ = inst.other_reportables || {};
         const oi = inst.open_interest || [];
@@ -2878,11 +3500,24 @@
         const swPctStr = swPctOI != null ? (swPctOI >= 0 ? '+' : '') + swPctOI.toFixed(1) + '%' : '—';
         const mmDC = (mmWow || 0) >= 0 ? '#22c55e' : '#ef4444';
         const swDC = (swWow || 0) >= 0 ? '#22c55e' : '#ef4444';
+
+        let typeBadge = '';
+        if (key.startsWith('comp_')) {
+          typeBadge = `<span class="inst-type-badge badge-macro">${ICONS.macro}MACRO</span>`;
+        } else if (key.endsWith('_basis')) {
+          typeBadge = `<span class="inst-type-badge badge-basis">${ICONS.basis}BASIS</span>`;
+        } else if (['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'opt_eur_nyme'].includes(key)) {
+          typeBadge = '<span class="inst-type-badge badge-bench">BENCH</span>';
+        } else {
+          typeBadge = '<span class="inst-type-badge badge-swap">SWAP</span>';
+        }
+
         panel.innerHTML = `
       <div class="chart-header">
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">
             <div class="chart-title">${inst.label}</div>
+            ${typeBadge}
             <span style="font-size:8px;font-weight:700;color:${sigCol};background:${sigCol}20;padding:1px 5px;border-radius:3px;flex-shrink:0">${score >= 0 ? '+' : ''}${score}</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2910,7 +3545,6 @@
         let datasets, scalesCfg;
 
         if (normaliseByOI) {
-          // normalise to % of OI — all traders on same scale
           mmD = (mmNet || []).map((v, i) => oiArr[i] > 0 && v != null ? v / oiArr[i] * 100 : null);
           swD = (swNet || []).map((v, i) => oiArr[i] > 0 && v != null ? v / oiArr[i] * 100 : null);
           prD = (prNet || []).map((v, i) => oiArr[i] > 0 && v != null ? v / oiArr[i] * 100 : null);
@@ -2928,7 +3562,6 @@
             { type: 'line', label: 'Price', data: price, borderColor: 'rgba(248,250,252,.4)', borderWidth: 1, pointRadius: 0, tension: .3, yAxisID: 'y2', borderDash: [3, 3] },
           ];
         } else {
-          // independent axes — no scale crushing
           scalesCfg = {
             x: { ...CHART_BASE.scales.x },
             y: { position: 'left', ...CHART_BASE.scales.y, title: { display: true, text: 'MM Net', color: '#3b82f6', font: { size: 8 } } },
@@ -2958,14 +3591,13 @@
       }
     }
 
-    // ── Initialisation & event wiring ────────────────────────────
-
     function initDashboard() {
-      // Start on overview tab (set active states without triggering full switchTab re-render)
+      // Start on overview tab
       document.getElementById('tab-overview').classList.add('active');
       document.getElementById('panel-overview').classList.add('active');
       document.getElementById('trader-wrap').style.display = 'none';
 
+      renderCategoryShelf();
       renderInstrumentPills();
       renderSignalCards();
       renderHeatmap();
@@ -2974,10 +3606,24 @@
       renderWeeklyTable();
     }
 
-    // ── Feature 8e: Keyboard navigation for By Instrument tab ─────
+    // ── Keyboard shortcuts: '/' for quick search, Arrow keys to cycle ─────
     document.addEventListener('keydown', e => {
+      // '/' quick shortcut to jump to By Instrument search
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        switchTab('instrument');
+        const sInput = document.getElementById('pill-search');
+        if (sInput) {
+          sInput.focus();
+          sInput.select();
+        }
+        return;
+      }
+
       const activePanel = document.querySelector('.tab-panel.active');
       if (!activePanel || activePanel.id !== 'panel-instrument') return;
+      if (document.activeElement?.id === 'pill-search') return;
+
       const instKeys = Object.keys(CFTC_DATA?.instruments || {});
       const idx = instKeys.indexOf(activeInstrument);
       if (e.key === 'ArrowRight') {
