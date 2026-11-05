@@ -455,6 +455,7 @@ def compute_trader_stats(net: pd.Series, long_s: pd.Series, short_s: pd.Series,
 
 def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.DataFrame,
                        fut_df: pd.DataFrame = None) -> dict:
+    inst_df = inst_df.drop_duplicates(subset=["report_date_as_yyyy_mm_dd"], keep="last")
     inst_df = inst_df.sort_values("report_date_as_yyyy_mm_dd").reset_index(drop=True)
     dates_raw = inst_df["report_date_as_yyyy_mm_dd"]
     dates_str = dates_raw.dt.strftime("%Y-%m-%d").tolist()
@@ -597,6 +598,12 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
             spec_opt_delta = spec_net - f_spec_net
             result["total_speculative"]["option_delta_net"] = spec_opt_delta.tolist()
             print(f"    [Option Delta] {inst_key}: latest MM delta = {mm_opt_delta.iloc[-1]:,.0f}, Spec delta = {spec_opt_delta.iloc[-1]:,.0f}")
+
+    # Pure options contract (02365U): all positions are 100% pure option delta
+    if inst_key == "opt_eur_nyme":
+        result["managed_money"]["option_delta_net"] = mm_raw["net"].tolist()
+        result["total_speculative"]["option_delta_net"] = spec_net.tolist()
+        print(f"    [Option Delta] opt_eur_nyme: pure options contract, latest MM delta = {mm_raw['net'].iloc[-1]:,.0f}, Spec delta = {spec_net.iloc[-1]:,.0f}")
 
     # Composite scores (-3 to +3)
     mm  = result.get("managed_money", {})

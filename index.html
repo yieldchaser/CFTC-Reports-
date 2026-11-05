@@ -1057,6 +1057,19 @@
     .inst-stat-item:first-child { padding-left: 0 }
     .inst-stat-item:last-child { border-right: none }
 
+    .inst-description-bar {
+      font-size: 11px;
+      color: var(--text2);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 7px 12px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
     .inst-stat-lbl {
       font-size: 8px;
       color: var(--text3);
@@ -1544,7 +1557,7 @@
         </div>
       </div>
 
-      <div class="section-title" data-tooltip="Pearson correlation of Managed Money net positions across all 10 instruments over the selected period. Strong positive (green) = instruments tend to move together in positioning. Strong negative (red) = instruments are positioned in opposite directions — potential hedging or basis pair. Use to identify cluster risk and uncorrelated positioning opportunities.">Instrument Correlation Matrix</div>
+      <div class="section-title" data-tooltip="Pearson correlation of Managed Money net positions across all 15 instruments over the selected period. Strong positive (green) = instruments tend to move together in positioning. Strong negative (red) = instruments are positioned in opposite directions — potential hedging or basis pair. Use to identify cluster risk and uncorrelated positioning opportunities.">Instrument Correlation Matrix</div>
       <div class="chart-panel" style="padding:10px; margin-bottom: 12px;">
         <div class="corr-period-bar">
           <span style="font-size:10px;color:var(--text3)">Period:</span>
@@ -1559,7 +1572,7 @@
         </div>
       </div>
 
-      <div class="section-title" data-tooltip="Ranks all 10 instruments by open interest metric. Use 'This Week' to see absolute market size and capital concentration. '4w Change %' reveals which contracts are attracting or losing participation. '52w High %' shows how current OI compares to the past year's peak — useful for identifying under/over-crowded markets.">Open Interest Leaderboard</div>
+      <div class="section-title" data-tooltip="Ranks all 15 natural gas instruments and composites by open interest metric. Use 'This Week' to see absolute market size and capital concentration. '4w Change %' reveals which contracts are attracting or losing participation. '52w High %' shows how current OI compares to the past year's peak — useful for identifying under/over-crowded markets.">Open Interest Leaderboard</div>
       <div class="chart-panel" style="padding:12px;margin-bottom:12px">
         <div
           style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -1579,7 +1592,7 @@
         <div id="oi-leaderboard-body"></div>
       </div>
 
-      <div class="section-title" data-tooltip="Sortable table of all key metrics for the latest report week across all 10 instruments. Click any column header to sort. Click any row to open the full By Instrument view. Color coding: green = bullish/positive, red = bearish/negative, yellow = elevated but not extreme.">Weekly Change Summary</div>
+      <div class="section-title" data-tooltip="Sortable table of all key metrics for the latest report week across all 15 instruments and composites. Click any column header to sort. Click any row to open the full By Instrument view. Color coding: green = bullish/positive, red = bearish/negative, yellow = elevated but not extreme.">Weekly Change Summary</div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table id="weekly-table">
@@ -1629,6 +1642,8 @@
       </div>
       <!-- Locational basis spread banner -->
       <div id="basis-spread-banner" style="display:none"></div>
+      <!-- Instrument Institutional Description Bar -->
+      <div id="instrument-description" class="inst-description-bar"></div>
       <div id="inst-stat-strip"></div>
       <div id="inst-charts-area" class="inst-grid"></div>
     </div>
@@ -1959,7 +1974,7 @@
       if (type === 'lagged_corr') {
         const dps = tooltip?.dataPoints || [];
         const rows = dps.map(dp => `<div class="tt-row"><span style="color:${dp.dataset?.borderColor || '#fff'}">Corr (${dp.dataset?.label || 'Lead'})</span><span style="color:${dp.dataset?.borderColor || '#fff'}">${fmt(dp.raw, 2)}</span></div>`).join('');
-        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Log Price</span><span>$${fmt(d.price, 2)}</span></div>`;
+        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
       }
       if (type === 'smart_dumb') {
         const inst = CFTC_DATA.instruments[instKey];
@@ -2002,7 +2017,7 @@
 
     function resetChartZoom(id) {
       const chart = Chart.getChart(id);
-      if (chart) chart.resetZoom();
+      if (chart && typeof chart.resetZoom === 'function') chart.resetZoom();
     }
 
     const CHART_BASE = {
@@ -2141,7 +2156,7 @@
 
       // Clean ALL_CHARTS of destroyed instances
       for (let i = ALL_CHARTS.length - 1; i >= 0; i--) {
-        if (!Chart.instances[ALL_CHARTS[i].id]) {
+        if (!Chart.instances?.[ALL_CHARTS[i].id]) {
           ALL_CHARTS.splice(i, 1);
         }
       }
@@ -2162,7 +2177,7 @@
       });
       // Cleanup ALL_CHARTS
       for (let i = ALL_CHARTS.length - 1; i >= 0; i--) {
-        if (!Chart.instances[ALL_CHARTS[i].id]) {
+        if (!Chart.instances?.[ALL_CHARTS[i].id]) {
           ALL_CHARTS.splice(i, 1);
         }
       }
@@ -2171,7 +2186,12 @@
     // ── Formatters ────────────────────────────────────────────────
     function fmt(n, dec = 0, pre = '', suf = '') { if (n == null || isNaN(n)) return '\u2014'; return pre + (+n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suf; }
     function fmtZ(n) { return n == null || isNaN(n) ? '\u2014' : ((+n >= 0 ? '+' : '') + ((+n).toFixed(2))); }
-    function fmtPct(n) { return n == null || isNaN(n) ? '\u2014' : `${Math.round(+n * 100)}th`; }
+    function getOrdinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function fmtPct(n) { return n == null || isNaN(n) ? '\u2014' : getOrdinal(Math.round(+n * 100)); }
     function fmtChg(n) { return n == null || isNaN(n) ? '\u2014' : ((+n >= 0 ? '+' : '') + fmt(n)); }
     function fmtPctChg(n) { return n == null || isNaN(n) ? '\u2014' : ((+n >= 0 ? '+' : '') + ((+n * 100).toFixed(1)) + '%'); }
     function last(arr, n = 1) { return arr && arr.length >= n ? arr[arr.length - n] : null; }
@@ -2551,20 +2571,20 @@
         lbl.setAttribute('data-tooltip', INSTRUMENT_TOOLTIPS[key] || inst.label);
         row.appendChild(lbl);
 
-        for (let i = NCOLS; i > 0; i--) {
-          const di = allDates.length - i;
-          const z = di >= 0 ? allZ[di] : null;
-          const dateStr = di >= 0 ? allDates[di] : '—';
+        const dateToZ = {};
+        allDates.forEach((d, idx) => { dateToZ[d] = allZ[idx]; });
+        refDates.forEach(d => {
+          const z = dateToZ[d] ?? null;
           const cell = document.createElement('div');
           cell.className = 'hm-cell';
           cell.style.background = zColour(z);
-          cell.setAttribute('data-tooltip', `<strong>${inst.label}</strong><br>${dateStr}<br>Trader: ${TRADER_LABELS[hmTrader] || hmTrader}<br>Z-Score: ${z != null ? (+z).toFixed(2) : '—'}`);
+          cell.setAttribute('data-tooltip', `<strong>${inst.label}</strong><br>${d}<br>Trader: ${TRADER_LABELS[hmTrader] || hmTrader}<br>Z-Score: ${z != null ? (+z).toFixed(2) : '—'}`);
           cell.onclick = () => {
             switchTab('instrument');
             setActiveInst(key);
           };
           row.appendChild(cell);
-        }
+        });
         body.appendChild(row);
       }
     }
@@ -2581,15 +2601,18 @@
       if (!colLabels || !matBody) return;
       colLabels.innerHTML = ''; matBody.innerHTML = '';
 
-      const seriesMap = {};
+      const refDates = (CFTC_DATA.instruments['nat_gas_nyme']?.dates || []).slice(-corrPeriod);
+      const dateMap = {};
       matrixKeys.forEach(k => {
         const inst = CFTC_DATA.instruments[k]; if (!inst) return;
-        const nets = (inst.managed_money || {}).net || [];
-        seriesMap[k] = corrPeriod ? nets.slice(-corrPeriod) : nets;
+        const dArr = inst.dates || [], nArr = (inst.managed_money || {}).net || [];
+        const m = {};
+        dArr.forEach((d, i) => { if (nArr[i] != null) m[d] = nArr[i]; });
+        dateMap[k] = m;
       });
 
-      function pearson(a, b) {
-        const pairs = a.map((v, i) => [v, b[i]]).filter(([x, y]) => x != null && y != null && !isNaN(x) && !isNaN(y));
+      function pearson(k1, k2) {
+        const pairs = refDates.map(d => [dateMap[k1]?.[d], dateMap[k2]?.[d]]).filter(([x, y]) => x != null && y != null && !isNaN(x) && !isNaN(y));
         if (pairs.length < 5) return null;
         const mn = (arr) => arr.reduce((s, x) => s + x, 0) / arr.length;
         const ax = mn(pairs.map(p => p[0])), ay = mn(pairs.map(p => p[1]));
@@ -2625,7 +2648,7 @@
           } else if (corrPeriod === 52 && corrData?.matrix && corrData.matrix[i1] && corrData.matrix[i1][i2] != null) {
             val = corrData.matrix[i1][i2];
           } else {
-            val = pearson(seriesMap[k1] || [], seriesMap[k2] || []);
+            val = pearson(k1, k2);
           }
 
           const cell = document.createElement('div');
@@ -2750,8 +2773,14 @@
     function sortAndBuildTable() {
       const fields = ['label', 'mmNet', 'mmDelta', 'mmZ', 'mmCot', 'score', 'momentum', 'swNet', 'swDelta', 'prNet', 'orNet', 'nrNet', 'price', 'priceWow', 'oiRoc', 'regime'];
       tableData.sort((a, b) => {
-        const va = a[fields[sortCol]] ?? -Infinity, vb = b[fields[sortCol]] ?? -Infinity;
-        return sortCol === 0 || sortCol === 15 ? (String(va) < String(vb) ? -1 : 1) * sortDir : (va - vb) * sortDir;
+        const va = a[fields[sortCol]], vb = b[fields[sortCol]];
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (sortCol === 0 || sortCol === 15) {
+          return String(va).localeCompare(String(vb)) * sortDir;
+        }
+        return (Number(va) - Number(vb)) * sortDir;
       });
       const tbody = document.getElementById('weekly-tbody');
       if (!tbody) return;
@@ -2959,21 +2988,21 @@
       // ── Instrument summary stat strip ──────────────────────────────────
       const strip = document.getElementById('inst-stat-strip');
       if (strip) {
-        const mm = inst.managed_money || {};
-        const mmNet = last(mm.net), mmDelta = last(mm.change_net) ?? wow(mm.net);
-        const mmZ = last(mm.z_score), mmPct = last(mm.pct_rank);
-        const mmCot = last(mm.cot_index?.w156), mmMom = last(mm.momentum_score);
-        const mmEdgeV = last(mm.edge);
+        const tObj = inst[t] || {};
+        const tNet = last(tObj.net), tDelta = last(tObj.change_net) ?? wow(tObj.net);
+        const tZ = last(tObj.z_score), tPct = last(tObj.pct_rank);
+        const tCot = last(tObj.cot_index?.w156), tMom = last(tObj.momentum_score);
+        const tEdgeV = t === 'managed_money' ? last(tObj.edge) : null;
         const price = last(inst.price), priceWow = wowPct(inst.price);
         const regime = last(inst.oi_regime) || '—';
         const season = last(inst.season) || '—';
         const scores = inst.composite_scores || [];
         const score = scores.length ? scores[scores.length - 1] : 0;
         const sigCol = getSignalColour(score);
-        const cotV = mmCot != null ? Math.round(+mmCot) : null;
+        const cotV = tCot != null ? Math.round(+tCot) : null;
         const cotC = cotV == null ? 'var(--text2)' : cotV >= 80 ? '#22c55e' : cotV <= 20 ? '#ef4444' : '#f59e0b';
-        const zC = mmZ == null ? 'var(--text2)' : mmZ > 1.5 ? '#22c55e' : mmZ < -1.5 ? '#ef4444' : mmZ > 0.5 ? '#86efac' : mmZ < -0.5 ? '#fca5a5' : 'var(--text2)';
-        const momC = mmMom == null ? 'var(--text2)' : mmMom > 80 ? '#f59e0b' : mmMom < 20 ? 'var(--text3)' : 'var(--text2)';
+        const zC = tZ == null ? 'var(--text2)' : tZ > 1.5 ? '#22c55e' : tZ < -1.5 ? '#ef4444' : tZ > 0.5 ? '#86efac' : tZ < -0.5 ? '#fca5a5' : 'var(--text2)';
+        const momC = tMom == null ? 'var(--text2)' : tMom > 80 ? '#f59e0b' : tMom < 20 ? 'var(--text3)' : 'var(--text2)';
 
         // Option Delta
         const optDeltaSeries = td.option_delta_net || inst.managed_money?.option_delta_net || inst.option_delta_net;
@@ -2982,6 +3011,7 @@
         // Composite constituents
         const isComp = activeInstrument.startsWith('comp_');
         const compConstituents = COMPOSITE_CONSTITUENTS[activeInstrument];
+        const tLabel = TRADER_LABELS[t] || 'MM';
 
         strip.innerHTML = `
           <div class="inst-stat-item" data-tooltip="${SIGNAL_TOOLTIPS[getSignalLabel(score)] ?? 'Composite positioning score from -3 (strong bearish) to +3 (strong bullish).'}">
@@ -2998,15 +3028,15 @@
             <span class="inst-stat-lbl">Option Delta</span>
             <span class="inst-stat-val" style="color:${optDelta>=0?'#22c55e':'#ef4444'}">${optDelta>=0?'+':''}${fmt(optDelta)} contracts (Net)</span>
           </div>` : ''}
-          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Net']}">
-            <span class="inst-stat-lbl">MM Net</span>
-            <span class="inst-stat-val">${fmt(mmNet)}</span>
-            <span style="font-size:9px;font-weight:600;color:${(mmDelta||0)>=0?'#22c55e':'#ef4444'}">${(mmDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(mmDelta||0))}</span>
+          <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Net'] || 'Net position of active trader category.'}">
+            <span class="inst-stat-lbl">${tLabel} Net</span>
+            <span class="inst-stat-val">${fmt(tNet)}</span>
+            <span style="font-size:9px;font-weight:600;color:${(tDelta||0)>=0?'#22c55e':'#ef4444'}">${(tDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(tDelta||0))}</span>
           </div>
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Z-Score']}">
             <span class="inst-stat-lbl">Z-Score</span>
-            <span class="inst-stat-val" style="color:${zC}">${fmtZ(mmZ)}</span>
-            <span style="font-size:9px;color:var(--text3)">${fmtPct(mmPct)}</span>
+            <span class="inst-stat-val" style="color:${zC}">${fmtZ(tZ)}</span>
+            <span style="font-size:9px;color:var(--text3)">${fmtPct(tPct)}</span>
           </div>
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['COT 3yr']}">
             <span class="inst-stat-lbl">COT 3yr</span>
@@ -3014,7 +3044,7 @@
           </div>
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Momentum']}">
             <span class="inst-stat-lbl">Momentum</span>
-            <span class="inst-stat-val" style="color:${momC}">${mmMom != null ? Math.round(mmMom) : '—'}</span>
+            <span class="inst-stat-val" style="color:${momC}">${tMom != null ? Math.round(tMom) : '—'}</span>
           </div>
           <div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['Price']}">
             <span class="inst-stat-lbl">${isBasis ? 'Ref Price' : 'Price'}</span>
@@ -3029,9 +3059,9 @@
             <span class="inst-stat-lbl">Season</span>
             <span class="inst-stat-val" style="font-size:9px;color:var(--text2)">${season}</span>
           </div>
-          ${mmEdgeV != null ? `<div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">
+          ${tEdgeV != null ? `<div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">
             <span class="inst-stat-lbl">MM Edge</span>
-            <span class="inst-stat-val" style="color:${mmEdgeV > 0.1 ? '#22c55e' : mmEdgeV < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdgeV >= 0 ? '+' : ''}${mmEdgeV.toFixed(2)}</span>
+            <span class="inst-stat-val" style="color:${tEdgeV > 0.1 ? '#22c55e' : tEdgeV < -0.1 ? '#ef4444' : '#f59e0b'}">${tEdgeV >= 0 ? '+' : ''}${tEdgeV.toFixed(2)}</span>
           </div>` : ''}`;
       }
 
@@ -3060,7 +3090,7 @@
     <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Net Short</div>
     <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>${isBasis ? 'Ref Price' : 'Price'}</div>`, 'h240', true);
 
-      panel('cv-scatter', 'Price vs Net Long', isBasis ? 'Scatter (Ref Price vs Net)' : 'Scatter by Season', `
+      panel('cv-scatter', 'Price vs Net Position', isBasis ? 'Scatter (Ref Price vs Net)' : 'Scatter by Season', `
     <div class="leg-item"><div class="leg-dot" style="background:#60a5fa"></div>Withdrawal</div>
     <div class="leg-item"><div class="leg-dot" style="background:#fb923c"></div>Injection</div>`, 'h240');
 
@@ -3148,15 +3178,15 @@
       return annots;
     }
 
-    // ── Scatter ───────────────────────────────────────────────────
+    // ── Scatter (Price vs Net Position) ──────────────────────────
     function renderScatterChart(inst, traderKey) {
       const canvas = document.getElementById('cv-scatter'); if (!canvas) return;
       const td = inst[traderKey] || {};
-      const { dates, arrays } = applyDateFilter(inst.dates, td.long, inst.price, inst.season);
-      const [longs, prices, seasons] = arrays;
-      const s = filterFromDate ? Math.max(0, inst.dates.findIndex(d => new Date(d) >= new Date(filterFromDate))) : 0;
+      const { dates, arrays } = applyDateFilter(inst.dates, td.net, inst.price, inst.season);
+      const [nets, prices, seasons] = arrays;
+      const s = dates.length ? (inst.dates || []).indexOf(dates[0]) : 0;
       const wData = [], iData = [];
-      dates.forEach((_, i) => { if (longs[i] == null || prices[i] == null) return; const pt = { x: longs[i], y: prices[i], rawIdx: s + i }; (seasons[i] === 'Withdrawal' ? wData : iData).push(pt); });
+      dates.forEach((_, i) => { if (nets[i] == null || prices[i] == null) return; const pt = { x: nets[i], y: prices[i], rawIdx: Math.max(0, s) + i }; (seasons[i] === 'Withdrawal' ? wData : iData).push(pt); });
       const chart = safeCreateChart(canvas, {
         type: 'scatter',
         data: {
@@ -3169,7 +3199,7 @@
           ...CHART_BASE,
           interaction: { mode: 'point', intersect: true },
           plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 9 }, boxWidth: 8 } } },
-          scales: { x: { ...CHART_BASE.scales.x, title: { display: true, text: 'Net Long', color: '#5c6b8a', font: { size: 9 } } }, y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 9 } } } }
+          scales: { x: { ...CHART_BASE.scales.x, title: { display: true, text: 'Net Position', color: '#5c6b8a', font: { size: 9 } } }, y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 9 } } } }
         }
       });
       chart.userData = { type: 'scatter', instrumentKey: activeInstrument, traderKey: traderKey };
@@ -3283,7 +3313,16 @@
         });
       }
       const weekLabels = Array.from({ length: 52 }, (_, i) => `W${i + 1}`);
-      function wkNum(dateStr) { const dt = new Date(dateStr), s = new Date(dt.getFullYear(), 0, 1); return Math.ceil(((dt - s) / 86400000 + s.getDay() + 1) / 7); }
+      function getISOWeek(dateStr) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const target = new Date(Date.UTC(y, m - 1, d));
+        const dayNr = (target.getUTCDay() + 6) % 7;
+        target.setUTCDate(target.getUTCDate() - dayNr + 3);
+        const firstThursday = target.valueOf();
+        target.setUTCMonth(0, 1);
+        if (target.getUTCDay() !== 4) target.setUTCMonth(0, 1 + ((4 - target.getUTCDay()) + 7) % 7);
+        return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+      }
       const avgLine = avgByWeek.slice(0, 52);
       const upper = avgByWeek.map((a, i) => a != null && stdByWeek[i] != null ? a + stdByWeek[i] : null);
       const lower = avgByWeek.map((a, i) => a != null && stdByWeek[i] != null ? a - stdByWeek[i] : null);
@@ -3296,7 +3335,12 @@
       displayYears.forEach((y, yi) => {
         if (!activeYears[y]) return;
         const sparse = Array(52).fill(null);
-        allDates.forEach((d, i) => { if (+d.slice(0, 4) === y) { const w = wkNum(d); if (w >= 1 && w <= 52) sparse[w - 1] = allNet[i]; } });
+        allDates.forEach((d, i) => {
+          if (+d.slice(0, 4) === y) {
+            const w = Math.min(52, Math.max(1, getISOWeek(d)));
+            sparse[w - 1] = allNet[i];
+          }
+        });
         datasets.push({ label: String(y), data: sparse, borderColor: colours[yi % colours.length], borderWidth: y === nowYear ? 2 : 1.2, pointRadius: 0, tension: .3, fill: false, opacity: y === nowYear ? 1 : .7 });
       });
       const chart = safeCreateChart(canvas, {
@@ -3564,18 +3608,15 @@
         } else {
           scalesCfg = {
             x: { ...CHART_BASE.scales.x },
-            y: { position: 'left', ...CHART_BASE.scales.y, title: { display: true, text: 'MM Net', color: '#3b82f6', font: { size: 8 } } },
-            y1: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, display: false },
-            y2: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, display: false },
-            y3: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, display: false },
-            y4: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 8 } } },
+            y: { position: 'left', ...CHART_BASE.scales.y, title: { display: true, text: 'Net Contracts', color: '#5c6b8a', font: { size: 8 } } },
+            y2: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 8 } } },
           };
           datasets = [
             { type: 'line', label: 'MM', data: mmNet, borderColor: '#3b82f6', borderWidth: 1.5, pointRadius: 0, tension: .3, yAxisID: 'y' },
-            { type: 'line', label: 'Swap', data: swNet, borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0, tension: .3, yAxisID: 'y1' },
-            { type: 'line', label: 'Prod', data: prNet, borderColor: '#22c55e', borderWidth: 1.5, pointRadius: 0, tension: .3, yAxisID: 'y2' },
-            { type: 'line', label: 'Other', data: orNet, borderColor: '#a855f7', borderWidth: 1.2, pointRadius: 0, tension: .3, yAxisID: 'y3', borderDash: [3, 2] },
-            { type: 'line', label: 'Price', data: price, borderColor: 'rgba(248,250,252,.4)', borderWidth: 1, pointRadius: 0, tension: .3, yAxisID: 'y4', borderDash: [3, 3] },
+            { type: 'line', label: 'Swap', data: swNet, borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0, tension: .3, yAxisID: 'y' },
+            { type: 'line', label: 'Prod', data: prNet, borderColor: '#22c55e', borderWidth: 1.5, pointRadius: 0, tension: .3, yAxisID: 'y' },
+            { type: 'line', label: 'Other', data: orNet, borderColor: '#a855f7', borderWidth: 1.2, pointRadius: 0, tension: .3, yAxisID: 'y', borderDash: [3, 2] },
+            { type: 'line', label: 'Price', data: price, borderColor: 'rgba(248,250,252,.4)', borderWidth: 1, pointRadius: 0, tension: .3, yAxisID: 'y2', borderDash: [3, 3] },
           ];
         }
 

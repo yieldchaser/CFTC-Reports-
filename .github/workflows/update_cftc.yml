@@ -36,6 +36,10 @@ jobs:
           test -f data/cftc_processed.json
           test $(wc -c < data/cftc_processed.json) -gt 100000
 
+      - name: Run Quantitative Parity Audit
+        if: steps.pipeline.outputs.new_data == 'true'
+        run: python scripts/run_quantitative_parity_audit.py
+
       - name: Commit and push
         if: steps.pipeline.outputs.new_data == 'true'
         run: |

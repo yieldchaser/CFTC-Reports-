@@ -161,7 +161,7 @@ def run_suite_2_option_delta_integrity(data: dict):
     insts = data["instruments"]
 
     # 2.1 Storage & Structure Check
-    delta_instruments = ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "comp_hh_prompt"]
+    delta_instruments = ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme", "comp_hh_prompt"]
     for inst_key in delta_instruments:
         mm_has = "option_delta_net" in insts[inst_key].get("managed_money", {})
         spec_has = "option_delta_net" in insts[inst_key].get("total_speculative", {})
@@ -517,6 +517,40 @@ def run_suite_4_ui_rendering(data: dict):
     finally:
         if os.path.exists(node_test_path):
             os.remove(node_test_path)
+
+    # 4.4 Verified DOM Structure & Containers
+    has_inst_desc = 'id="instrument-description"' in html
+    log_test(suite, "DOM Element #instrument-description Present", has_inst_desc,
+             "Container present in panel-instrument for institutional contract profile")
+
+    # 4.5 Scatter Chart Net Position Parity (C2 fix verification)
+    # Ensure scatter plot points are bound to td.net, not td.long
+    has_scatter_net = "x: td.net[idx]" in html or "td.net" in html
+    has_no_scatter_gross_bug = not ("d.push({ x: td.long[idx], y: price[idx]" in html)
+    log_test(suite, "Scatter Plot Net Position Mapping (Zero Gross Distortion)",
+             has_scatter_net and has_no_scatter_gross_bug,
+             f"Scatter maps net positioning to X-axis correctly: {has_no_scatter_gross_bug}")
+
+    # 4.6 Tooltip Metric Accuracy (C6 fix verification)
+    has_no_log_price_typo = '<span>Log Price</span>' not in html
+    log_test(suite, "Lagged Correlation Tooltip Correct Metric Label",
+             has_no_log_price_typo,
+             "Price dollar metric displayed without misleading 'Log Price' misnomer")
+
+    # 4.7 English Ordinal Grammar Compliance (C7 fix verification)
+    has_ordinal_logic = "['th', 'st', 'nd', 'rd']" in html or "v % 100" in html
+    log_test(suite, "Percentile Ordinal Suffix Formatter (1st, 2nd, 3rd, 4th)",
+             has_ordinal_logic,
+             "Standard English ordinal formatting properly implemented")
+
+    # 4.8 Professional SVG Aesthetic Enforcement (Zero Raw Emojis)
+    import re
+    # Match emoji ranges (Emoticons, Misc Symbols, Dingbats, Transport, Supplemental, etc.)
+    emoji_pattern = re.compile(r'[\U0001F300-\U0001FAFF\U00002700-\U000027BF\U00002600-\U000026FF]')
+    emoji_matches = emoji_pattern.findall(html)
+    log_test(suite, "Strict Zero-Emoji Policy (Professional SVG Icons Only)",
+             len(emoji_matches) == 0,
+             f"Emoji matches found in index.html: {len(emoji_matches)}")
 
 
 # ==============================================================================
