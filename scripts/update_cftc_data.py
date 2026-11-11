@@ -46,14 +46,12 @@ def _set_gha_output(name: str, value: str):
 CFTC_COMBINED_URL = (
     "https://publicreporting.cftc.gov/resource/kh3c-gbw2.csv"
     "?commodity_name=NATURAL%20GAS"
-    "&$limit=50000"
-    "&$order=report_date_as_yyyy_mm_dd%20DESC"
+    "&$order=report_date_as_yyyy_mm_dd%20DESC,cftc_contract_market_code%20ASC"
 )
 CFTC_FUTURES_URL = (
     "https://publicreporting.cftc.gov/resource/72hh-3qpy.csv"
     "?commodity_name=NATURAL%20GAS"
-    "&$limit=50000"
-    "&$order=report_date_as_yyyy_mm_dd%20DESC"
+    "&$order=report_date_as_yyyy_mm_dd%20DESC,cftc_contract_market_code%20ASC"
 )
 PRICE_URL = "https://query2.finance.yahoo.com/v8/finance/chart/NG=F?interval=1d&range=5y"
 OUTPUT_PATH = "data/cftc_processed.json"
@@ -196,10 +194,25 @@ def fetch_with_retry(url, label, timeout=60, retries=3, headers=None):
 
 # ─── Fetch CFTC ────────────────────────────────────────────────────────────────
 
+def _fetch_socrata_paginated(base_url: str, label: str, page_size: int = 50000, max_pages: int = 10) -> pd.DataFrame:
+    """Fetch all pages from a Socrata CSV endpoint cleanly without losing rows above $limit."""
+    chunks = []
+    offset = 0
+    for page in range(1, max_pages + 1):
+        url = f"{base_url}&$limit={page_size}&$offset={offset}"
+        page_label = label if page == 1 else f"{label} p{page}"
+        raw = fetch_with_retry(url, page_label)
+        chunk = pd.read_csv(io.StringIO(raw), low_memory=False)
+        chunks.append(chunk)
+        if len(chunk) < page_size:
+            break
+        offset += page_size
+    return pd.concat(chunks, ignore_index=True) if len(chunks) > 1 else chunks[0]
+
+
 def fetch_cftc_combined() -> pd.DataFrame:
     print("\n[Phase 1.1] Fetching CFTC Disaggregated Futures & Options Combined (kh3c-gbw2)...")
-    raw = fetch_with_retry(CFTC_COMBINED_URL, "CFTC Combined")
-    df = pd.read_csv(io.StringIO(raw), low_memory=False)
+    df = _fetch_socrata_paginated(CFTC_COMBINED_URL, "CFTC Combined")
     print(f"  Rows: {len(df):,}  Cols: {len(df.columns)}")
     assert len(df) > 500
     assert "market_and_exchange_names" in df.columns
@@ -223,8 +236,7 @@ def fetch_cftc_combined() -> pd.DataFrame:
 
 def fetch_cftc_futures_only() -> pd.DataFrame:
     print("\n[Phase 1.2] Fetching CFTC Disaggregated Futures Only (72hh-3qpy)...")
-    raw = fetch_with_retry(CFTC_FUTURES_URL, "CFTC Futures Only")
-    df = pd.read_csv(io.StringIO(raw), low_memory=False)
+    df = _fetch_socrata_paginated(CFTC_FUTURES_URL, "CFTC Futures Only")
     print(f"  Rows: {len(df):,}  Cols: {len(df.columns)}")
     assert len(df) > 500
     assert "market_and_exchange_names" in df.columns
@@ -239,41 +251,42 @@ def fetch_prices() -> pd.Series:
     print("[Phase 1.3] Fetching NG price data from Yahoo Finance...")
     import urllib.request
     import urllib.parse
-    
-    url = (
-        "https://query2.finance.yahoo.com/v8/finance/chart/"
-        + urllib.parse.quote("NG=F")
-        + "?interval=1d&range=5y"
-    )
+
+    symbol = urllib.parse.quote("NG=F")
+    urls = [
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5y",
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5y",
+    ]
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; archive_contract/1.0)"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-    
+
     payload = None
-    retries = 3
+    retries = 4
     for attempt in range(1, retries + 1):
+        url = urls[(attempt - 1) % len(urls)]
         try:
             print(f"  [Prices] Attempt {attempt}/{retries}: {url[:80]}...")
             req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=20) as resp:
                 payload = json.load(resp)
-            print(f"  [Prices] OK")
+            print("  [Prices] OK")
             break
         except Exception as exc:
             print(f"  [Prices] Error: {exc}")
             if attempt < retries:
                 time.sleep(2 ** attempt)
-                
+
     if not payload:
         raise RuntimeError("All attempts failed to fetch prices from Yahoo Finance")
-        
+
     result = payload.get('chart', {}).get('result')
     if not result:
         raise RuntimeError("Yahoo Finance returned no data for NG=F")
-        
+
     timestamps = result[0].get('timestamp', [])
     closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
-    
+
     dates = []
     prices = []
     for ts, close in zip(timestamps, closes):
@@ -282,12 +295,12 @@ def fetch_prices() -> pd.Series:
         dt = datetime.fromtimestamp(ts, tz=timezone.utc).date()
         dates.append(pd.to_datetime(dt))
         prices.append(float(close))
-        
+
     df = pd.DataFrame({"date": dates, "price": prices})
     df["date"] = pd.to_datetime(df["date"]).astype("datetime64[ns]")
-    df = df.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
+    df = df.dropna(subset=["date"]).sort_values("date").drop_duplicates(subset=["date"], keep="last").reset_index(drop=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
-    
+
     price = df.set_index("date")["price"]
     print(f"  Price range: {price.index.min().date()} to {price.index.max().date()}")
     print("[Phase 1.3] Price OK\n")
@@ -337,6 +350,8 @@ def seasonal_stats(net: pd.Series, dates):
         week_of_year = dates.dt.isocalendar().week.values.astype(int)
     else:
         week_of_year = pd.DatetimeIndex(dates).isocalendar().week.values.astype(int)
+    # Map ISO week 53 (e.g., 2026-12-29) into week 52 to prevent NaN year-end gaps
+    week_of_year = np.clip(week_of_year, 1, 52)
     avgs, stds = {}, {}
     for w in range(1, 53):
         mask = week_of_year == w
@@ -580,6 +595,7 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
         market_name = INSTRUMENTS[inst_key]
         fut_sub = fut_df[fut_df["market_and_exchange_names"].str.strip() == market_name].copy()
         if len(fut_sub) > 0:
+            fut_sub = fut_sub.drop_duplicates(subset=["report_date_as_yyyy_mm_dd"], keep="last")
             fut_sub = fut_sub.sort_values("report_date_as_yyyy_mm_dd").set_index("report_date_as_yyyy_mm_dd")
             # Align with inst_df dates
             aligned_fut = inst_df[["report_date_as_yyyy_mm_dd"]].join(fut_sub, on="report_date_as_yyyy_mm_dd")
@@ -869,8 +885,9 @@ def main():
     cftc_comb_df = fetch_cftc_combined()
     cftc_fut_df  = fetch_cftc_futures_only()
 
-    # Staleness check
+    # Staleness & endpoint sync check
     incoming_latest = cftc_comb_df["report_date_as_yyyy_mm_dd"].max().strftime("%Y-%m-%d")
+    fut_latest = cftc_fut_df["report_date_as_yyyy_mm_dd"].max().strftime("%Y-%m-%d")
     existing_latest = None
     if os.path.exists(OUTPUT_PATH):
         try:
@@ -880,12 +897,19 @@ def main():
         except Exception:
             pass
     print(f"  Existing latest date : {existing_latest or 'none'}")
-    print(f"  Incoming latest date : {incoming_latest}")
+    print(f"  Incoming Comb date   : {incoming_latest}")
+    print(f"  Incoming Fut  date   : {fut_latest}")
 
     if not args.force and existing_latest and incoming_latest <= existing_latest:
         print("\n[Skip] CFTC has not published new data yet. No update needed. (Use --force to override)")
         _set_gha_output("new_data", "false")
         return
+
+    if not args.force and fut_latest < incoming_latest:
+        print(f"\n[Skip] Futures Only endpoint ({fut_latest}) is behind Combined ({incoming_latest}); deferring until synced so option deltas stay accurate.")
+        _set_gha_output("new_data", "false")
+        return
+
     print("  Processing full data pipeline...\n")
     _set_gha_output("new_data", "true")
 

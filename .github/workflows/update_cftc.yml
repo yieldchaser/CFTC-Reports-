@@ -8,6 +8,10 @@ on:
     - cron: '30 21 * * 2'   # Tuesday 21:30 UTC  — catch holiday/slip delays (Monday holiday delays update Socrata Tuesday ~19:30 UTC)
   workflow_dispatch:          # Allow manual trigger from Actions tab
 
+concurrency:
+  group: cftc-data-pipeline
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -37,7 +41,7 @@ jobs:
           test $(wc -c < data/cftc_processed.json) -gt 100000
 
       - name: Run Quantitative Parity Audit
-        if: steps.pipeline.outputs.new_data == 'true'
+        if: steps.pipeline.outputs.new_data == 'true' || github.event_name == 'workflow_dispatch'
         run: python scripts/run_quantitative_parity_audit.py
 
       - name: Commit and push
