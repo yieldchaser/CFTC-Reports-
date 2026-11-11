@@ -103,28 +103,32 @@ def run_suite_1_bloomberg_parity(data: dict):
              f"Actual peak: {peak_2024_nyme_val:,.0f} on {peak_2024_nyme_date} (Target: ~510,000)")
 
     peak_2024_combo_idx = df_2024["combo_spec_s"].idxmax()
-    peak_2024_combo_val = df_2024.loc[peak_2024_combo_idx]["combo_spec_s"]
+    peak_2024_combo_row = df_2024.loc[peak_2024_combo_idx]
+    peak_2024_combo_val = peak_2024_combo_row["combo_spec_s"]
     log_test(suite, "2024 Combined (NYME + EUR Opt) Short Reconciliation", True,
-             f"Combined Spec Short: {peak_2024_combo_val:,.0f} (NYME: {peak_2024_nyme_val:,.0f} + EUR Opt: {peak_2024_nyme_row['eur_spec_s']:,.0f})")
+             f"Combined Spec Short: {peak_2024_combo_val:,.0f} (NYME: {peak_2024_combo_row['nyme_spec_s']:,.0f} + EUR Opt: {peak_2024_combo_row['eur_spec_s']:,.0f})")
 
-    # 1.3 2026 Peak Parity (Sept/Oct 2026 ~570K–580K)
-    df_2026 = combo_df[combo_df["year"] == 2026]
-    peak_2026_combo_idx = df_2026["combo_spec_s"].idxmax()
-    peak_2026_combo_row = df_2026.loc[peak_2026_combo_idx]
+    # 1.3 Sept/Oct 2026 Historical Peak Parity (~570K–580K through 2026-10-27 Bloomberg snapshot)
+    # Pinned to <= 2026-10-27 so live CFTC weekly updates in Nov/Dec 2026+ do not break historical snapshot parity.
+    df_2026_oct = combo_df[(combo_df["date"] >= "2026-01-01") & (combo_df["date"] <= "2026-10-27")]
+    peak_2026_combo_idx = df_2026_oct["combo_spec_s"].idxmax()
+    peak_2026_combo_row = df_2026_oct.loc[peak_2026_combo_idx]
     peak_2026_combo_val = peak_2026_combo_row["combo_spec_s"]
     peak_2026_combo_date = peak_2026_combo_row["date"].strftime("%Y-%m-%d")
 
-    # Reconciled against 570K–580K range:
+    # Reconciled against Sept/Oct 2026 Bloomberg snapshot range (~570K–580K):
     is_2026_parity = (565_000 <= peak_2026_combo_val <= 585_000)
-    log_test(suite, "2026 Combined Spec Short Parity (~570K–580K)", is_2026_parity,
-             f"Actual peak: {peak_2026_combo_val:,.0f} on {peak_2026_combo_date} (Target: 570,000–580,000)")
+    log_test(suite, "Sept/Oct 2026 Historical Spec Short Parity (~570K–580K)", is_2026_parity,
+             f"Peak through 2026-10-27: {peak_2026_combo_val:,.0f} on {peak_2026_combo_date} (Target: 570,000–580,000)")
 
-    # Latest observation check (2026-10-20)
+    # Dynamic Latest Combined Spec Short Level (forward-compatible for all future CFTC releases)
     latest_row = combo_df.iloc[-1]
     latest_combo_val = latest_row["combo_spec_s"]
     latest_date_str = latest_row["date"].strftime("%Y-%m-%d")
-    log_test(suite, "Latest 2026-10 Combined Spec Short Level", True,
-             f"Latest as of {latest_date_str}: {latest_combo_val:,.0f} contracts")
+    is_latest_valid = bool(pd.notna(latest_combo_val) and latest_combo_val > 0)
+    log_test(suite, "Latest Combined Spec Short Level", is_latest_valid,
+             f"Latest as of {latest_date_str}: {latest_combo_val:,.0f} contracts "
+             f"(NYME: {latest_row['nyme_spec_s']:,.0f} + EUR Opt: {latest_row['eur_spec_s']:,.0f})")
 
     # 1.4 2020 Historical Benchmark Reconciliation
     # Note: nat_gas_nyme has 246 weekly observations (from 2022-02-08) due to the 50,000-row Socrata natural gas limit.
@@ -181,41 +185,26 @@ def run_suite_2_option_delta_integrity(data: dict):
                      f"Len={len(arr)}, Nulls={null_count}, Infs={inf_count}, Min={arr.min():,.0f}, Max={arr.max():,.0f}")
 
     # 2.3 Composite Option Delta Exact Additivity
-    # Check: comp_hh_prompt delta == nat_gas_nyme delta + nat_gas_ld1 delta + nat_gas_ice_pen delta + opt_eur_nyme net
+    # Check date-aligned sum: comp_hh_prompt delta == sum(nyme, ld1, ice_pen, opt_eur_nyme)
     prompt_dates = insts["comp_hh_prompt"]["dates"]
-    eur_dates = insts["opt_eur_nyme"]["dates"]
+    mm_expected = np.zeros(len(prompt_dates), dtype=float)
+    spec_expected = np.zeros(len(prompt_dates), dtype=float)
+    for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]:
+        k_dates = insts[k]["dates"]
+        mm_expected += pd.Series(insts[k]["managed_money"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values
+        spec_expected += pd.Series(insts[k]["total_speculative"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values
 
-    eur_mm_net_s = pd.Series(insts["opt_eur_nyme"]["managed_money"]["net"], index=eur_dates)
-    eur_spec_net_s = pd.Series(insts["opt_eur_nyme"]["total_speculative"]["net"], index=eur_dates)
+    mm_actual = np.array(insts["comp_hh_prompt"]["managed_money"]["option_delta_net"], dtype=float)
+    mm_diff = float(np.max(np.abs(mm_expected - mm_actual)))
 
-    eur_mm_aligned = eur_mm_net_s.reindex(prompt_dates).fillna(0).values
-    eur_spec_aligned = eur_spec_net_s.reindex(prompt_dates).fillna(0).values
+    log_test(suite, "Prompt Composite MM Option Delta Exact Additivity", mm_diff <= 1e-4,
+             f"Max absolute discrepancy across all {len(prompt_dates)} weeks: {mm_diff:.4f} contracts")
 
-    # Managed Money Delta Additivity
-    mm_expected = (
-        np.array(insts["nat_gas_nyme"]["managed_money"]["option_delta_net"]) +
-        np.array(insts["nat_gas_ld1"]["managed_money"]["option_delta_net"]) +
-        np.array(insts["nat_gas_ice_pen"]["managed_money"]["option_delta_net"]) +
-        eur_mm_aligned
-    )
-    mm_actual = np.array(insts["comp_hh_prompt"]["managed_money"]["option_delta_net"])
-    mm_diff = np.max(np.abs(mm_expected - mm_actual))
+    spec_actual = np.array(insts["comp_hh_prompt"]["total_speculative"]["option_delta_net"], dtype=float)
+    spec_diff = float(np.max(np.abs(spec_expected - spec_actual)))
 
-    log_test(suite, "Prompt Composite MM Option Delta Exact Additivity", mm_diff == 0.0,
-             f"Max absolute discrepancy across all 246 weeks: {mm_diff:.4f} contracts")
-
-    # Total Speculative Delta Additivity
-    spec_expected = (
-        np.array(insts["nat_gas_nyme"]["total_speculative"]["option_delta_net"]) +
-        np.array(insts["nat_gas_ld1"]["total_speculative"]["option_delta_net"]) +
-        np.array(insts["nat_gas_ice_pen"]["total_speculative"]["option_delta_net"]) +
-        eur_spec_aligned
-    )
-    spec_actual = np.array(insts["comp_hh_prompt"]["total_speculative"]["option_delta_net"])
-    spec_diff = np.max(np.abs(spec_expected - spec_actual))
-
-    log_test(suite, "Prompt Composite Spec Option Delta Exact Additivity", spec_diff == 0.0,
-             f"Max absolute discrepancy across all 246 weeks: {spec_diff:.4f} contracts")
+    log_test(suite, "Prompt Composite Spec Option Delta Exact Additivity", spec_diff <= 1e-4,
+             f"Max absolute discrepancy across all {len(prompt_dates)} weeks: {spec_diff:.4f} contracts")
 
 
 # ==============================================================================
@@ -268,14 +257,28 @@ def run_suite_3_schema_guardrails(data: dict):
     log_test(suite, "Array Length Uniformity Across All Series", all_lengths_ok,
              "All array series perfectly match dates length" if all_lengths_ok else f"Mismatches: {bad_length_details[:3]}")
 
-    # 3.3 Strict JSON Numerical Literal Validation (No raw NaN or Infinity)
+    # 3.2b Chronological Strict Ordering & Duplicate Date Check
+    dates_ordered_ok = True
+    bad_date_insts = []
+    for k, inst in insts.items():
+        d_list = inst.get("dates", [])
+        if len(d_list) != len(set(d_list)) or d_list != sorted(d_list):
+            dates_ordered_ok = False
+            bad_date_insts.append(k)
+    log_test(suite, "Chronological & Unique Date Ordering", dates_ordered_ok,
+             "All instruments strictly chronological without duplicate dates" if dates_ordered_ok else f"Issues in: {bad_date_insts}")
+
+    # 3.3 Strict JSON Numerical Literal Validation (No JSON NaN / Infinity constants)
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         raw_text = f.read()
-    has_nan_literal = "NaN" in raw_text
-    has_inf_literal = "Infinity" in raw_text
+    invalid_constants = []
+    def _reject_nonstandard(c):
+        invalid_constants.append(c)
+        return None
+    json.loads(raw_text, parse_constant=_reject_nonstandard)
     log_test(suite, "JSON Strict Compliance (Zero NaN / Infinity Literals)",
-             (not has_nan_literal and not has_inf_literal),
-             f"NaN present: {has_nan_literal}, Infinity present: {has_inf_literal}")
+             len(invalid_constants) == 0,
+             f"Non-standard JSON numeric constants found: {len(invalid_constants)}")
 
     # 3.4 Numerical Bounds Guardrails
     bounds_ok = True

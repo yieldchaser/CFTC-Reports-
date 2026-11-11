@@ -775,31 +775,21 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
 
     # Net Option Delta for Prompt Composite
     if comp_key == "comp_hh_prompt":
-        # Sum option_delta_net of components
+        # Sum date-aligned option_delta_net across components:
         # nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + opt_eur_nyme
         mm_delta_comp = pd.Series(0.0, index=dates_raw.index)
         spec_delta_comp = pd.Series(0.0, index=dates_raw.index)
-        
-        for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen"]:
-            if k in instruments_out:
-                mm_d = instruments_out[k].get("managed_money", {}).get("option_delta_net", [])
-                sp_d = instruments_out[k].get("total_speculative", {}).get("option_delta_net", [])
-                if len(mm_d) == len(dates_raw):
-                    mm_delta_comp += pd.Series(mm_d, index=dates_raw.index).fillna(0)
-                if len(sp_d) == len(dates_raw):
-                    spec_delta_comp += pd.Series(sp_d, index=dates_raw.index).fillna(0)
 
-        # In opt_eur_nyme, ALL positions are pure option delta
-        if "opt_eur_nyme" in instruments_out:
-            opt_inst = instruments_out["opt_eur_nyme"]
-            opt_dates = pd.to_datetime(opt_inst["dates"])
-            opt_mm_net = pd.Series(opt_inst["managed_money"]["net"], index=opt_dates)
-            opt_sp_net = pd.Series(opt_inst["total_speculative"]["net"], index=opt_dates)
-            
-            aligned_mm_opt = opt_mm_net.reindex(dates_raw).fillna(0)
-            aligned_sp_opt = opt_sp_net.reindex(dates_raw).fillna(0)
-            mm_delta_comp += aligned_mm_opt.values
-            spec_delta_comp += aligned_sp_opt.values
+        for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]:
+            if k in instruments_out:
+                c_inst = instruments_out[k]
+                c_dates = pd.to_datetime(c_inst["dates"])
+                mm_d = c_inst.get("managed_money", {}).get("option_delta_net", [])
+                sp_d = c_inst.get("total_speculative", {}).get("option_delta_net", [])
+                if len(mm_d) == len(c_dates):
+                    mm_delta_comp += pd.Series(mm_d, index=c_dates).reindex(dates_raw).fillna(0).values
+                if len(sp_d) == len(c_dates):
+                    spec_delta_comp += pd.Series(sp_d, index=c_dates).reindex(dates_raw).fillna(0).values
 
         result["managed_money"]["option_delta_net"] = mm_delta_comp.tolist()
         result["total_speculative"]["option_delta_net"] = spec_delta_comp.tolist()
