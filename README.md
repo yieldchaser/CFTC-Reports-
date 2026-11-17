@@ -54,7 +54,7 @@ Dollar-sized positioning plus a daily trend-follower (CTA) model for Henry Hub.
 - The dollar scale is the OLS slope of weekly CFTC Managed Money $ on model exposure (156w). The fit quality (r) is shown on the page. The page polls for new data every 10 minutes while open.
 
 ### Interactive Controls
-- **Date range** — dropdown presets (1y / 2y / 3y / 5y / all) + drag slider for precise start date
+- **Per-chart range**: every time-series chart has its own 1Y / 3Y / 5Y / 10Y / All selector (Multi-Trader also has a set-all control)
 - **Trader filter** — per-instrument tab filter (MM / Swap / Prod / Other / Retail)
 - **Zoom + pan** — mouse-wheel zoom and horizontal pan on every chart; Reset button per chart
 - **Tooltips** — hover-only, context-sensitive tooltips on every metric, chart, button, and label; plain-text institutional descriptions
@@ -164,10 +164,20 @@ python -m http.server 8000
 
 ---
 
-## Covered Instruments (10 Contracts)
+## Covered Instruments
+
+Markets are matched by CFTC contract code, so history survives CFTC's 2022 market renaming. The pipeline log also prints every reporting natural gas market ranked by open interest (`meta.coverage`), so newly liquid contracts are easy to spot.
 
 | Group | Contracts |
 |-------|-----------|
+| Composites (NYMEX-equivalent) | HH Prompt Core (NYMEX + ICE LD1 + ICE PEN + EUR options), HH Clean Outright (all Henry Hub futures and swaps, no options) |
+| Prompt Benchmarks | Nat Gas NYME, ICE LD1, ICE PEN, EUR-style options |
+| Henry Hub Cleared Swaps | CME Last Day, CME Penultimate, CME NN, CME NP, ICE HH Index |
+| Regional Basis | Waha, HSC, NGPL TXOK, Dominion South, TETCO M2, Transco Z6 NY, REX Zone 3, Chicago, CIG Rockies, NWP Rockies, SoCal Border, AECO |
+
+Composites are expressed in **NYMEX-equivalent contracts** (10,000 MMBtu): ICE and CME look-alike contracts are 2,500 MMBtu and are scaled by 0.25 before summing, and composites are only defined on dates where every component reports.
+
+-------|-----------|
 | NYME Futures | Nat Gas NYME (Henry Hub benchmark), Nat Gas LD1, NAT GAS ICE PEN |
 | Henry Hub Variants | Henry Hub NYME Swap, HH Last Day Fin, HH Penultimate Fin, HH Penultimate Nat Gas, HH Index ICE, HH Basis ICE |
 | Regional Basis | NG LD1 Texok (Texoma/Oklahoma vs Henry Hub) |

@@ -53,37 +53,46 @@ CFTC_FUTURES_URL = (
     "?commodity_name=NATURAL%20GAS"
     "&$order=report_date_as_yyyy_mm_dd%20DESC,cftc_contract_market_code%20ASC"
 )
-PRICE_URL = "https://query2.finance.yahoo.com/v8/finance/chart/NG=F?interval=1d&range=5y"
 OUTPUT_PATH = "data/cftc_processed.json"
 
-# Core Benchmarks & Cleared Swaps + Regional Basis Powerhouses
-INSTRUMENTS = {
-    # Core Benchmarks & Cleared Swaps
-    "nat_gas_nyme":        "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE",
-    "nat_gas_ld1":         "NAT GAS ICE LD1 - ICE FUTURES ENERGY DIV",
-    "nat_gas_ice_pen":     "NAT GAS ICE PEN - ICE FUTURES ENERGY DIV",
-    "hh_last_day":         "HENRY HUB LAST DAY FIN - NEW YORK MERCANTILE EXCHANGE",
-    "hh_penult_fin":       "HENRY HUB PENULTIMATE FIN - NEW YORK MERCANTILE EXCHANGE",
-    "hh_index_ice":        "HENRY HUB INDEX - ICE FUTURES ENERGY DIV",
-    "opt_eur_nyme":        "EUR STYLE NATURAL GAS OPTIONS - NEW YORK MERCANTILE EXCHANGE",
-    # Regional Basis Powerhouses
-    "waha_basis":          "WAHA FIN BASIS - ICE FUTURES ENERGY DIV",
-    "hsc_basis":           "HSC FIN BASIS - ICE FUTURES ENERGY DIV",
-    "dominion_basis":      "DOMINION - SOUTH POINT (BASIS) - ICE FUTURES ENERGY DIV",
-    "aeco_basis":          "AECO FIN BASIS - ICE FUTURES ENERGY DIV",
-    "chicago_basis":       "CHICAGO FIN BASIS - ICE FUTURES ENERGY DIV",
-    "ngpl_txok_basis":     "NGPL TXOK BASIS - ICE FUTURES ENERGY DIV",
+# Tracked markets: key -> (CFTC contract market code, current market name).
+# Rows are matched by CODE. CFTC renamed every energy market in Feb 2022
+# (e.g. "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE" -> "NAT GAS NYME - ..."),
+# so matching by name silently dropped all pre-2022 history. The name is only
+# a fallback should a code ever be reassigned.
+INSTRUMENT_SPECS = {
+    # Prompt benchmarks
+    "nat_gas_nyme":     ("023651", "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE"),
+    "nat_gas_ld1":      ("023391", "NAT GAS ICE LD1 - ICE FUTURES ENERGY DIV"),
+    "nat_gas_ice_pen":  ("023392", "NAT GAS ICE PEN - ICE FUTURES ENERGY DIV"),
+    "opt_eur_nyme":     ("02365U", "EUR STYLE NATURAL GAS OPTIONS - NEW YORK MERCANTILE EXCHANGE"),
+    # Henry Hub cleared swaps
+    "hh_last_day":      ("023A55", "HENRY HUB LAST DAY FIN - NEW YORK MERCANTILE EXCHANGE"),
+    "hh_penult_fin":    ("023A56", "HENRY HUB PENULTIMATE FIN - NEW YORK MERCANTILE EXCHANGE"),
+    "hh_nymex_nn":      ("03565B", "HENRY HUB - NEW YORK MERCANTILE EXCHANGE"),
+    "hh_penult_ng":     ("03565C", "HENRY HUB PENULTIMATE NAT GAS - NEW YORK MERCANTILE EXCHANGE"),
+    "hh_index_ice":     ("0233AH", "HENRY HUB INDEX - ICE FUTURES ENERGY DIV"),
+    # Regional basis (ICE, differential to Henry Hub)
+    "waha_basis":       ("023399", "WAHA FIN BASIS - ICE FUTURES ENERGY DIV"),
+    "hsc_basis":        ("023398", "HSC FIN BASIS - ICE FUTURES ENERGY DIV"),
+    "ngpl_txok_basis":  ("0233B1", "NGPL TXOK BASIS - ICE FUTURES ENERGY DIV"),
+    "dominion_basis":   ("0233A3", "DOMINION - SOUTH POINT (BASIS) - ICE FUTURES ENERGY DIV"),
+    "tetco_m2_basis":   ("0233DR", "TETCO M2 Basis (Receipts) - ICE FUTURES ENERGY DIV"),
+    "transco_z6_basis": ("0233CU", "TRANSCO ZONE 6 BASIS - ICE FUTURES ENERGY DIV"),
+    "rex_z3_basis":     ("0233EB", "REX ZONE 3 BASIS - ICE FUTURES ENERGY DIV"),
+    "chicago_basis":    ("023397", "CHICAGO FIN BASIS - ICE FUTURES ENERGY DIV"),
+    "cig_rockies_basis":("02339U", "CIG ROCKIES BASIS - ICE FUTURES ENERGY DIV"),
+    "nwp_rockies_basis":("023395", "NWP ROCKIES FIN BASIS - ICE FUTURES ENERGY DIV"),
+    "socal_basis":      ("023393", "SOCAL BORDER FIN BASIS - ICE FUTURES ENERGY DIV"),
+    "aeco_basis":       ("023396", "AECO FIN BASIS - ICE FUTURES ENERGY DIV"),
 }
-assert len(INSTRUMENTS) == 13, f"Expected 13 instruments, got {len(INSTRUMENTS)}"
+INSTRUMENTS = {k: v[1] for k, v in INSTRUMENT_SPECS.items()}
+INSTRUMENT_CODES = {k: v[0] for k, v in INSTRUMENT_SPECS.items()}
 
+# Henry Hub-priced contracts (everything that is not a regional basis differential)
 BENCHMARK_KEYS = [
-    "nat_gas_nyme",
-    "nat_gas_ld1",
-    "nat_gas_ice_pen",
-    "hh_last_day",
-    "hh_penult_fin",
-    "hh_index_ice",
-    "opt_eur_nyme",
+    "nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme",
+    "hh_last_day", "hh_penult_fin", "hh_nymex_nn", "hh_penult_ng", "hh_index_ice",
 ]
 
 INSTRUMENT_LABELS = {
@@ -94,14 +103,22 @@ INSTRUMENT_LABELS = {
     "hh_last_day":         "HH Last Day Fin",
     "hh_penult_fin":       "HH Penultimate Fin",
     "hh_index_ice":        "HH Index ICE",
+    "hh_nymex_nn":         "HH NYMEX Swap (NN)",
+    "hh_penult_ng":        "HH Penultimate NG",
     "opt_eur_nyme":        "EUR Options NYME",
-    # Regional Basis Powerhouses
+    # Regional basis
     "waha_basis":          "Waha Basis",
     "hsc_basis":           "HSC Basis",
     "dominion_basis":      "Dominion South Basis",
     "aeco_basis":          "AECO Basis",
     "chicago_basis":       "Chicago Basis",
     "ngpl_txok_basis":     "NGPL TXOK Basis",
+    "tetco_m2_basis":      "TETCO M2 Basis",
+    "transco_z6_basis":    "Transco Z6 NY Basis",
+    "rex_z3_basis":        "REX Zone 3 Basis",
+    "cig_rockies_basis":   "CIG Rockies Basis",
+    "nwp_rockies_basis":   "NWP Rockies Basis",
+    "socal_basis":         "SoCal Border Basis",
     # Synthetic Composites
     "comp_hh_prompt":      "HH Prompt Core Composite",
     "comp_hh_clean":       "HH Clean Outright Curve",
@@ -157,14 +174,18 @@ CONCENTRATION_COLS = {
 CONTRACT_SIZE_FALLBACK = {
     "nat_gas_nyme": 10000, "nat_gas_ld1": 2500, "nat_gas_ice_pen": 2500,
     "hh_last_day": 10000, "hh_penult_fin": 10000, "hh_index_ice": 2500,
-    "opt_eur_nyme": 10000,
+    "hh_nymex_nn": 2500, "hh_penult_ng": 2500, "opt_eur_nyme": 10000,
     "waha_basis": 2500, "hsc_basis": 2500, "dominion_basis": 2500,
     "aeco_basis": 2500, "chicago_basis": 2500, "ngpl_txok_basis": 2500,
+    "tetco_m2_basis": 2500, "transco_z6_basis": 2500, "rex_z3_basis": 2500,
+    "cig_rockies_basis": 2500, "nwp_rockies_basis": 2500, "socal_basis": 2500,
 }
+NYMEX_EQ_MMBTU = 10000   # composites are expressed in NYMEX-equivalent contracts
 
 COMPOSITE_COMPONENTS = {
     "comp_hh_prompt": ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"],
-    "comp_hh_clean":  ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "hh_last_day", "hh_penult_fin", "hh_index_ice"],
+    "comp_hh_clean":  ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "hh_last_day", "hh_penult_fin",
+                       "hh_nymex_nn", "hh_penult_ng", "hh_index_ice"],
 }
 
 WITHDRAWAL_MONTHS = {11, 12, 1, 2, 3}
@@ -195,7 +216,7 @@ def parse_contract_size(units):
     if not isinstance(units, str):
         return None
     import re
-    m = re.search(r"([\d,]+(?:\.\d+)?)\s*MMBTU", units.upper())
+    m = re.search(r"([\d,]+(?:\.\d+)?)\s*MM\s*BTU", units.upper())
     if not m:
         return None
     try:
@@ -203,6 +224,16 @@ def parse_contract_size(units):
     except ValueError:
         return None
     return int(v) if v > 0 else None
+
+
+def market_mask(df: pd.DataFrame, inst_key: str) -> pd.Series:
+    """Rows for a tracked market: by CFTC contract code, name as fallback."""
+    code = INSTRUMENT_CODES.get(inst_key)
+    if code and "cftc_contract_market_code" in df.columns:
+        m = df["cftc_contract_market_code"].astype(str).str.strip() == code
+        if m.any():
+            return m
+    return df["market_and_exchange_names"].astype(str).str.strip() == INSTRUMENTS[inst_key]
 
 
 def fetch_with_retry(url, label, timeout=60, retries=3, headers=None):
@@ -288,8 +319,8 @@ def fetch_prices() -> pd.Series:
 
     symbol = urllib.parse.quote("NG=F")
     urls = [
-        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5y",
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5y",
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=max",
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=max",
     ]
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -640,8 +671,7 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
     # Net Option Delta Calculation
     # For nat_gas_nyme, nat_gas_ld1, nat_gas_ice_pen:
     if fut_df is not None and inst_key in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen"]:
-        market_name = INSTRUMENTS[inst_key]
-        fut_sub = fut_df[fut_df["market_and_exchange_names"].str.strip() == market_name].copy()
+        fut_sub = fut_df[market_mask(fut_df, inst_key)].copy()
         if len(fut_sub) > 0:
             fut_sub = fut_sub.drop_duplicates(subset=["report_date_as_yyyy_mm_dd"], keep="last")
             fut_sub = fut_sub.sort_values("report_date_as_yyyy_mm_dd").set_index("report_date_as_yyyy_mm_dd")
@@ -703,73 +733,61 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
 
 def synthesize_composite(comp_key: str, component_keys: list, instruments_out: dict,
                          include_options_delta=False) -> dict:
-    """Build synthetic composite from processed instrument results."""
-    print(f"\n[Composite] Building {comp_key} ({INSTRUMENT_LABELS[comp_key]})...")
-    
-    # Anchor to nat_gas_nyme dates
-    ref = instruments_out["nat_gas_nyme"]["_raw"]
-    dates_raw = ref["dates_raw"].reset_index(drop=True)
-    dates_str = dates_raw.dt.strftime("%Y-%m-%d").tolist()
-    price_series = ref["price_series"].reset_index(drop=True)
-    price_pct_change = price_series.pct_change()
-    
-    # Initialize aggregated series on common dates
-    comp_oi = pd.Series(0.0, index=dates_raw.index)
-    traders_agg = {
-        t: {
-            "long": pd.Series(0.0, index=dates_raw.index),
-            "short": pd.Series(0.0, index=dates_raw.index),
-            "spread": pd.Series(0.0, index=dates_raw.index),
-            "change_long": pd.Series(0.0, index=dates_raw.index),
-            "change_short": pd.Series(0.0, index=dates_raw.index),
-        }
-        for t in TRADER_COLUMNS
-    }
-    spec_agg = {
-        "long": pd.Series(0.0, index=dates_raw.index),
-        "short": pd.Series(0.0, index=dates_raw.index),
-        "change_long": pd.Series(0.0, index=dates_raw.index),
-        "change_short": pd.Series(0.0, index=dates_raw.index),
-    }
+    """Build a synthetic composite in NYMEX-equivalent contracts (10,000 MMBtu).
 
-    # Sum across component instruments
-    for k in component_keys:
-        if k not in instruments_out:
-            print(f"  WARNING: Component {k} not in instruments_out!")
-            continue
+    Components trade in different sizes (NYMEX/CME 10,000 MMBtu, ICE and the
+    CME NN/NP look-alikes 2,500 MMBtu), so each component is scaled by
+    size / 10,000 before summing. The composite is defined only on report
+    dates where EVERY component reports: zero-filling a component that has not
+    started yet would create a structural break in the history."""
+    print(f"\n[Composite] Building {comp_key} ({INSTRUMENT_LABELS[comp_key]})...")
+    comps = [k for k in component_keys if k in instruments_out]
+    missing = [k for k in component_keys if k not in instruments_out]
+    if missing:
+        print(f"  WARNING: components missing from this run: {missing}")
+    if not comps:
+        raise RuntimeError(f"No components available for {comp_key}")
+    scale = {k: (instruments_out[k].get("contract_size_mmbtu") or CONTRACT_SIZE_FALLBACK.get(k, NYMEX_EQ_MMBTU))
+                / NYMEX_EQ_MMBTU for k in comps}
+    print("  Scale to NYMEX-eq: " + ", ".join(f"{k} x{scale[k]:g}" for k in comps))
+
+    common = None
+    for k in comps:
+        d = set(instruments_out[k]["_raw"]["dates_raw"].tolist())
+        common = d if common is None else common & d
+    dates_raw = pd.Series(sorted(common)).reset_index(drop=True)
+    dates_str = dates_raw.dt.strftime("%Y-%m-%d").tolist()
+
+    # Price on those dates (same NG=F alignment as the instruments)
+    ref = instruments_out["nat_gas_nyme"]["_raw"]
+    ref_price = pd.Series(ref["price_series"].values, index=ref["dates_raw"].values)
+    price_series = pd.Series(ref_price.reindex(dates_raw.values).values, index=dates_raw.index, dtype="float64")
+    price_pct_change = price_series.pct_change()
+
+    comp_oi = pd.Series(0.0, index=dates_raw.index)
+    traders_agg = {t: {f: pd.Series(0.0, index=dates_raw.index)
+                       for f in ("long", "short", "spread", "change_long", "change_short")}
+                   for t in TRADER_COLUMNS}
+    spec_agg = {f: pd.Series(0.0, index=dates_raw.index) for f in ("long", "short", "change_long", "change_short")}
+
+    for k in comps:
         c_raw = instruments_out[k]["_raw"]
-        c_dates = c_raw["dates_raw"].reset_index(drop=True)
-        # Create mapping of date -> index in c_raw
-        date_map = pd.Series(c_dates.index.values, index=c_dates.values)
-        
-        # Aligned indices
-        target_indices = date_map.reindex(dates_raw.values).values
-        mask_valid = ~pd.isna(target_indices)
-        valid_idx = target_indices[mask_valid].astype(int)
-        
-        # Accumulate OI
-        comp_oi.iloc[mask_valid] += c_raw["oi"].iloc[valid_idx].values
-        
-        # Accumulate traders
+        f = scale[k]
+        pos = pd.Series(range(len(c_raw["dates_raw"])), index=c_raw["dates_raw"].values)
+        idx = pos.reindex(dates_raw.values).values.astype(int)   # all present by construction
+        comp_oi += c_raw["oi"].iloc[idx].values * f
         for t in TRADER_COLUMNS:
             t_data = c_raw["trader_data_raw"][t]
-            traders_agg[t]["long"].iloc[mask_valid] += t_data["long"].iloc[valid_idx].values
-            traders_agg[t]["short"].iloc[mask_valid] += t_data["short"].iloc[valid_idx].values
-            traders_agg[t]["change_long"].iloc[mask_valid] += t_data["change_long"].iloc[valid_idx].values
-            traders_agg[t]["change_short"].iloc[mask_valid] += t_data["change_short"].iloc[valid_idx].values
-            
-            # Spread (managed_money)
+            for fld in ("long", "short", "change_long", "change_short"):
+                traders_agg[t][fld] += t_data[fld].iloc[idx].values * f
             if t == "managed_money":
-                inst_sp = instruments_out[k].get("managed_money", {}).get("spread", [])
-                if inst_sp and len(inst_sp) == len(c_dates):
-                    sp_s = pd.Series(inst_sp, index=c_dates.index)
-                    traders_agg[t]["spread"].iloc[mask_valid] += sp_s.iloc[valid_idx].values
-
-        # Accumulate Total Speculative
-        spec_agg["long"].iloc[mask_valid] += c_raw["spec_long"].iloc[valid_idx].values
-        spec_agg["short"].iloc[mask_valid] += c_raw["spec_short"].iloc[valid_idx].values
-        spec_agg["change_long"].iloc[mask_valid] += c_raw["spec_chg_l"].iloc[valid_idx].values
-        spec_agg["change_short"].iloc[mask_valid] += c_raw["spec_chg_s"].iloc[valid_idx].values
+                sp = instruments_out[k].get("managed_money", {}).get("spread", [])
+                if len(sp) == len(pos):
+                    traders_agg[t]["spread"] += np.asarray(sp, dtype=float)[idx] * f
+        spec_agg["long"] += c_raw["spec_long"].iloc[idx].values * f
+        spec_agg["short"] += c_raw["spec_short"].iloc[idx].values * f
+        spec_agg["change_long"] += c_raw["spec_chg_l"].iloc[idx].values * f
+        spec_agg["change_short"] += c_raw["spec_chg_s"].iloc[idx].values * f
 
     # Build composite result dict
     season = ["Withdrawal" if m in WITHDRAWAL_MONTHS else "Injection" for m in dates_raw.dt.month]
@@ -791,9 +809,11 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
         "oi_roc_4w":     oi_roc_4w.tolist(),
         "oi_regime":     oi_regimes,
         "season":        season,
-        # Mixed contract sizes: composite counts are raw sums (kept for Bloomberg
-        # parity). Consumers needing MMBtu/$ must size each component separately.
-        "components":    list(component_keys),
+        "components":    comps,
+        "component_scale": scale,
+        "contract_units": "NYMEX-equivalent contracts (10,000 MMBtu)",
+        "contract_size_mmbtu": NYMEX_EQ_MMBTU,
+        "contract_size_source": "composite",
     }
 
     # Trader categories
@@ -842,21 +862,19 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
 
     # Net Option Delta for Prompt Composite
     if comp_key == "comp_hh_prompt":
-        # Sum date-aligned option_delta_net across components:
-        # nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + opt_eur_nyme
+        # Date-aligned sum of NYMEX-equivalent option deltas across components
         mm_delta_comp = pd.Series(0.0, index=dates_raw.index)
         spec_delta_comp = pd.Series(0.0, index=dates_raw.index)
 
-        for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]:
-            if k in instruments_out:
-                c_inst = instruments_out[k]
-                c_dates = pd.to_datetime(c_inst["dates"])
-                mm_d = c_inst.get("managed_money", {}).get("option_delta_net", [])
-                sp_d = c_inst.get("total_speculative", {}).get("option_delta_net", [])
-                if len(mm_d) == len(c_dates):
-                    mm_delta_comp += pd.Series(mm_d, index=c_dates).reindex(dates_raw).fillna(0).values
-                if len(sp_d) == len(c_dates):
-                    spec_delta_comp += pd.Series(sp_d, index=c_dates).reindex(dates_raw).fillna(0).values
+        for k in comps:
+            c_inst = instruments_out[k]
+            c_dates = pd.to_datetime(c_inst["dates"])
+            mm_d = c_inst.get("managed_money", {}).get("option_delta_net", [])
+            sp_d = c_inst.get("total_speculative", {}).get("option_delta_net", [])
+            if len(mm_d) == len(c_dates):
+                mm_delta_comp += pd.Series(mm_d, index=c_dates).reindex(dates_raw).fillna(0).values * scale[k]
+            if len(sp_d) == len(c_dates):
+                spec_delta_comp += pd.Series(sp_d, index=c_dates).reindex(dates_raw).fillna(0).values * scale[k]
 
         result["managed_money"]["option_delta_net"] = mm_delta_comp.tolist()
         result["total_speculative"]["option_delta_net"] = spec_delta_comp.tolist()
@@ -884,18 +902,19 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
 
 # ─── Correlation Matrix ────────────────────────────────────────────────────────
 
-def build_correlation_matrix(instruments_out: dict) -> dict:
-    """Inter-benchmark correlation matrix (benchmarks & cleared swaps, excluding regional basis)."""
+def build_correlation_matrix(instruments_out: dict, window: int = 52) -> dict:
+    """Correlation of weekly Managed Money FLOWS (change in net) across the Henry
+    Hub contracts. Flows, not levels: two trending net-position series correlate
+    regardless of whether the markets are linked, so level correlation over
+    13-52 weeks is mostly spurious."""
     keys = [k for k in BENCHMARK_KEYS if k in instruments_out]
     series_map = {}
     for k in keys:
         inst = instruments_out[k]
-        nets = inst.get("managed_money", {}).get("net", [])
+        flows = inst.get("managed_money", {}).get("change_net", [])
         dates = inst.get("dates", [])
-        if nets and dates:
-            s = pd.Series(nets, index=pd.to_datetime(dates))
-            # last 52 weekly observations
-            series_map[k] = s.iloc[-52:] if len(s) >= 52 else s
+        if flows and dates:
+            series_map[k] = pd.Series(flows, index=pd.to_datetime(dates), dtype="float64").iloc[-window:]
 
     matrix = []
     for k1 in keys:
@@ -903,18 +922,19 @@ def build_correlation_matrix(instruments_out: dict) -> dict:
         for k2 in keys:
             if k1 == k2:
                 row.append(1.0)
-            elif k1 in series_map and k2 in series_map:
-                s1, s2 = series_map[k1].align(series_map[k2], join="inner")
-                if len(s1) >= 10:
-                    row.append(float(s1.corr(s2)))
-                else:
-                    row.append(None)
-            else:
+                continue
+            s1, s2 = series_map.get(k1), series_map.get(k2)
+            if s1 is None or s2 is None:
                 row.append(None)
+                continue
+            a, b = s1.align(s2, join="inner")
+            ok = a.notna() & b.notna()
+            row.append(float(a[ok].corr(b[ok])) if ok.sum() >= 10 and a[ok].std() > 0 and b[ok].std() > 0 else None)
         matrix.append(row)
 
     as_of = instruments_out.get("nat_gas_nyme", {}).get("dates", [""])[-1]
-    return {"instruments": keys, "matrix": matrix, "as_of_date": as_of}
+    return {"instruments": keys, "matrix": matrix, "as_of_date": as_of,
+            "basis": "weekly change in Managed Money net", "window_weeks": window}
 
 # ─── Coverage Report ──────────────────────────────────────────────────────────
 
@@ -925,7 +945,7 @@ def coverage_report(df: pd.DataFrame, top: int = 40) -> list:
     latest = df["report_date_as_yyyy_mm_dd"].max()
     recent = df[df["report_date_as_yyyy_mm_dd"] >= latest - pd.Timedelta(days=28)]
     recent = recent.sort_values("report_date_as_yyyy_mm_dd").drop_duplicates("market_and_exchange_names", keep="last")
-    tracked = set(INSTRUMENTS.values())
+    tracked_codes = set(INSTRUMENT_CODES.values())
     rows = []
     for _, r in recent.iterrows():
         name = str(r["market_and_exchange_names"]).strip()
@@ -941,7 +961,7 @@ def coverage_report(df: pd.DataFrame, top: int = 40) -> list:
             "open_interest": oi,
             "oi_bcf": oi * size / 1e6,
             "mm_gross": float((0 if pd.isna(mm_l) else mm_l) + (0 if pd.isna(mm_s) else mm_s)),
-            "tracked": name in tracked,
+            "tracked": str(r.get("cftc_contract_market_code", "")).strip() in tracked_codes,
         })
     rows.sort(key=lambda x: -x["oi_bcf"])
     print(f"\n[Coverage] {len(rows)} natural gas markets reporting in the last 4 weeks (ranked by OI, Bcf):")
@@ -1019,7 +1039,7 @@ def main():
     instruments_out = {}
     for inst_key, market_name in INSTRUMENTS.items():
         print(f"[Instrument] {inst_key} ({market_name})...")
-        mask = cftc_comb_df["market_and_exchange_names"].str.strip() == market_name
+        mask = market_mask(cftc_comb_df, inst_key)
         inst_df = cftc_comb_df[mask].copy()
         if len(inst_df) == 0:
             w = f"No rows for {inst_key} ({market_name})"
@@ -1034,13 +1054,13 @@ def main():
     assert len(instruments_out["nat_gas_nyme"]["dates"]) > 200, "Insufficient history for nat_gas_nyme"
 
     # Process Synthetic Composites
-    # 1. Primary Prompt Core: nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + opt_eur_nyme
+    # 1. Prompt Core: NYMEX futures + ICE LD1 + ICE PEN + EUR options (NYMEX-equivalent)
     prompt_components = COMPOSITE_COMPONENTS["comp_hh_prompt"]
     instruments_out["comp_hh_prompt"] = synthesize_composite(
         "comp_hh_prompt", prompt_components, instruments_out, include_options_delta=True
     )
 
-    # 2. Clean Outright Curve: nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + hh_last_day + hh_penult_fin + hh_index_ice
+    # 2. Clean Outright: every Henry Hub futures/swap contract, no options (NYMEX-equivalent)
     clean_components = COMPOSITE_COMPONENTS["comp_hh_clean"]
     instruments_out["comp_hh_clean"] = synthesize_composite(
         "comp_hh_clean", clean_components, instruments_out, include_options_delta=False
