@@ -916,6 +916,41 @@ def build_correlation_matrix(instruments_out: dict) -> dict:
     as_of = instruments_out.get("nat_gas_nyme", {}).get("dates", [""])[-1]
     return {"instruments": keys, "matrix": matrix, "as_of_date": as_of}
 
+# ─── Coverage Report ──────────────────────────────────────────────────────────
+
+def coverage_report(df: pd.DataFrame, top: int = 40) -> list:
+    """List every currently-reporting natural gas market, ranked by latest open
+    interest in MMBtu, flagging which ones the dashboard tracks. Printed in the
+    CI log and stored in meta so new liquid contracts are easy to spot."""
+    latest = df["report_date_as_yyyy_mm_dd"].max()
+    recent = df[df["report_date_as_yyyy_mm_dd"] >= latest - pd.Timedelta(days=28)]
+    recent = recent.sort_values("report_date_as_yyyy_mm_dd").drop_duplicates("market_and_exchange_names", keep="last")
+    tracked = set(INSTRUMENTS.values())
+    rows = []
+    for _, r in recent.iterrows():
+        name = str(r["market_and_exchange_names"]).strip()
+        size = parse_contract_size(r.get("contract_units")) or 2500
+        oi = pd.to_numeric(r.get("open_interest_all"), errors="coerce")
+        oi = 0.0 if pd.isna(oi) else float(oi)
+        mm_l = pd.to_numeric(r.get("m_money_positions_long_all"), errors="coerce")
+        mm_s = pd.to_numeric(r.get("m_money_positions_short_all"), errors="coerce")
+        rows.append({
+            "market": name,
+            "code": str(r.get("cftc_contract_market_code", "")).strip(),
+            "units": str(r.get("contract_units", "")).strip(),
+            "open_interest": oi,
+            "oi_bcf": oi * size / 1e6,
+            "mm_gross": float((0 if pd.isna(mm_l) else mm_l) + (0 if pd.isna(mm_s) else mm_s)),
+            "tracked": name in tracked,
+        })
+    rows.sort(key=lambda x: -x["oi_bcf"])
+    print(f"\n[Coverage] {len(rows)} natural gas markets reporting in the last 4 weeks (ranked by OI, Bcf):")
+    for x in rows[:top]:
+        print(f"  {'TRACKED  ' if x['tracked'] else 'untracked'} {x['oi_bcf']:>10,.0f} Bcf  OI {x['open_interest']:>11,.0f}  "
+              f"MM gross {x['mm_gross']:>10,.0f}  [{x['code']}] {x['market']}  {x['units']}")
+    return rows[:top]
+
+
 # ─── Main Pipeline Execution ──────────────────────────────────────────────────
 
 def main():
@@ -961,6 +996,7 @@ def main():
         _set_gha_output("new_data", "false")
         return
 
+    coverage = coverage_report(cftc_comb_df)
     print("  Processing full data pipeline...\n")
     _set_gha_output("new_data", "true")
 
@@ -1028,6 +1064,7 @@ def main():
             "latest_report_date": latest_date,
             "warnings":           warnings_list,
             "price_source":       "yieldchaser/nat-gas-data-pipeline",
+            "coverage":           coverage,
         },
         "instruments":        instruments_out,
         "correlation_matrix": corr_matrix,
