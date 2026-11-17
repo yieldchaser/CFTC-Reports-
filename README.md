@@ -43,6 +43,16 @@ All 10 instruments side-by-side with MM, Swap, Producers, and Other Reportables 
 - **Per-card header** — composite score badge, MM % of OI, Swap % of OI, OI regime
 - Price overlaid as a secondary axis on every chart
 
+### CTA & Flows Tab
+Dollar-sized positioning plus a daily trend-follower (CTA) model for Henry Hub.
+
+- **Managed Money Net Length ($bn) vs Price**: CFTC contracts × contract size (MMBtu, parsed from CFTC `contract_units`) × front-month price. Trader selectable (MM, Total Spec, Other, Swap, PMPU). Composites are sized component by component, because NYMEX NG is 10,000 MMBtu while ICE Henry Hub contracts are 2,500 MMBtu. Basis contracts are excluded because they settle on a differential.
+- **PMPU Gross Longs / Shorts ($bn) vs Price**: commercial hedger gross exposure in dollars.
+- **CTA Momentum Thresholds (%)**: distance of the roll-adjusted front month from its 20 / 60 / 250-session moving average. Crossing zero flips that horizon.
+- **1m Conditional Projections ($bn)**: simulated CTA net length (realized), then 21 sessions forward under Up Big / Up Small / Flat / Down Small / Down Big paths (±2σ / ±1σ / 0 of one-month realized vol).
+- **Signal Flip Levels** and a **Scenario Flow Table**, plus a CTA strip on the Overview tab.
+- The dollar scale is the OLS slope of weekly CFTC Managed Money $ on model exposure (156w). The fit quality (r) is shown on the page. The page polls for new data every 10 minutes while open.
+
 ### Interactive Controls
 - **Date range** — dropdown presets (1y / 2y / 3y / 5y / all) + drag slider for precise start date
 - **Trader filter** — per-instrument tab filter (MM / Swap / Prod / Other / Retail)
@@ -60,11 +70,15 @@ All 10 instruments side-by-side with MM, Swap, Producers, and Other Reportables 
 CFTC-Reports-/
 ├── .github/
 │   └── workflows/
-│       └── update_cftc.yml     # 3-window retry schedule (Fri / Sat / Mon)
+│       ├── update_cftc.yml       # weekly COT pipeline (Fri / Sat / Mon / Tue retries) + CTA re-fit
+│       └── update_cta_model.yml  # daily CTA model refresh after NYMEX settlement
 ├── data/
-│   └── cftc_processed.json     # Auto-generated data payload (~1.7 MB)
+│   ├── cftc_processed.json     # Auto-generated COT payload
+│   └── cta_model.json          # Auto-generated daily CTA model (~100 KB)
 ├── scripts/
-│   └── update_cftc_data.py     # Data pipeline: fetch → staleness check → process → write
+│   ├── update_cftc_data.py     # Data pipeline: fetch → staleness check → process → write
+│   ├── update_cta_model.py     # CTA trend model: NG=F daily → thresholds, $ position, projections
+│   └── run_quantitative_parity_audit.py  # Parity, schema, headless-UI and CTA integrity audit
 ├── index.html                  # Entire dashboard UI (Vanilla JS + Chart.js)
 ├── favicon.svg                 # Custom SVG bar-chart favicon
 ├── favicon.png
@@ -94,6 +108,9 @@ CFTC-Reports-/
 4. **Composite score** — −3 to +3 signal from Z-score + COT index + confirming factors (regime, momentum)
 5. **Correlation matrix** — 10×10 Pearson correlation across all instruments
 6. **Output** — writes `data/cftc_processed.json`; GitHub Actions commits and pushes → GitHub Pages re-deploys automatically
+
+### CTA model pipeline
+`scripts/update_cta_model.py` runs every weekday at 21:20 UTC (after NG settlement) and again right after each new COT report. It fetches 10 years of Yahoo `NG=F` daily closes and zeroes the return on each roll day (the session after NYMEX last trade), so seasonal roll gaps do not register as trend. It then computes the thresholds, the vol-targeted position and the scenario paths, re-fits the dollar scale to CFTC Managed Money, and commits `data/cta_model.json` only when something changed. Both workflows share one concurrency group and rebase before pushing, so they never race. Offline: `python scripts/update_cta_model.py --prices-csv prices.csv` (columns `date,close`).
 
 ---
 

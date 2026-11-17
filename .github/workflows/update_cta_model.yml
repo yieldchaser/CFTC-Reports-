@@ -1,0 +1,50 @@
+name: Update CTA Model
+
+# Daily refresh of the Henry Hub CTA trend model (data/cta_model.json).
+# Prices move every session, so this runs on weekdays after NYMEX NG settlement
+# (14:30 ET = 19:30 UTC in winter / 18:30 UTC in summer). The weekly CFTC
+# workflow also re-runs the model right after new COT data lands, so the
+# dollar calibration picks up each new report immediately.
+
+on:
+  schedule:
+    - cron: '20 21 * * 1-5'   # Mon-Fri 21:20 UTC, after settlement
+  workflow_dispatch:
+
+concurrency:
+  group: data-pipeline-push   # shared with update_cftc.yml so pushes never race
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests pandas numpy
+
+      - name: Run CTA model
+        id: cta
+        run: python scripts/update_cta_model.py
+
+      - name: Commit and push
+        if: steps.cta.outputs.cta_changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/cta_model.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: update CTA model $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 10))
+          done
+          exit 1

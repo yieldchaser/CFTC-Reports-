@@ -382,6 +382,7 @@ def run_suite_4_ui_rendering(data: dict):
     const fs = require('fs');
     const rawData = fs.readFileSync('data/cftc_processed.json', 'utf8');
     const cftcData = JSON.parse(rawData);
+    const ctaData = fs.existsSync('data/cta_model.json') ? JSON.parse(fs.readFileSync('data/cta_model.json', 'utf8')) : null;
     const html = fs.readFileSync('index.html', 'utf8');
     const scriptStart = html.indexOf('<script>');
     const scriptEnd = html.lastIndexOf('</script>');
@@ -460,7 +461,9 @@ def run_suite_4_ui_rendering(data: dict):
       update() {}
     };
 
-    global.fetch = async () => ({ ok: true, status: 200, json: async () => cftcData });
+    global.fetch = async (url) => String(url).includes('cta_model.json')
+      ? (ctaData ? { ok: true, status: 200, json: async () => ctaData } : { ok: false, status: 404, json: async () => ({}) })
+      : { ok: true, status: 200, json: async () => cftcData };
 
     const bridge = `
       global.loadData = loadData;
@@ -474,6 +477,11 @@ def run_suite_4_ui_rendering(data: dict):
       global.setActiveTrader = (t) => { activeTrader = t; };
       global.renderByInstrument = renderByInstrument;
       global.getINSTRUMENT_KEYS = () => INSTRUMENT_KEYS;
+      global.loadCTA = loadCTA;
+      global.renderCTA = renderCTA;
+      global.renderCtaHeroStrip = renderCtaHeroStrip;
+      global.usdSeries = usdSeries;
+      global.getCTA = () => CTA_DATA;
     `;
 
     (async () => {
@@ -499,6 +507,14 @@ def run_suite_4_ui_rendering(data: dict):
           }
         }
         console.log("HEADLESS_RENDER_SUCCESS:" + renderedCount);
+
+        // CTA & Flows tab: render with and without the model file present
+        await global.loadCTA();
+        global.renderCtaHeroStrip();
+        global.renderCTA();
+        const usd = global.usdSeries('comp_hh_prompt', 'managed_money', 'net');
+        if (!usd.dates.length || !usd.values.every(Number.isFinite)) throw new Error('usdSeries produced no finite values');
+        console.log("CTA_RENDER_SUCCESS:" + (global.getCTA() ? 'model' : 'nomodel'));
       } catch (e) {
         console.error("HEADLESS_RENDER_ERROR:" + e.stack);
         process.exit(1);
@@ -509,6 +525,7 @@ def run_suite_4_ui_rendering(data: dict):
     with open(node_test_path, "w", encoding="utf-8") as f:
         f.write(node_script)
 
+    output = ""
     try:
         res = subprocess.run(["node", node_test_path], capture_output=True, text=True, timeout=30)
         output = res.stdout + res.stderr
@@ -520,6 +537,10 @@ def run_suite_4_ui_rendering(data: dict):
     finally:
         if os.path.exists(node_test_path):
             os.remove(node_test_path)
+
+    cta_ok = "CTA_RENDER_SUCCESS:" in output
+    log_test(suite, "Headless CTA & Flows Tab Render (with dollar sizing)", cta_ok,
+             "renderCTA() + usdSeries() executed without errors")
 
     # 4.4 Verified DOM Structure & Containers
     has_inst_desc = 'id="instrument-description"' in html
@@ -559,6 +580,50 @@ def run_suite_4_ui_rendering(data: dict):
 # ==============================================================================
 # MAIN TEST HARNESS EXECUTION
 # ==============================================================================
+def run_suite_5_cta_model():
+    print("\n" + "=" * 75)
+    print("SUITE 5: CTA TREND MODEL INTEGRITY AUDIT")
+    print("=" * 75)
+    suite = "Suite 5: CTA Model"
+    path = "data/cta_model.json"
+    if not os.path.exists(path):
+        print("  [SKIP] data/cta_model.json not generated yet")
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    log_test(suite, "CTA JSON Free of NaN/Infinity", "NaN" not in raw and "Infinity" not in raw, "")
+    m = json.loads(raw)
+    log_test(suite, "CTA Model Identifier", m.get("meta", {}).get("model") == "hh_cta_trend_v1",
+             f"model={m.get('meta', {}).get('model')}")
+    L = m.get("latest", {})
+    finite = all(isinstance(L.get(k), (int, float)) for k in ("price", "position_usd_bn", "exposure", "realized_vol_ann_pct"))
+    lv = L.get("levels", {})
+    finite = finite and all(isinstance(lv.get(h, {}).get(f), (int, float)) for h in ("short", "medium", "long")
+                            for f in ("pct_from_threshold", "threshold_price", "signal"))
+    log_test(suite, "Latest State Finite (price, position, 3 horizons)", finite, "")
+    sig_ok = all(-1.0001 <= lv[h]["signal"] <= 1.0001 for h in lv) if finite else False
+    log_test(suite, "Horizon Signals Bounded [-1, 1]", sig_ok, "")
+    T = m.get("thresholds", {})
+    n = len(T.get("dates", []))
+    aligned = n > 0 and all(len(T.get(h, [])) == n and len(T.get("trigger", {}).get(h, [])) == n for h in ("short", "medium", "long"))
+    log_test(suite, "Threshold Series Aligned", aligned, f"{n} sessions")
+    P = m.get("projections", {})
+    sc = P.get("scenarios", {})
+    order = ["up_big", "up_small", "flat", "down_small", "down_big"]
+    days = len(P.get("dates", []))
+    shape_ok = days == 21 and all(k in sc and len(sc[k]["position_usd_bn"]) == days and len(sc[k]["price"]) == days for k in order)
+    log_test(suite, "Five Scenarios x 21 Sessions", shape_ok, f"days={days}, scenarios={sorted(sc)}")
+    if shape_ok:
+        ends = [sc[k]["end_position_usd_bn"] for k in order]
+        mono = all(ends[i] >= ends[i + 1] - 1e-6 for i in range(len(ends) - 1))
+        log_test(suite, "Scenario Monotonicity (higher price path => longer trend position)", mono,
+                 " >= ".join(f"{e:+.2f}" for e in ends))
+    cal = m.get("meta", {}).get("calibration", {})
+    log_test(suite, "Dollar Scale Positive & Calibrated", isinstance(cal.get("k_usd_bn_per_unit"), (int, float))
+             and cal["k_usd_bn_per_unit"] > 0 and cal.get("n_obs", 0) >= 20,
+             f"method={cal.get('method')} K={cal.get('k_usd_bn_per_unit')} corr={cal.get('corr')} n={cal.get('n_obs')}")
+
+
 def main():
     print("=" * 75)
     print("BLUE PULSE CFTC PLATFORM: QUANTITATIVE AUDIT & RECONCILIATION")
@@ -575,6 +640,7 @@ def main():
     run_suite_2_option_delta_integrity(data)
     run_suite_3_schema_guardrails(data)
     run_suite_4_ui_rendering(data)
+    run_suite_5_cta_model()
 
     print("\n" + "=" * 75)
     print("AUDIT SUMMARY REPORT")
