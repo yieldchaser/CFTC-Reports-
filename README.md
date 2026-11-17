@@ -43,6 +43,19 @@ All 10 instruments side-by-side with MM, Swap, Producers, and Other Reportables 
 - **Per-card header** — composite score badge, MM % of OI, Swap % of OI, OI regime
 - Price overlaid as a secondary axis on every chart
 
+### Cycles & Signals Tab
+Event-based analysis of where Henry Hub sits in its swing cycle and whether positioning data supports a direction. No fixed-horizon returns are used.
+
+- **Swing cycle**: confirmed troughs and peaks (20% reversal on roll-adjusted prices), with the level that would confirm the next turn. NG has run about 1.6 major cycles a year since 2006 (about 2.5 at a 15% threshold).
+- **Swing map**: every completed rally and decline by size and duration, with the swing in progress highlighted.
+- **When turns happen**: troughs and peaks by calendar month.
+- **Fund positioning around turns**: event study of the Managed Money COT index and 4-week flow, 12 weeks either side of each turn.
+- **Which way moves resolve**: share of weeks where price rose X% before falling X% (first passage), by month and under today's conditions, with overlap-adjusted intervals.
+- **Signal scorecard**: every positioning signal judged as a turning-point detector (hit rate vs base rate, lift, turns caught).
+- **What the evidence says now**: a generated summary of the above, including when the data does not support a directional call.
+
+Key findings from the data: Managed Money is a coincident trend follower (weekly flows track same-week price, r about +0.4, and do not lead it). Crowded long positioning has marked peaks about 1.7-1.9x more often than chance, while crowded short has NOT reliably marked troughs. Producers, swap dealers, Other Reportables and non-reportables show no relationship with turns.
+
 ### CTA & Flows Tab
 Dollar-sized positioning plus a daily trend-follower (CTA) model for Henry Hub.
 
@@ -120,11 +133,10 @@ CFTC-Reports-/
 |--------|-------------|
 | **Z-Score** | Standard deviations from full historical mean. ±1.5 = historically extended; ±2 = rare extreme |
 | **COT Index** | Percentile rank within prior 3-year range. ≥80% = crowded long; ≤20% = crowded short |
-| **Composite Score** | −3 to +3 algorithmic signal combining Z, COT index, OI regime, and momentum |
+| **Extension Score** | −3 (crowded short) to +3 (crowded long) from the MM Z-score and 3-year COT index. Describes how stretched positioning is, not direction |
 | **Momentum Score** | 0–100 flow momentum vs trailing 13-week volatility. >80 = outsized repositioning |
-| **MM Edge** | Weekly Z-score change minus price return signal — positive = MM repositioning faster than price implies (potential lead); negative = divergence/exhaustion |
 | **OI Regime** | Market structure: Accumulation (OI↑+Price↑), Distribution (OI↑+Price↓), Short Covering (OI↓+Price↑), Long Liquidation (OI↓+Price↓) |
-| **Lead/Lag** | Rolling correlation at 1–4w lags — detects whether MM positioning leads or follows price |
+| **Lead/Lag** | Rank cross-correlation of weekly flow with weekly price change at lags −8 to +8 weeks, with a band adjusted for multiple testing |
 
 ---
 

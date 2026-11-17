@@ -1,4 +1,4 @@
-name: Update CTA Model
+name: Update CTA Model & Cycle Analysis
 
 # Daily refresh of the Henry Hub CTA trend model (data/cta_model.json).
 # Prices move every session, so this runs on weekdays after NYMEX NG settlement
@@ -35,14 +35,21 @@ jobs:
         id: cta
         run: python scripts/update_cta_model.py
 
+      # Swing state (current swing, confirmation level) moves with daily prices
+      - name: Run cycle analysis
+        id: cycle
+        continue-on-error: true
+        run: python scripts/update_cycle_analysis.py
+
       - name: Commit and push
-        if: steps.cta.outputs.cta_changed == 'true'
+        if: steps.cta.outputs.cta_changed == 'true' || steps.cycle.outputs.cycle_changed == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/cta_model.json
+          if [ -f data/cycle_analysis.json ]; then git add data/cycle_analysis.json; fi
           git diff --staged --quiet && exit 0
-          git commit -m "chore: update CTA model $(date -u +%Y-%m-%d)"
+          git commit -m "chore: update CTA model and cycle analysis $(date -u +%Y-%m-%d)"
           for i in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
             sleep $((i * 10))

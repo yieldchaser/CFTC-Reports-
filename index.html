@@ -270,15 +270,15 @@
     }
 
     .signal-card.score-3 {
-      border-left: 3px solid #16a34a
+      border-left: 3px solid #2563eb
     }
 
     .signal-card.score-2 {
-      border-left: 3px solid #22c55e
+      border-left: 3px solid #3b82f6
     }
 
     .signal-card.score-1 {
-      border-left: 3px solid #86efac
+      border-left: 3px solid #93c5fd
     }
 
     .signal-card.score-0 {
@@ -286,15 +286,15 @@
     }
 
     .signal-card.score--1 {
-      border-left: 3px solid #fca5a5
+      border-left: 3px solid #fdba74
     }
 
     .signal-card.score--2 {
-      border-left: 3px solid var(--red)
+      border-left: 3px solid #f97316
     }
 
     .signal-card.score--3 {
-      border-left: 3px solid #991b1b
+      border-left: 3px solid #c2410c
     }
 
     .card-title {
@@ -1481,7 +1481,15 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px
     }
-    .cta-grid > .chart-panel, #panel-cta > * { min-width: 0 }
+    .cta-grid > .chart-panel, #panel-cta > *, #panel-cycles > * { min-width: 0 }
+    .cta-grid > .span-full { grid-column: 1 / -1 }
+    .cyc-read { font-size: 12px; line-height: 1.6; color: var(--text2) }
+    .cyc-read p { margin: 0 0 8px }
+    .cyc-read strong { color: var(--text) }
+    .cyc-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px; margin-right: 6px; vertical-align: 1px }
+    .cyc-tag.yes { background: rgba(34,197,94,.15); color: #22c55e; border: 1px solid rgba(34,197,94,.35) }
+    .cyc-tag.weak { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.35) }
+    .cyc-tag.no { background: rgba(239,68,68,.12); color: #f87171; border: 1px solid rgba(239,68,68,.35) }
     #cta-size-note { overflow-wrap: anywhere }
     @media(max-width:900px) { .cta-grid { grid-template-columns: minmax(0, 1fr) } }
     .cta-hero {
@@ -1633,6 +1641,7 @@
     <button class="tab-btn active" id="tab-overview" onclick="switchTab('overview')" role="tab" data-tooltip="High-level dashboard with top signals, heatmaps, and weekly positioning summary across all variants.">Overview</button>
     <button class="tab-btn" id="tab-instrument" onclick="switchTab('instrument')" role="tab" data-tooltip="Detailed time-series positioning charts and momentum metrics for individual natural gas variants.">By Instrument</button>
     <button class="tab-btn" id="tab-three" onclick="switchTab('three')" role="tab" data-tooltip="Comparative view displaying multiple trader categories side-by-side for a specific instrument.">Multi-Trader View</button>
+    <button class="tab-btn" id="tab-cycles" onclick="switchTab('cycles')" role="tab" data-tooltip="Swing-cycle analysis: confirmed troughs and peaks, where the current swing sits, positioning around turning points, and evidence-based odds for the next move.">Cycles &amp; Signals</button>
     <button class="tab-btn" id="tab-cta" onclick="switchTab('cta')" role="tab" data-tooltip="Dollar-sized positioning (Managed Money net, PMPU gross) plus a daily CTA trend model: momentum thresholds, flip levels and 1-month conditional flow projections.">CTA &amp; Flows</button>
   </div>
 
@@ -1648,7 +1657,7 @@
         <div id="cta-hero-strip"></div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px">
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center">
-            <svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><polygon points="8,1 3,9 8,9 7,15 13,7 8,7"/></svg>Strongest Signals This Week</div>
+            <svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><polygon points="8,1 3,9 8,9 7,15 13,7 8,7"/></svg>Most Extended Positioning This Week</div>
           <div id="top-signals-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
       </div>
@@ -1661,11 +1670,11 @@
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
           <div class="hm-trader-bar">
             <span style="font-size:10px;color:var(--text3)">Trader:</span>
-            <button class="hm-btn active" id="hmbt-managed_money" onclick="setHmTrader('managed_money')" data-tooltip="<strong>Managed Money</strong><br>Leveraged funds, hedge funds, and CTAs. The primary speculative flow — most watched category for positioning signals and mean-reversion setups.">MM</button>
-            <button class="hm-btn" id="hmbt-swap_dealers" onclick="setHmTrader('swap_dealers')" data-tooltip="<strong>Swap Dealers</strong><br>Banks and financial intermediaries managing OTC swap exposure. Often the structural counterparty to speculative longs — large negative Swap net with positive MM net is a classic crowded positioning setup.">Swap</button>
-            <button class="hm-btn" id="hmbt-producers" onclick="setHmTrader('producers')" data-tooltip="<strong>Producers / Merchants</strong><br>Physical market participants (E&amp;P companies, utilities, processors) hedging real commodity exposure. Their net position signals commercial hedging intensity — deeply negative = heavy producer hedging, often near price cycle highs.">Prod</button>
-            <button class="hm-btn" id="hmbt-other_reportables" onclick="setHmTrader('other_reportables')" data-tooltip="<strong>Other Reportables</strong><br>CTAs, commodity pools, and hedge funds not classified as Managed Money. Often a fast-moving leading indicator — this category tends to reposition more quickly than MM in response to technical signals.">Other</button>
-            <button class="hm-btn" id="hmbt-non_reportables" onclick="setHmTrader('non_reportables')" data-tooltip="<strong>Non-Reportable (Small Speculators)</strong><br>Positions below the CFTC reporting threshold — retail and small participants. Often read as a contrarian indicator: extreme net longs have tended to coincide with price tops, extreme net shorts with troughs.">Non-Rept</button>
+            <button class="hm-btn active" id="hmbt-managed_money" onclick="setHmTrader('managed_money')" data-tooltip="<strong>Managed Money</strong><br>Leveraged funds, hedge funds, and CTAs. The main speculative category. In NG it behaves as a trend follower: weekly flows track same-week price moves (r about +0.4) and do not lead price.">MM</button>
+            <button class="hm-btn" id="hmbt-swap_dealers" onclick="setHmTrader('swap_dealers')" data-tooltip="<strong>Swap Dealers</strong><br>Banks and financial intermediaries managing OTC swap exposure. Typically on the other side of speculative and commercial end-user flows.">Swap</button>
+            <button class="hm-btn" id="hmbt-producers" onclick="setHmTrader('producers')" data-tooltip="<strong>Producers / Merchants</strong><br>Physical market participants (E&amp;P companies, utilities, processors) hedging real commodity exposure. Their net position reflects commercial hedging activity. In testing it showed no consistent relationship with swing turns.">Prod</button>
+            <button class="hm-btn" id="hmbt-other_reportables" onclick="setHmTrader('other_reportables')" data-tooltip="<strong>Other Reportables</strong><br>CTAs, commodity pools, and hedge funds not classified as Managed Money. In testing this group showed no consistent relationship with swing turns.">Other</button>
+            <button class="hm-btn" id="hmbt-non_reportables" onclick="setHmTrader('non_reportables')" data-tooltip="<strong>Non-Reportable (Small Speculators)</strong><br>Positions below the CFTC reporting threshold — retail and small participants. About 1% of NG open interest; in testing it showed no consistent relationship with swing turns.">Non-Rept</button>
           </div>
           <div class="hm-range-bar">
             <span style="font-size:10px;color:var(--text3)">Weeks:</span>
@@ -1716,7 +1725,7 @@
         <div id="oi-leaderboard-body"></div>
       </div>
 
-      <div class="section-title" data-tooltip="Sortable table of key metrics for the latest report week across every tracked contract and composite. Click any column header to sort. Click any row to open the full By Instrument view. Color coding: green = bullish/positive, red = bearish/negative, yellow = elevated but not extreme.">Weekly Change Summary</div>
+      <div class="section-title" data-tooltip="Sortable table of key metrics for the latest report week across every tracked contract and composite. Click any column header to sort. Click any row to open the full By Instrument view. Color coding: green = positive / rising, red = negative / falling; the Score column uses blue for long-side and orange for short-side extension.">Weekly Change Summary</div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table id="weekly-table">
@@ -1727,12 +1736,12 @@
                 <th onclick="sortTable(2)" id="th2" data-tooltip="Managed Money weekly change in net position.">MM &Delta;</th>
                 <th onclick="sortTable(3)" id="th3" data-tooltip="Standard deviations from the expanding historical mean. Above +1.5 = extended long, below -1.5 = extended short.">MM Z</th>
                 <th onclick="sortTable(4)" id="th4" data-tooltip="COT Index over a 3-year lookback. 0 = minimum positioning of last 3 years, 100 = maximum. Above 80 = historically extended.">COT 3yr</th>
-                <th onclick="sortTable(5)" id="th5" data-tooltip="Composite positioning score ranging from -3 (Strong Bearish) to +3 (Strong Bullish), aggregating Z-score, COT metric, and regime factors.">Score</th>
+                <th onclick="sortTable(5)" id="th5" data-tooltip="Positioning extension score from -3 (crowded short) to +3 (crowded long), from the Managed Money Z-score and 3-year COT index. Describes stretch, not direction.">Score</th>
                 <th onclick="sortTable(6)" id="th6" data-tooltip="Positioning momentum score (0-100). Above 80 = unusually large repositioning this week vs recent volatility.">Momentum</th>
                 <th onclick="sortTable(7)" id="th7" data-tooltip="Swap Dealer net position. Often the counterparty to Managed Money — large negative swap net with large positive MM net is a classic setup.">Swap Net</th>
                 <th onclick="sortTable(8)" id="th8" data-tooltip="Swap Dealer weekly change in net position.">Swap &Delta;</th>
                 <th onclick="sortTable(9)" id="th9" data-tooltip="Producer/Merchant/Processor/User net — commercial hedgers. Typically hold offsetting short positions against physical exposure.">Prod Net</th>
-                <th onclick="sortTable(10)" id="th10" data-tooltip="Other Reportables net — CTAs, hedge funds not classified as MM. A leading/coincident indicator.">Other Net</th>
+                <th onclick="sortTable(10)" id="th10" data-tooltip="Other Reportables net: large traders not classified as Managed Money, swap dealers or producers.">Other Net</th>
                 <th onclick="sortTable(11)" id="th11" data-tooltip="Non-Reportable (small speculator) net. Often read as a contrarian indicator at extremes.">Non-Rept Net</th>
                 <th onclick="sortTable(12)" id="th12" data-tooltip="Most recent settlement price for the contract.">Price</th>
                 <th onclick="sortTable(13)" id="th13" data-tooltip="Percentage change in price from the previous week.">Price &Delta;%</th>
@@ -1805,6 +1814,110 @@
         <span id="three-range-all"></span>
       </div>
       <div id="three-trader-grid" class="three-grid"></div>
+    </div>
+
+    <!-- CYCLES & SIGNALS TAB -->
+    <div id="panel-cycles" class="tab-panel">
+      <div id="cyc-status"></div>
+      <div id="cyc-kpis"></div>
+
+      <div class="cta-grid">
+        <div class="chart-panel span-full">
+          <div class="chart-header">
+            <div><div class="chart-title">Henry Hub Swing Cycle</div><div class="chart-sub" id="cyc-price-sub">Confirmed troughs and peaks (20% reversal), front-month price</div></div>
+            <div class="chart-actions"><span id="rng-cv-cyc-price"></span><button class="reset-zoom-btn" onclick="resetChartZoom('cv-cyc-price')">Reset</button></div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#e2e8f0"></div>Front month (weekly)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>Confirmed trough</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Confirmed peak</div>
+            <div class="leg-item"><div class="leg-line" style="background:#f59e0b"></div>Next-pivot confirmation level</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cyc-price"></canvas></div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">Swing Map</div><div class="chart-sub">Every completed swing since 2006: size vs duration. The amber point is the swing in progress.</div></div>
+            <div class="chart-actions"><button class="reset-zoom-btn" onclick="resetChartZoom('cv-cyc-map')">Reset</button></div></div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>Rallies (trough to peak)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Declines (peak to trough)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>Current swing (so far)</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cyc-map"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">When Turns Happen</div><div class="chart-sub" id="cyc-season-sub">Confirmed troughs and peaks by calendar month</div></div></div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div>Troughs</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Peaks</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cyc-season"></canvas></div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">Fund Positioning Around Turns</div><div class="chart-sub" id="cyc-event-sub">Median and interquartile range, 12 weeks either side of each trough and peak</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn active" id="cyc-met-cot" onclick="setCycMetric('cot')" data-tooltip="Managed Money 3-year COT index (0 = most short in 3 years, 100 = most long).">COT index</button>
+                <button class="hm-btn" id="cyc-met-flow4z" onclick="setCycMetric('flow4z')" data-tooltip="Managed Money 4-week net flow, in standard deviations.">4w flow</button>
+              </span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div>Around troughs</div>
+            <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Around peaks</div>
+            <div class="leg-item"><div class="leg-line" style="background:#9ba8c0"></div>All weeks (median)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>Today</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cyc-event"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">Which Way Moves Resolve</div><div class="chart-sub" id="cyc-pass-sub">Share of weeks where price rose X% before falling X%, by starting month</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn" id="cyc-lvl-15" onclick="setCycLevel('15')">&plusmn;15%</button>
+                <button class="hm-btn active" id="cyc-lvl-20" onclick="setCycLevel('20')">&plusmn;20%</button>
+              </span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>Up move first</div>
+            <div class="leg-item"><div class="leg-line" style="background:rgba(147,197,253,.5)"></div>95% interval (overlap-adjusted)</div>
+            <div class="leg-item"><div class="leg-line" style="background:#9ba8c0"></div>All weeks</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cyc-passage"></canvas></div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">Odds Under Today's Conditions</div><div class="chart-sub" id="cyc-cond-sub">Price rises X% before falling X%: history filtered to conditions that match now</div></div></div>
+          <div class="cta-scroll" id="cyc-cond-table"></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">What the Evidence Says Now</div><div class="chart-sub">Generated from the statistics on this page; no discretionary view</div></div></div>
+          <div class="cyc-read" id="cyc-read"></div>
+        </div>
+
+        <div class="chart-panel span-full">
+          <div class="chart-header">
+            <div><div class="chart-title">Positioning Signal Scorecard</div><div class="chart-sub" id="cyc-score-sub">Each signal judged as a turning-point detector: how often it fired within 4 weeks of the turn it should mark, against the base rate</div></div>
+            <div class="chart-actions">
+              <label for="cyc-source" class="cta-note" style="text-transform:uppercase;font-weight:600;letter-spacing:.5px">Positioning</label>
+              <select id="cyc-source" onchange="setCycSource(this.value)"></select>
+            </div>
+          </div>
+          <div class="cta-scroll" id="cyc-scorecard"></div>
+        </div>
+      </div>
+
+      <div class="chart-panel cta-method">
+        <details>
+          <summary>Methodology &amp; caveats</summary>
+          <div class="cta-note" id="cyc-method"></div>
+        </details>
+      </div>
     </div>
 
     <!-- CTA & FLOWS TAB -->
@@ -2137,37 +2250,41 @@
     }
 
     const METRIC_TOOLTIPS = {
-      'MM Net': 'Managed Money net (longs minus shorts). Positive = net long. Primary speculative flow signal — extremes often precede mean-reversion. Watch for divergence from price.',
-      'Z-Score': 'Standard deviations from full historical mean. Above +1.5 = historically extended long. Below −1.5 = historically extended short. Beyond ±2 = rare, high-conviction reversal zone.',
+      'MM Net': 'Managed Money net (longs minus shorts). Positive = net long. In NG, crowded long extremes have preceded peaks more often than chance; crowded short extremes have not reliably marked bottoms.',
+      'Z-Score': 'Standard deviations from full historical mean. Above +1.5 = historically extended long. Below −1.5 = historically extended short. Beyond ±2 = rare. Note: in NG, Z <= -2 has not marked bottoms (declines often continued).',
       'COT 3yr': 'COT Index: percentile rank within prior 3-year range. ≥80% = crowded long (near 3yr high). ≤20% = crowded short (near 3yr low). Anchors Z-score to recent history.',
-      'Swap Net': 'Swap Dealer net. Structural counterparty to speculative longs — deeply negative Swap + positive MM net = classic crowded setup. Narrowing spread can precede momentum shifts.',
-      'Prod Net': 'Producer/Merchant net. Producers hedge by selling forward — deeply negative = heavy physical hedging, often at cycle price highs. Watch vs price for hedging pressure signals.',
-      'Other Net': 'Other Reportables net (CTAs, commodity pools, non-MM hedge funds). Fast-moving leading/coincident indicator — responds to technical signals before Managed Money.',
+      'Swap Net': 'Swap Dealer net. Typically the counterparty to end-user and speculative flows.',
+      'Prod Net': 'Producer/Merchant net. Producers hedge by selling forward; the net reflects hedging activity. No consistent relationship with swing turns in testing.',
+      'Other Net': 'Other Reportables net (CTAs, commodity pools, non-MM hedge funds). Large traders not classified as Managed Money, swap dealers or producers.',
       'Retail Net': 'Non-Reportable net: positions below the CFTC reporting threshold (smaller traders). Often read as a contrarian indicator at extremes.',
       'OI Regime': 'Market structure via OI trend + price. Accumulation: OI↑+Price↑ (new longs). Distribution: OI↑+Price↓ (new shorts). Short Covering: OI↓+Price↑. Long Liquidation: OI↓+Price↓.',
-      'Momentum': 'Flow momentum score 0–100. Above 80 = statistically outsized repositioning vs trailing 13w volatility — often precedes trend breakouts. Below 20 = positioning stagnation.',
-      'Price': 'Most recent weekly settlement price. WoW % change shown — cross-reference with positioning flow for directional confirmation or divergence.',
-      'Season': 'Withdrawal (Nov–Mar): demand-driven drawdowns, price-sensitive. Injection (Apr–Oct): storage rebuilding, structurally oversupplied. Season context shapes how positioning extremes read.',
-      'MM Edge': 'Positioning momentum divergence: weekly Z-score change minus price return signal (normalized). Positive = MM repositioning faster than price implies — potential leading signal. Negative = MM lagging or fading price — potential divergence or exhaustion.'
+      'Momentum': 'Flow momentum score 0–100. Above 80 = unusually large repositioning versus trailing 13-week flow volatility. Below 20 = little repositioning.',
+      'Price': 'Most recent weekly settlement price. Week-over-week % change shown.',
+      'Season': 'Withdrawal (Nov–Mar): demand-driven drawdowns, price-sensitive. Injection (Apr–Oct): storage rebuilding.',
     };
 
     const REGIME_TOOLTIPS = {
-      'Accumulation': 'Open interest growing while price rises — large traders building new longs. Historically bullish continuation signal.',
-      'Distribution': 'Open interest growing while price falls — large traders building new shorts. Historically bearish continuation signal.',
-      'Short Covering': 'Open interest falling while price rises — shorts being closed, not new longs being built. Rally may lack conviction.',
-      'Long Liquidation': 'Open interest falling while price falls — longs being closed. Decline may lack conviction if shorts not building.',
+      'Accumulation': 'Open interest growing while price rises — new positions being added on a rising market. Descriptive, not a tested signal.',
+      'Distribution': 'Open interest growing while price falls — new positions being added on a falling market. Descriptive, not a tested signal.',
+      'Short Covering': 'Open interest falling while price rises — positions being closed on a rising market (consistent with short covering). Descriptive, not a tested signal.',
+      'Long Liquidation': 'Open interest falling while price falls — positions being closed on a falling market (consistent with long liquidation). Descriptive, not a tested signal.',
       'Neutral': 'No clear OI trend vs price direction this week.',
     };
 
+    // Positioning EXTENSION score (Managed Money Z-score + 3-year COT index).
+    // It describes how stretched fund positioning is, not which way price goes.
+    // Tested against NG swing turns since 2009: crowded long has preceded peaks
+    // ~1.6-1.9x more often than chance; crowded short has NOT reliably marked
+    // troughs (funds have kept selling into further declines).
     const SIGNAL_TOOLTIPS = {
-      'STRONG BEARISH SETUP': 'Score −3: Z ≤ −2.0 AND COT ≤ 20% AND confirming factor (Distribution regime or short momentum). Rare multi-year extreme — highest conviction bearish setup.',
-      'BEARISH POSITIONING': 'Score −2: Z ≤ −1.5 AND COT Index ≤ 20%. Positioning historically extended short. Structurally meaningful — awaiting a regime confirming signal.',
-      'MILD BEARISH BIAS': 'Score −1: One bearish factor (low Z or low COT) but not both at extremes. Directional lean only — monitor for second factor to trigger.',
-      'NEUTRAL': 'Score 0: No significant positioning signal. Z-score and COT Index within normal historical range. No structural edge from positioning this week.',
-      'MILD BULLISH BIAS': 'Score +1: One bullish factor (elevated Z or high COT) but not both confirmed. Directional lean — watch for second factor or regime change to upgrade.',
-      'BULLISH POSITIONING': 'Score +2: Z ≥ +1.5 AND COT Index ≥ 80%. Historically extended long. Most powerful when combined with Accumulation OI regime.',
-      'STRONG BULLISH SETUP': 'Score +3: Z ≥ +2.0 AND COT ≥ 80% AND confirming factor (Accumulation regime or long momentum). Rare multi-year extreme — highest conviction bullish setup.',
-      'HIGH ACTIVITY': 'Momentum score > 80 — statistically outsized repositioning vs trailing 13w flow volatility. Large flow events often precede trend inflections. Cross-ref with Z-score and regime.',
+      'CROWDED SHORT': 'Score -3: Managed Money net Z-score <= -2 and 3-year COT index <= 20. Funds are as short as they get. In NG this has NOT reliably marked bottoms: since 2009 it landed near a swing trough no more often than chance, and declines often continued.',
+      'EXTENDED SHORT': 'Score -2: funds stretched short (Z <= -1.5 or Z <= -2, or COT <= 20 with Z <= -1.5). Positioning context, not a timing signal.',
+      'LEANING SHORT': 'Score -1: one short-side extension factor present.',
+      'NEUTRAL': 'Score 0: Managed Money positioning within its normal historical range.',
+      'LEANING LONG': 'Score +1: one long-side extension factor present.',
+      'EXTENDED LONG': 'Score +2: funds stretched long. Historically this zone has coincided with peak risk more than with continuation.',
+      'CROWDED LONG': 'Score +3: Managed Money net Z-score >= +2 and 3-year COT index >= 80. In NG, crowded long positioning has preceded swing peaks about 1.6-1.9x more often than chance (see Cycles & Signals).',
+      'HIGH ACTIVITY': 'Momentum score > 80: this week\'s flow is unusually large relative to the trailing 13-week flow volatility.',
     };
 
 
@@ -2234,16 +2351,6 @@
         const rows = dps.map(dp => ['80', '20'].includes(dp.dataset?.label) ? '' : `<div class="tt-row"><span style="color:${dp.dataset?.borderColor || '#fff'}">${dp.dataset?.label || 'COT'}</span><span style="color:${dp.dataset?.borderColor || '#fff'}">${fmt(dp.raw, 1)}%</span></div>`).join('');
         return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
       }
-      if (type === 'lagged_corr') {
-        const dps = tooltip?.dataPoints || [];
-        const rows = dps.map(dp => `<div class="tt-row"><span style="color:${dp.dataset?.borderColor || '#fff'}">Corr (${dp.dataset?.label || 'Lead'})</span><span style="color:${dp.dataset?.borderColor || '#fff'}">${fmt(dp.raw, 2)}</span></div>`).join('');
-        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-divider"></div>${rows}<div class="tt-divider"></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
-      }
-      if (type === 'smart_dumb') {
-        const inst = CFTC_DATA.instruments[instKey];
-        return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span style="color:#3b82f6">Managed Money</span><span style="color:#3b82f6">${fmt(inst?.managed_money?.net?.[idx])}</span></div><div class="tt-row"><span style="color:#ef4444">Non-Rept Net</span><span style="color:#ef4444">${fmt(inst?.non_reportables?.net?.[idx])}</span></div><div class="tt-row"><span>Price</span><span>$${fmt(d.price, 2)}</span></div>`;
-      }
-
       return `${dateLine}<div class="tt-header">${instLabel}</div><div class="tt-row"><span>Value</span><span>${fmt(d.net)}</span></div>`;
     }
 
@@ -2327,6 +2434,9 @@
           if (document.getElementById('panel-cta')?.classList.contains('active')) renderCTA();
           startLiveRefresh();
         });
+        loadCycle().then(() => {
+          if (document.getElementById('panel-cycles')?.classList.contains('active')) renderCycles();
+        });
         document.getElementById('loading').style.opacity = '0';
         setTimeout(() => document.getElementById('loading').style.display = 'none', 400);
       } catch (e) {
@@ -2360,7 +2470,8 @@
     // the instrument or trader changes. Wheel-zoom / pan still work inside it.
     const RANGE_OPTIONS = [['1Y', 52], ['3Y', 156], ['5Y', 260], ['10Y', 520], ['All', 0]];
     const DEFAULT_RANGE = '3Y';
-    const chartRanges = {};
+    // Statistical charts default to full history: the tests need the sample size
+    const chartRanges = { 'cv-lagged': 'All', 'cv-scatter': 'All' };
     const CHART_RERENDER = {};
     function rangeKey(id) { return chartRanges[id] || DEFAULT_RANGE; }
     function rangeControl(id) {
@@ -2437,14 +2548,15 @@
     // ── Signal labels & colours ───────────────────────────────────
     function getSignalLabel(score) {
       const m = {
-        3: 'STRONG BULLISH SETUP', 2: 'BULLISH POSITIONING', 1: 'MILD BULLISH BIAS', 0: 'NEUTRAL',
-        '-1': 'MILD BEARISH BIAS', '-2': 'BEARISH POSITIONING', '-3': 'STRONG BEARISH SETUP'
+        3: 'CROWDED LONG', 2: 'EXTENDED LONG', 1: 'LEANING LONG', 0: 'NEUTRAL',
+        '-1': 'LEANING SHORT', '-2': 'EXTENDED SHORT', '-3': 'CROWDED SHORT'
       };
       return m[String(score)] || 'NEUTRAL';
     }
     function getSignalColour(score) {
-      if (score >= 3) return '#16a34a'; if (score === 2) return '#22c55e'; if (score === 1) return '#86efac';
-      if (score === -1) return '#fca5a5'; if (score === -2) return '#ef4444'; if (score <= -3) return '#991b1b';
+      // Long side blue, short side orange: neither colour implies "good" or "bad"
+      if (score >= 3) return '#2563eb'; if (score === 2) return '#3b82f6'; if (score === 1) return '#93c5fd';
+      if (score === -1) return '#fdba74'; if (score === -2) return '#f97316'; if (score <= -3) return '#c2410c';
       return '#5c6b8a';
     }
     function scoreClass(score) { const s = Math.max(-3, Math.min(3, +score || 0)); return s >= 0 ? `score-${s}` : `score--${Math.abs(s)}`; }
@@ -2505,7 +2617,7 @@
       document.querySelectorAll('.tab-panel.active').forEach(p => p.classList.remove('active'));
 
       document.getElementById('tab-' + name).classList.add('active');
-      const panelId = { overview: 'panel-overview', instrument: 'panel-instrument', three: 'panel-three', cta: 'panel-cta' }[name];
+      const panelId = { overview: 'panel-overview', instrument: 'panel-instrument', three: 'panel-three', cta: 'panel-cta', cycles: 'panel-cycles' }[name];
       document.getElementById(panelId).classList.add('active');
 
       // Render the new tab's content
@@ -2513,6 +2625,7 @@
       if (name === 'instrument') renderByInstrument();
       if (name === 'three') renderThreeTraderGrid();
       if (name === 'cta') renderCTA();
+      if (name === 'cycles') renderCycles();
     }
 
     function redrawAll() {
@@ -2522,6 +2635,7 @@
       if (active.id === 'panel-instrument') renderByInstrument();
       if (active.id === 'panel-three') renderThreeTraderGrid();
       if (active.id === 'panel-cta') renderCTA();
+      if (active.id === 'panel-cycles') renderCycles();
     }
 
     // ── Overview tab renderers ────────────────────────────────────
@@ -2701,7 +2815,6 @@
           const nrDelta = last(nr.change_net) ?? wow(nr.net);
           const oi = last(inst.open_interest);
           const oiRoc = last(inst.oi_roc_4w);
-          const mmEdge = last(mm.edge);
           const oiRocC = oiRoc == null ? '#5c6b8a' : oiRoc > 5 ? '#22c55e' : oiRoc < -5 ? '#ef4444' : '#f59e0b';
           const cotPct = mmCot != null ? Math.round(+mmCot) : null;
           const regime = last(inst.oi_regime) || 'Neutral';
@@ -2756,7 +2869,6 @@
             <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['Season']}">Season</span><span class="card-val" style="font-family:var(--font)">${last(inst.season) || '&mdash;'}</span></div>
             <div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['OI Regime']}">OI Regime</span><span class="card-val" style="font-family:var(--font)">${oiBadge(regime)}</span></div>
             <div class="card-row"><span class="card-key" data-tooltip="Total open interest across all traders. 4wk ROC shows momentum of market participation.">OI Total</span><span class="card-val">${fmt(oi)}${oiRoc != null ? '&nbsp;<span style="color:' + oiRocC + ' font-weight:600">' + (oiRoc >= 0 ? '+' : '') + oiRoc.toFixed(1) + '%</span>' : ''}</span></div>
-            ${mmEdge != null ? `<div class="card-row"><span class="card-key" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">MM Edge</span><span class="card-val" style="color:${mmEdge > 0.1 ? '#22c55e' : mmEdge < -0.1 ? '#ef4444' : '#f59e0b'}">${mmEdge >= 0 ? '+' : ''}${mmEdge.toFixed(2)}</span></div>` : ''}
             <div style="font-size:8px;color:var(--text3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px">
               <div style="width:6px;height:6px;border-radius:50%;background:${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 7 ? '#22c55e' : Math.round((Date.now() - new Date(last(inst.dates))) / 86400000) <= 14 ? '#eab308' : '#ef4444'}"></div>
               Report date: ${last(inst.dates)} &middot; ${Math.round((Date.now() - new Date(last(inst.dates))) / 86400000)} days ago
@@ -3254,7 +3366,6 @@
         const tNet = last(tObj.net), tDelta = last(tObj.change_net) ?? wow(tObj.net);
         const tZ = last(tObj.z_score), tPct = last(tObj.pct_rank);
         const tCot = last(tObj.cot_index?.w156), tMom = last(tObj.momentum_score);
-        const tEdgeV = t === 'managed_money' ? last(tObj.edge) : null;
         const price = last(inst.price), priceWow = wowPct(inst.price);
         const regime = last(inst.oi_regime) || '—';
         const season = last(inst.season) || '—';
@@ -3276,7 +3387,7 @@
         const tLabel = TRADER_LABELS[t] || 'MM';
 
         strip.innerHTML = `
-          <div class="inst-stat-item" data-tooltip="${SIGNAL_TOOLTIPS[getSignalLabel(score)] ?? 'Composite positioning score from -3 (strong bearish) to +3 (strong bullish).'}">
+          <div class="inst-stat-item" data-tooltip="${SIGNAL_TOOLTIPS[getSignalLabel(score)] ?? 'Positioning extension score from -3 (crowded short) to +3 (crowded long).'}">
             <span class="inst-stat-lbl">Signal</span>
             <span class="inst-stat-val" style="color:${sigCol};background:${sigCol}18;padding:1px 6px;border-radius:3px">${score >= 0 ? '+' : ''}${score} ${getSignalLabel(score)}</span>
           </div>
@@ -3321,10 +3432,7 @@
             <span class="inst-stat-lbl">Season</span>
             <span class="inst-stat-val" style="font-size:9px;color:var(--text2)">${season}</span>
           </div>
-          ${tEdgeV != null ? `<div class="inst-stat-item" data-tooltip="${METRIC_TOOLTIPS['MM Edge']}">
-            <span class="inst-stat-lbl">MM Edge</span>
-            <span class="inst-stat-val" style="color:${tEdgeV > 0.1 ? '#22c55e' : tEdgeV < -0.1 ? '#ef4444' : '#f59e0b'}">${tEdgeV >= 0 ? '+' : ''}${tEdgeV.toFixed(2)}</span>
-          </div>` : ''}`;
+`;
       }
 
       const latestNet = last(td.net), latestPrice = last(inst.price);
@@ -3354,13 +3462,14 @@
     <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>${isBasis ? 'Ref Price' : 'Price'}</div>
     <div class="leg-item"><div class="leg-line" style="background:rgba(155,168,192,.6)"></div>Range high / low</div>`, 'h240', true, { wide: true });
 
-      panel('cv-scatter', 'Price vs Net Position', isBasis ? 'Scatter (Ref Price vs Net)' : 'Scatter by Season', `
-    <div class="leg-item"><div class="leg-dot" style="background:#60a5fa"></div>Withdrawal</div>
-    <div class="leg-item"><div class="leg-dot" style="background:#fb923c"></div>Injection</div>`, 'h240');
+      panel('cv-scatter', 'Weekly Flow vs Price Change', 'Weekly flow vs weekly price change', `
+    <div class="leg-item"><div class="leg-dot" style="background:#60a5fa"></div>Withdrawal season</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#fb923c"></div>Injection season</div>
+    <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.55)"></div>Least-squares fit</div>`, 'h240');
 
-      panel('cv-corr', '20-Week Rolling Correlation', isBasis ? 'Ref Price vs Net Position' : 'Price vs Net Position', `
-    <div class="leg-item"><div class="leg-line" style="background:#22c55e;opacity:.5"></div>Trending &gt;0.4</div>
-    <div class="leg-item"><div class="leg-line" style="background:#ef4444;opacity:.5"></div>Mean-Rev &lt;-0.4</div>`, 'h200');
+      panel('cv-corr', '20-Week Flow / Price Correlation', isBasis ? 'Weekly basis flow vs Henry Hub price change' : 'Weekly flow vs weekly price change, rolling 20 weeks', `
+    <div class="leg-item"><div class="leg-line" style="background:#22c55e;opacity:.5"></div>Trend-following &gt; 0.4</div>
+    <div class="leg-item"><div class="leg-line" style="background:#ef4444;opacity:.5"></div>Contrarian &lt; &minus;0.4</div>`, 'h200');
 
       panel('cv-flow', 'Weekly Flow', 'CFTC-reported week-over-week change', null, 'h200', true);
       panel('cv-cot', 'COT Index', '3-year lookback &middot; 0 = Min, 100 = Max', null, 'h180');
@@ -3372,10 +3481,14 @@
     <div class="chart-container h200"><canvas id="cv-seasonal"></canvas></div>`;
       area.appendChild(seasonDiv);
 
-      panel('cv-lagged', 'Positioning Lead/Lag Analysis', 'Does MM positioning lead or lag price? 1–4 week leads', null, 'h180');
-      panel('cv-smart-dumb', 'Managed Money vs Small Traders', 'Net position, contracts', `
-    <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>Managed Money</div>
-    <div class="leg-item"><div class="leg-line" style="background:#ef4444"></div>Non-Reportable (small traders)</div>`, 'h200');
+      panel('cv-lagged', 'Lead / Lag: Flow vs Price', 'Does the flow lead price, or follow it?', `
+    <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>Flow leads price</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#9ba8c0"></div>Price leads flow</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>Same week</div>
+    <div class="leg-item"><div class="leg-line" style="background:rgba(245,158,11,.6)"></div>95% noise band (adjusted for 17 lags)</div>`, 'h180');
+      panel('cv-oi', 'Open Interest vs Price', 'Total open interest (participation) and price', `
+    <div class="leg-item"><div class="leg-line" style="background:#a855f7"></div>Open interest</div>
+    <div class="leg-item"><div class="leg-line" style="background:rgba(248,250,252,.6)"></div>${isBasis ? 'HH price (ref)' : 'Price'}</div>`, 'h200');
 
       // Percentile rank: full-width strip below the grid (one column per trader)
       const pctDiv = document.getElementById('pct-strip');
@@ -3387,7 +3500,7 @@
       CHART_RERENDER['cv-flow'] = () => renderFlowChart(CFTC_DATA.instruments[activeInstrument], activeTrader);
       CHART_RERENDER['cv-cot'] = () => renderCOTChart(CFTC_DATA.instruments[activeInstrument], activeTrader);
       CHART_RERENDER['cv-lagged'] = () => renderLaggedCorrChart(CFTC_DATA.instruments[activeInstrument], activeTrader);
-      CHART_RERENDER['cv-smart-dumb'] = () => renderSmartDumbChart(CFTC_DATA.instruments[activeInstrument]);
+      CHART_RERENDER['cv-oi'] = () => renderOIChart(CFTC_DATA.instruments[activeInstrument]);
 
       renderNetPosChart(inst, t);
       renderScatterChart(inst, t);
@@ -3396,7 +3509,7 @@
       renderCOTChart(inst, t);
       renderSeasonalChart(inst, t);
       renderLaggedCorrChart(inst, t);
-      renderSmartDumbChart(inst);
+      renderOIChart(inst);
       renderPercentileBars(inst);
     }
 
@@ -3458,33 +3571,90 @@
     }
 
     // ── Scatter (Price vs Net Position) ──────────────────────────
+    // Weekly flow vs weekly price change: stationary, so the slope / r are meaningful.
+    // (Replaced a price-level vs net-level scatter: two trending series always
+    // look related, which said nothing about behaviour.)
+    function weeklyReturns(prices) { return (prices || []).map((p, i) => i && p != null && prices[i - 1] ? (p / prices[i - 1] - 1) * 100 : null); }
+    // Weekly % returns for an instrument from the ROLL-ADJUSTED price when the
+    // payload has it; unadjusted front-month returns include contract-roll gaps.
+    let _adjMap = null, _adjSrc = null;
+    function instReturns(inst) {
+      const pa = CFTC_DATA?.price_adjusted;
+      if (pa?.dates?.length) {
+        if (_adjSrc !== pa) { _adjMap = new Map(pa.dates.map((d, i) => [d, pa.values[i]])); _adjSrc = pa; }
+        return weeklyReturns((inst.dates || []).map(d => _adjMap.get(d) ?? null));
+      }
+      return weeklyReturns(inst.price);
+    }
+    function ranks(arr) {
+      const idx = arr.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
+      const r = new Array(arr.length);
+      for (let i = 0; i < idx.length;) { let j = i; while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j++; const avg = (i + j) / 2 + 1; for (let k = i; k <= j; k++) r[idx[k][1]] = avg; i = j + 1; }
+      return r;
+    }
+    // Spearman rank correlation: robust to the spike weeks NG is prone to
+    function spearmanXY(xs, ys) {
+      const pts = xs.map((x, i) => [x, ys[i]]).filter(([x, y]) => x != null && y != null && isFinite(x) && isFinite(y));
+      if (pts.length < 8) return { r: null, n: pts.length };
+      return { r: pearsonXY(ranks(pts.map(p => p[0])), ranks(pts.map(p => p[1]))).r, n: pts.length };
+    }
+    function pearsonXY(xs, ys) {
+      const pts = xs.map((x, i) => [x, ys[i]]).filter(([x, y]) => x != null && y != null && isFinite(x) && isFinite(y));
+      const n = pts.length; if (n < 8) return { r: null, n, slope: null, icpt: null };
+      const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+      let sxy = 0, sxx = 0, syy = 0; pts.forEach(([x, y]) => { sxy += (x - mx) * (y - my); sxx += (x - mx) ** 2; syy += (y - my) ** 2; });
+      const r = sxx && syy ? sxy / Math.sqrt(sxx * syy) : null; const slope = sxx ? sxy / sxx : null;
+      return { r, n, slope, icpt: slope != null ? my - slope * mx : null };
+    }
+    function plainTooltip(callbacks) {
+      return { enabled: true, external: undefined, backgroundColor: 'rgba(13,17,23,.96)', borderColor: '#2d3a55', borderWidth: 1,
+        titleColor: '#e8eaf0', bodyColor: '#cbd5e1', titleFont: { size: 10, family: 'JetBrains Mono' }, bodyFont: { size: 10, family: 'JetBrains Mono' },
+        padding: 8, boxWidth: 8, boxHeight: 8, callbacks };
+    }
     function renderScatterChart(inst, traderKey) {
       const canvas = document.getElementById('cv-scatter'); if (!canvas) return;
       const td = inst[traderKey] || {};
-      const { dates, arrays } = applyRange('cv-scatter', inst.dates, td.net, inst.price, inst.season);
-      const [nets, prices, seasons] = arrays;
-      const s = dates.length ? (inst.dates || []).indexOf(dates[0]) : 0;
+      const rets = instReturns(inst);
+      const { dates, arrays } = applyRange('cv-scatter', inst.dates, td.change_net, rets, inst.season);
+      const [flows, rr, seasons] = arrays;
       const wData = [], iData = [];
-      dates.forEach((_, i) => { if (nets[i] == null || prices[i] == null) return; const pt = { x: nets[i], y: prices[i], rawIdx: Math.max(0, s) + i }; (seasons[i] === 'Withdrawal' ? wData : iData).push(pt); });
+      dates.forEach((d, i) => { if (flows[i] == null || rr[i] == null) return; (seasons[i] === 'Withdrawal' ? wData : iData).push({ x: rr[i], y: flows[i], d }); });
+      const fit = pearsonXY(rr, flows);
+      const rho = spearmanXY(rr, flows);
+      // Axis spans the 1st-99th percentile so a single spike week cannot flatten the cloud
+      const xs = [...wData, ...iData].map(p => p.x).sort((a, b) => a - b);
+      const q = f => xs.length ? xs[Math.min(xs.length - 1, Math.max(0, Math.round(f * (xs.length - 1))))] : 0;
+      const xMin = q(0.01), xMax = q(0.99), pad = (xMax - xMin) * 0.08 || 1;
+      const line = fit.slope != null && xs.length ? [{ x: xMin, y: fit.icpt + fit.slope * xMin }, { x: xMax, y: fit.icpt + fit.slope * xMax }] : [];
+      const sub = canvas.closest('.chart-panel')?.querySelector('.chart-sub');
+      if (sub) {
+        const isBasis = activeInstrument.endsWith('_basis');
+        sub.textContent = rho.r == null ? 'Weekly flow vs weekly price change' :
+          `rank corr ${rho.r.toFixed(2)} (n = ${rho.n}) · ` + (isBasis ? 'basis flows vs Henry Hub price: little relation expected' :
+          rho.r > 0.3 ? 'trend-following: buys into rallies, sells into declines' : rho.r < -0.3 ? 'contrarian / hedging: sells rallies, buys declines' : 'no consistent relation to same-week price moves');
+      }
       const chart = safeCreateChart(canvas, {
         type: 'scatter',
-        data: {
-          datasets: [
-            { label: 'Withdrawal', data: wData, backgroundColor: 'rgba(96,165,250,.65)', pointRadius: 3.5, pointHoverRadius: 5 },
-            { label: 'Injection', data: iData, backgroundColor: 'rgba(251,146,60,.65)', pointRadius: 3.5, pointHoverRadius: 5 },
-          ]
-        },
+        data: { datasets: [
+          { label: 'Withdrawal season', data: wData, backgroundColor: 'rgba(96,165,250,.6)', pointRadius: 3, pointHoverRadius: 5 },
+          { label: 'Injection season', data: iData, backgroundColor: 'rgba(251,146,60,.6)', pointRadius: 3, pointHoverRadius: 5 },
+          { type: 'line', label: 'Fit', data: line, borderColor: 'rgba(248,250,252,.55)', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, fill: false },
+        ] },
         options: {
           ...CHART_BASE,
-          interaction: { mode: 'point', intersect: true },
-          plugins: { ...CHART_BASE.plugins },
-          scales: { x: { ...CHART_BASE.scales.x, title: { display: true, text: 'Net Position', color: '#5c6b8a', font: { size: 9 } } }, y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 9 } } } }
+          interaction: { mode: 'nearest', intersect: true },
+          plugins: { ...CHART_BASE.plugins, tooltip: plainTooltip({
+            title: items => items[0]?.raw?.d || '',
+            label: item => item.datasetIndex === 2 ? null : ` Price ${item.raw.x >= 0 ? '+' : ''}${item.raw.x.toFixed(1)}%  ·  flow ${fmtChg(item.raw.y)}`
+          }) },
+          scales: {
+            x: { ...CHART_BASE.scales.x, type: 'linear', min: xMin - pad, max: xMax + pad, ticks: { ...CHART_BASE.scales.x.ticks, callback: v => Math.round(v) + '%' }, title: { display: true, text: 'Weekly price change (roll-adjusted)', color: '#5c6b8a', font: { size: 9 } } },
+            y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Weekly net flow (contracts)', color: '#5c6b8a', font: { size: 9 } } }
+          }
         }
       });
-      chart.userData = { type: 'scatter', instrumentKey: activeInstrument, traderKey: traderKey };
+      chart.userData = { type: 'flow_scatter', instrumentKey: activeInstrument, traderKey };
     }
-
-    // ── Rolling Correlation ───────────────────────────────────────
     function renderCorrChart(inst, traderKey) {
       const canvas = document.getElementById('cv-corr'); if (!canvas) return;
       const td = inst[traderKey] || {};
@@ -3634,62 +3804,81 @@
     }
 
     // ── Lagged Correlation (F6) ───────────────────────────────────
+    // Cross-correlation of weekly flow with weekly price change at lags -8..+8.
+    // Lag L > 0: flow this week vs price change L weeks LATER (flow leads price).
+    // Lag L < 0: price change |L| weeks EARLIER vs flow now (flow follows price).
+    // Replaced four overlapping rolling-correlation lines that were mostly noise.
     function renderLaggedCorrChart(inst, traderKey) {
       const canvas = document.getElementById('cv-lagged'); if (!canvas) return;
       const td = inst[traderKey] || {};
-      const lc = td.lagged_corr;
-      if (!lc) { canvas.closest('.chart-container').innerHTML = '<div class="no-data">Lagged correlation not available for this trader</div>'; return; }
-      const { dates, arrays } = applyRange('cv-lagged', inst.dates, lc.lag_1w, lc.lag_2w, lc.lag_3w, lc.lag_4w);
-      const [l1, l2, l3, l4] = arrays;
-      const lagCols = ['#4f8ef7', '#22c55e', '#f59e0b', '#a855f7'];
-      // Determine dominant current lag
-      const currLags = [l1, l2, l3, l4].map(a => last(a));
-      const maxLag = currLags.reduce((best, v, i) => Math.abs(v ?? 0) > Math.abs(best.val ?? 0) ? { val: v, lag: i + 1 } : best, { val: 0, lag: 0 });
-      const note = maxLag.lag ? `Positioning leads price by ~${maxLag.lag}w (r=${(maxLag.val || 0).toFixed(2)})` : '';
-      const chartSub = canvas.closest('.chart-panel')?.querySelector('.chart-sub');
-      if (chartSub) chartSub.textContent = note || 'Does MM positioning lead/lag price?';
+      const { dates, arrays } = applyRange('cv-lagged', inst.dates, td.change_net, instReturns(inst));
+      const [flows, rets] = arrays;
+      const lags = []; for (let L = -8; L <= 8; L++) lags.push(L);
+      const vals = lags.map(L => {
+        const ys = flows.map((_, i) => (i + L >= 0 && i + L < rets.length) ? rets[i + L] : null);
+        return spearmanXY(flows, ys).r;
+      });
+      const n = (flows || []).filter(v => v != null).length;
+      // 17 lags are tested, so the 95% band is Bonferroni-adjusted (z = 2.97);
+      // otherwise about one lag would look "significant" by chance alone.
+      const band = n > 0 ? 2.97 / Math.sqrt(n) : 0;
+      const sig = lags.map((L, i) => ({ L, r: vals[i] })).filter(o => o.r != null && Math.abs(o.r) > band);
+      const leads = sig.filter(o => o.L > 0), follows = sig.filter(o => o.L < 0);
+      const sub = canvas.closest('.chart-panel')?.querySelector('.chart-sub');
+      if (sub) sub.textContent = n < 20 ? 'Not enough history in this range' :
+        (leads.length ? `Flow leads price at ${leads.map(o => '+' + o.L + 'w').join(', ')}` : 'No significant lead of flow over price') +
+        (follows.length ? ` · flow follows price at ${follows.map(o => o.L + 'w').join(', ')}` : '') + ` · band ±${band.toFixed(2)} (n=${n})`;
       const chart = safeCreateChart(canvas, {
-        type: 'line',
-        data: {
-          labels: dates, datasets: [1, 2, 3, 4].map((lag, i) => ({
-            label: `+${lag}w`, data: [l1, l2, l3, l4][i], borderColor: lagCols[i], borderWidth: 1.5, pointRadius: 0, tension: .3, fill: false
-          }))
-        },
+        type: 'bar',
+        data: { labels: lags.map(L => (L > 0 ? '+' : '') + L + 'w'), datasets: [{
+          label: 'Correlation', data: vals,
+          backgroundColor: lags.map((L, i) => vals[i] != null && Math.abs(vals[i]) > band ? (L > 0 ? '#3b82f6' : L < 0 ? '#9ba8c0' : '#f59e0b') : 'rgba(92,107,138,.45)'),
+          borderWidth: 0
+        }] },
         options: {
           ...CHART_BASE,
-          maintainAspectRatio: false,
-          plugins: { ...CHART_BASE.plugins, legend: { display: true, labels: { color: '#9ba8c0', font: { size: 9 }, boxWidth: 8 } }, annotation: { annotations: { zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,.15)', borderWidth: 1, borderDash: [4, 4] } } } },
-          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y, min: -1.1, max: 1.1, title: { display: true, text: 'Corr (r)', color: '#5c6b8a', font: { size: 8 } }, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(1) } } }
+          plugins: { ...CHART_BASE.plugins, zoom: undefined, tooltip: plainTooltip({
+            title: items => { const L = lags[items[0].dataIndex]; return L === 0 ? 'Same week' : L > 0 ? `Flow leads price by ${L}w` : `Price leads flow by ${-L}w`; },
+            label: item => ` r = ${item.raw == null ? '—' : item.raw.toFixed(3)}${item.raw != null && Math.abs(item.raw) > band ? ' (significant)' : ''}`
+          }), annotation: { annotations: {
+            up: { type: 'line', yMin: band, yMax: band, borderColor: 'rgba(245,158,11,.5)', borderWidth: 1, borderDash: [4, 4] },
+            dn: { type: 'line', yMin: -band, yMax: -band, borderColor: 'rgba(245,158,11,.5)', borderWidth: 1, borderDash: [4, 4] },
+            z: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,.2)', borderWidth: 1 } } } },
+          scales: {
+            x: { ticks: { color: '#5c6b8a', font: { size: 9 }, maxRotation: 0, autoSkip: false, callback: function (v, i) { return i % 2 === 0 ? this.getLabelForValue(v) : ''; } }, grid: { display: false } },
+            y: { ...CHART_BASE.scales.y, title: { display: true, text: 'Correlation (r)', color: '#5c6b8a', font: { size: 8 } }, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v.toFixed(2) } }
+          }
         }
       });
-      chart.userData = { type: 'lagged_corr', instrumentKey: activeInstrument, traderKey: null };
+      chart.userData = { type: 'xcorr', instrumentKey: activeInstrument, traderKey };
     }
-
-    // ── Smart vs Dumb Money (F3) ──────────────────────────────────
-    function renderSmartDumbChart(inst) {
-      const canvas = document.getElementById('cv-smart-dumb'); if (!canvas) return;
-      const mm = inst.managed_money || {}, nr = inst.non_reportables || {};
-      if (!mm.net || !nr.net) { canvas.closest('.chart-container').innerHTML = '<div class="no-data">Non-reportable data unavailable</div>'; return; }
-      const { dates, arrays } = applyRange('cv-smart-dumb', inst.dates, mm.net, nr.net);
-      const [mmN, nrN] = arrays;
+    // Open interest (participation) with price. Replaced a Managed Money vs
+    // Non-Reportable chart: non-reportables are ~1% of NG open interest and
+    // showed no relationship with swing turns in testing.
+    function renderOIChart(inst) {
+      const canvas = document.getElementById('cv-oi'); if (!canvas) return;
+      const { dates, arrays } = applyRange('cv-oi', inst.dates, inst.open_interest, inst.price);
+      const [oi, price] = arrays;
+      if (!dates?.length) { canvas.closest('.chart-container').innerHTML = '<div class="no-data">No data</div>'; return; }
       const chart = safeCreateChart(canvas, {
-        type: 'line',
-        data: {
-          labels: dates, datasets: [
-            { label: 'MM Net', data: mmN, borderColor: '#3b82f6', borderWidth: 1.5, pointRadius: 0, tension: .3, fill: false },
-            { label: 'Non-Rept Net', data: nrN, borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0, tension: .3, fill: false, borderDash: [4, 3] },
-          ]
-        },
+        data: { labels: dates, datasets: [
+          { type: 'line', label: 'Open interest', data: oi, borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,.12)', fill: 'origin', borderWidth: 1.5, pointRadius: 0, tension: .2, yAxisID: 'y' },
+          { type: 'line', label: 'Price', data: price, borderColor: 'rgba(248,250,252,.55)', borderWidth: 1.2, pointRadius: 0, tension: .2, yAxisID: 'y2' },
+        ] },
         options: {
           ...CHART_BASE,
-          plugins: { ...CHART_BASE.plugins },
-          scales: { x: { ...CHART_BASE.scales.x }, y: { ...CHART_BASE.scales.y } }
+          plugins: { ...CHART_BASE.plugins, tooltip: plainTooltip({
+            label: item => item.datasetIndex === 0 ? ` Open interest: ${fmt(item.raw)}` : ` Price: $${fmt(item.raw, 3)}`
+          }) },
+          scales: {
+            x: { ...CHART_BASE.scales.x },
+            y: { position: 'left', ...CHART_BASE.scales.y, title: { display: true, text: 'Open interest (contracts)', color: '#5c6b8a', font: { size: 8 } } },
+            y2: { position: 'right', ...CHART_BASE.scales.y, grid: { display: false }, title: { display: true, text: 'Price $', color: '#5c6b8a', font: { size: 8 } } }
+          }
         }
       });
-      chart.userData = { type: 'smart_dumb', instrumentKey: activeInstrument, traderKey: 'managed_money' };
+      chart.userData = { type: 'oi_price', instrumentKey: activeInstrument, traderKey: null };
     }
-
-    // ── Percentile bars ─
     function renderPercentileBars(inst) {
       const area = document.getElementById('pct-bars-area'); if (!area) return;
       area.innerHTML = '';
@@ -4125,6 +4314,8 @@
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       try {
         const ctaChanged = await loadCTA();
+        const cycChanged = await loadCycle();
+        if (cycChanged && document.getElementById('panel-cycles')?.classList.contains('active')) renderCycles();
         const cftcBehind = CTA_DATA?.meta?.cftc_latest_report_date && CFTC_DATA?.meta?.latest_report_date &&
           CTA_DATA.meta.cftc_latest_report_date > CFTC_DATA.meta.latest_report_date;
         let cftcChanged = false;
@@ -4388,6 +4579,278 @@
         <li><strong>Position:</strong> mean of the three signals &times; (${m ? (m.params.vol_target * 100).toFixed(0) : 15}% vol target &divide; ${m ? m.params.vol_window : 60}-day realized vol), converted to dollars by ${cal ? (cal.method === 'ols_slope' ? `the OLS slope of weekly CFTC Managed Money $ (HH Prompt composite, NYMEX-equivalent) on model exposure, ${cal.start} to ${cal.end} (n=${cal.n_obs}, r=${cal.corr.toFixed(2)})${cal.corr < 0.3 ? '. The fit is weak: most NG Managed Money is structural or discretionary rather than trend-following, so read the dollar level as indicative and the direction, flip levels and relative scenario sizes as the robust part' : ''}` : `matching the dispersion of weekly CFTC Managed Money $ (slope was non-positive: r=${cal.corr.toFixed(2)})`) : 'a fit to weekly CFTC Managed Money dollars'}. The intercept, NG's structural Managed Money short, is not trend-driven and is deliberately left out.</li>
         <li><strong>Projections:</strong> the model re-run forward ${m ? m.params.projection_days : 21} sessions along five steady price paths, with volatility held at today's estimate. They are conditional "if price does X, trend followers likely do Y" estimates, not forecasts of price.</li>
         <li><strong>Refresh:</strong> recomputed every weekday after NYMEX settlement and right after each CFTC release; this page polls for new data every ${CTA_POLL_MS / 60000} minutes while open.${m ? ` Last model run ${m.generated_at.replace('T', ' ').replace('Z', ' UTC')}.` : ''}</li>
+      </ul>`;
+    }
+
+    // ══ Cycles & Signals tab ══════════════════════════════════════════════
+    // Rendered from data/cycle_analysis.json (scripts/update_cycle_analysis.py).
+    const CYCLE_MODEL_ID = 'hh_cycle_v1';
+    let CYCLE_DATA = null, CYCLE_ERROR = null;
+    let cycMetric = 'cot', cycLevel = '20', cycSource = 'comp_hh_prompt';
+    chartRanges['cv-cyc-price'] = chartRanges['cv-cyc-price'] || '5Y';
+
+    async function loadCycle() {
+      try {
+        const r = await fetch(`data/cycle_analysis.json?v=${Date.now()}`);
+        if (!r.ok) throw new Error(r.status === 404 ? 'not generated yet' : `HTTP ${r.status}`);
+        const j = await r.json();
+        if (j?.meta?.model !== CYCLE_MODEL_ID || !j.current || !j.pivots) throw new Error('unexpected schema');
+        const changed = !CYCLE_DATA || CYCLE_DATA.meta.generated_at !== j.meta.generated_at;
+        CYCLE_DATA = j; CYCLE_ERROR = null;
+        if (!CYCLE_DATA.positioning[cycSource]) cycSource = Object.keys(CYCLE_DATA.positioning)[0];
+        return changed;
+      } catch (e) { CYCLE_ERROR = e.message || String(e); return false; }
+    }
+
+    function setCycMetric(m) { cycMetric = m; setCtaSeg('cyc-met-', m); renderCycEvent(); }
+    function setCycLevel(l) { cycLevel = l; setCtaSeg('cyc-lvl-', l); renderCycPassage(); renderCycConditions(); renderCycRead(); }
+    function setCycSource(k) { if (CYCLE_DATA?.positioning?.[k]) { cycSource = k; renderCycEvent(); renderCycScorecard(); renderCycRead(); } }
+    const pctTxt = (v, d = 0) => v == null || isNaN(v) ? '—' : `${(v * 100).toFixed(d)}%`;
+    const signedPct = (v, d = 0) => v == null || isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`;
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function renderCycles() {
+      const st = document.getElementById('cyc-status');
+      if (!CYCLE_DATA) {
+        if (st) st.innerHTML = `<div class="basis-spread-banner" style="display:flex">${ICONS.warn}<div>Cycle analysis unavailable (${CYCLE_ERROR || 'loading'}). It is rebuilt every weekday after NYMEX settlement and after each CFTC report.</div></div>`;
+        ['cv-cyc-price', 'cv-cyc-map', 'cv-cyc-season', 'cv-cyc-event', 'cv-cyc-passage'].forEach(id => ctaNoData(id, 'Cycle analysis not available yet'));
+        ['cyc-kpis', 'cyc-cond-table', 'cyc-read', 'cyc-scorecard', 'cyc-method'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+        return;
+      }
+      const age = (Date.now() - tsOf(CYCLE_DATA.meta.as_of)) / 86400000;
+      if (st) st.innerHTML = age > 5 ? `<div class="basis-spread-banner" style="display:flex">${ICONS.warn}<div>Cycle analysis last priced ${CYCLE_DATA.meta.as_of} (${Math.round(age)} days ago); the daily refresh may have failed.</div></div>` : '';
+      const sel = document.getElementById('cyc-source');
+      if (sel) { sel.innerHTML = Object.entries(CYCLE_DATA.positioning).map(([k, v]) => `<option value="${k}"${k === cycSource ? ' selected' : ''}>${v.label}</option>`).join(''); sel.value = cycSource; }
+      const rng = document.getElementById('rng-cv-cyc-price'); if (rng) rng.innerHTML = rangeControl('cv-cyc-price');
+      CHART_RERENDER['cv-cyc-price'] = renderCycPrice;
+      renderCycKpis(); renderCycPrice(); renderCycMap(); renderCycSeason(); renderCycEvent(); renderCycPassage();
+      renderCycConditions(); renderCycRead(); renderCycScorecard(); renderCycMethod();
+    }
+
+    function renderCycKpis() {
+      const el = document.getElementById('cyc-kpis'); if (!el) return;
+      const c = CYCLE_DATA.current, s = CYCLE_DATA.swing_stats, pv = c.since_pivot;
+      const pos = CYCLE_DATA.positioning[cycSource]?.current || {};
+      const cond = CYCLE_DATA.first_passage[cycLevel]?.conditions || {};
+      const best = cond.all_three?.n >= 20 ? cond.all_three : cond.season_and_swing;
+      const item = (lbl, val, sub, col, tip) => `<div class="hero-metric"${tip ? ` data-tooltip="${tip}"` : ''}><span class="hero-metric-lbl">${lbl}</span><span class="hero-metric-val" style="color:${col || 'var(--text)'}">${val}</span>${sub ? `<span class="hero-delta" style="color:var(--text3)">${sub}</span>` : ''}</div>`;
+      const dirWord = c.direction === 'up' ? 'Rally' : c.direction === 'down' ? 'Decline' : 'Undetermined';
+      el.innerHTML = `<div class="hero-metrics-grid">
+        ${item('Swing in progress', `${dirWord} since ${pv.date}`, `from ${pv.type} at $${fmt(pv.front_price, 3)}`, c.direction === 'up' ? '#22c55e' : '#ef4444')}
+        ${item('Move so far', signedPct(c.move_pct, 1), `extreme ${signedPct(c.extreme_move_pct, 1)} on ${c.extreme_date}`, posNegColour(c.move_pct))}
+        ${item('Swing age', `${Math.round(c.weeks)} weeks`, `older than ${Math.round(c.duration_pctile)}% of past ${c.direction === 'up' ? 'rallies' : 'declines'}`)}
+        ${item('Size vs history', c.amplitude_pctile < 1 ? 'Below all past' : `${Math.round(c.amplitude_pctile)}th pctile`, `typical ${c.direction === 'up' ? 'rally' : 'decline'} ${signedPct(c.typical_amplitude_pct)} / ${Math.round(c.typical_weeks)}w`)}
+        ${item('Turn confirmed at', `$${fmt(c.confirm_level, 3)}`, c.direction === 'up' ? '20% below swing high' : '20% above swing low', '#f59e0b', c.confirm_rule)}
+        ${item(`Up ${cycLevel}% before down ${cycLevel}%`, pctTxt(best?.p_up_first), best?.ci ? `95% ${pctTxt(best.ci[0])}–${pctTxt(best.ci[1])} · n=${best.n}` : '', 'var(--text)', 'Historical share of weeks with matching conditions (season and swing state) where price rose first.')}
+        ${item('Funds (MM 3y COT)', `${Math.round(pos.cot ?? NaN)}`, `Z ${fmtZ(pos.z)}`, pos.cot <= 10 ? '#f97316' : pos.cot >= 90 ? '#3b82f6' : 'var(--text)')}
+        ${item('Cycles per year', s.cycles_per_year.toFixed(1), `${CYCLE_DATA.pivots.length} pivots since ${CYCLE_DATA.series.dates[0].slice(0, 4)}`)}
+      </div>`;
+    }
+
+    function renderCycPrice() {
+      const canvas = ctaEnsureCanvas('cv-cyc-price'); if (!canvas || !CYCLE_DATA) return;
+      const S = CYCLE_DATA.series, c = CYCLE_DATA.current;
+      const { dates, arrays: [front] } = applyRange('cv-cyc-price', S.dates, S.front);
+      if (!dates.length) return;
+      const pts = dates.map((d, i) => ({ x: tsOf(d), y: front[i] }));
+      const minTs = pts[0].x, maxTs = pts[pts.length - 1].x;
+      const pv = CYCLE_DATA.pivots.filter(p => tsOf(p.date) >= minTs);
+      const mk = type => pv.filter(p => p.type === type).map(p => ({ x: tsOf(p.date), y: p.front_price, p }));
+      const tooltip = ctaTooltip({
+        label: item => {
+          if (item.datasetIndex === 0) return ` Front month: $${item.parsed.y.toFixed(3)}`;
+          const p = item.raw.p;
+          return [` ${p.type === 'trough' ? 'Trough' : 'Peak'}: $${p.front_price.toFixed(3)}`,
+            p.swing_pct != null ? ` Swing into it: ${signedPct(p.swing_pct)} over ${Math.round(p.swing_weeks)}w` : '',
+            ` Confirmed ${p.confirmed} (${Math.round(p.confirm_lag_weeks)}w later)`].filter(Boolean);
+        }
+      });
+      const opts = ctaBaseOptions(minTs, maxTs, tooltip, 'nearest');
+      opts.scales.y = { type: 'logarithmic', ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => [1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 15].includes(+v) ? '$' + v : '' }, grid: { color: 'rgba(37,48,71,.25)' }, title: { display: true, text: 'Front month $/MMBtu (log)', color: '#5c6b8a', font: { size: 8 } } };
+      const lastPv = CYCLE_DATA.pivots[CYCLE_DATA.pivots.length - 1];
+      opts.plugins.annotation = { annotations: {
+        conf: { type: 'line', yMin: c.confirm_level, yMax: c.confirm_level, xMin: Math.max(minTs, tsOf(c.extreme_date)), xMax: maxTs, borderColor: '#f59e0b', borderWidth: 1.5, borderDash: [5, 4],
+          label: { display: true, content: `${c.direction === 'up' ? 'Peak' : 'Trough'} confirmed at $${c.confirm_level.toFixed(2)}`, position: 'start', color: '#f59e0b', backgroundColor: 'rgba(13,17,23,.85)', font: { size: 9 } } },
+        swing: { type: 'box', xMin: Math.max(minTs, tsOf(lastPv.date)), xMax: maxTs, backgroundColor: c.direction === 'up' ? 'rgba(34,197,94,.05)' : 'rgba(239,68,68,.05)', borderWidth: 0 }
+      } };
+      safeCreateChart(canvas, {
+        type: 'line',
+        data: { datasets: [
+          { label: 'Front month', data: pts, borderColor: '#e2e8f0', borderWidth: 1.3, pointRadius: 0, pointHoverRadius: 0, tension: 0 },
+          { type: 'scatter', label: 'Troughs', data: mk('trough'), backgroundColor: '#22c55e', borderColor: '#0d1117', borderWidth: 1, pointStyle: 'triangle', pointRadius: 6, pointHoverRadius: 8 },
+          { type: 'scatter', label: 'Peaks', data: mk('peak'), backgroundColor: '#ef4444', borderColor: '#0d1117', borderWidth: 1, pointStyle: 'triangle', rotation: 180, pointRadius: 6, pointHoverRadius: 8 },
+        ] },
+        options: opts
+      });
+      const sub = document.getElementById('cyc-price-sub');
+      if (sub) sub.textContent = `Confirmed troughs and peaks (20% reversal on roll-adjusted prices; markers at the actual front-month price). A turn is only confirmed about ${Math.round(CYCLE_DATA.swing_stats.median_confirm_lag_weeks)} weeks after it happens.`;
+    }
+
+    function renderCycMap() {
+      const canvas = ctaEnsureCanvas('cv-cyc-map'); if (!canvas || !CYCLE_DATA) return;
+      const s = CYCLE_DATA.swing_stats, c = CYCLE_DATA.current;
+      const up = s.up.swings.map(([a, w]) => ({ x: w, y: a })), dn = s.down.swings.map(([a, w]) => ({ x: w, y: a }));
+      const cur = [{ x: c.weeks, y: c.move_pct }];
+      safeCreateChart(canvas, {
+        type: 'scatter',
+        data: { datasets: [
+          { label: 'Rallies', data: up, backgroundColor: 'rgba(34,197,94,.55)', pointRadius: 3.5 },
+          { label: 'Declines', data: dn, backgroundColor: 'rgba(239,68,68,.55)', pointRadius: 3.5 },
+          { label: 'Current swing', data: cur, backgroundColor: '#f59e0b', borderColor: '#fff', borderWidth: 1.5, pointRadius: 8, pointStyle: 'rectRot' },
+        ] },
+        options: {
+          ...CHART_BASE, interaction: { mode: 'nearest', intersect: true },
+          plugins: { ...CHART_BASE.plugins, tooltip: plainTooltip({
+            title: items => items[0]?.dataset?.label || '',
+            label: item => ` ${signedPct(item.raw.y)} over ${Math.round(item.raw.x)} weeks`
+          }), annotation: { annotations: { z: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,.2)', borderWidth: 1 } } } },
+          scales: {
+            x: { type: 'linear', min: 0, ticks: { color: '#5c6b8a', font: { size: 9 } }, grid: { color: 'rgba(37,48,71,.4)' }, title: { display: true, text: 'Duration (weeks)', color: '#5c6b8a', font: { size: 9 } } },
+            y: { ...CHART_BASE.scales.y, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v + '%' }, title: { display: true, text: 'Size of swing', color: '#5c6b8a', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function renderCycSeason() {
+      const canvas = ctaEnsureCanvas('cv-cyc-season'); if (!canvas || !CYCLE_DATA) return;
+      const s = CYCLE_DATA.swing_stats, curM = +CYCLE_DATA.meta.as_of.slice(5, 7) - 1;
+      safeCreateChart(canvas, {
+        type: 'bar',
+        data: { labels: MONTH_NAMES, datasets: [
+          { label: 'Troughs', data: s.troughs_by_month, backgroundColor: MONTH_NAMES.map((_, i) => i === curM ? '#4ade80' : 'rgba(34,197,94,.6)') },
+          { label: 'Peaks', data: s.peaks_by_month, backgroundColor: MONTH_NAMES.map((_, i) => i === curM ? '#f87171' : 'rgba(239,68,68,.6)') },
+        ] },
+        options: {
+          ...CHART_BASE, plugins: { ...CHART_BASE.plugins, zoom: undefined, tooltip: plainTooltip({ label: item => ` ${item.dataset.label}: ${item.raw}` }) },
+          scales: { x: { ticks: { color: '#5c6b8a', font: { size: 9 } }, grid: { display: false } }, y: { ...CHART_BASE.scales.y, ticks: { ...CHART_BASE.scales.y.ticks, precision: 0 }, title: { display: true, text: 'Count since 2006', color: '#5c6b8a', font: { size: 8 } } } }
+        }
+      });
+      const sub = document.getElementById('cyc-season-sub');
+      if (sub) { const t = s.troughs_by_month, p = s.peaks_by_month, nxt = (curM + 1) % 12;
+        sub.textContent = `Confirmed troughs and peaks by month. ${MONTH_NAMES[curM]}–${MONTH_NAMES[nxt]}: ${p[curM] + p[nxt]} peaks vs ${t[curM] + t[nxt]} troughs since ${CYCLE_DATA.series.dates[0].slice(0, 4)}.`; }
+    }
+
+    function renderCycEvent() {
+      const canvas = ctaEnsureCanvas('cv-cyc-event'); if (!canvas || !CYCLE_DATA) return;
+      const P = CYCLE_DATA.positioning[cycSource]; if (!P) return;
+      const E = P.event_study, M = E.metrics[cycMetric]; const labels = E.offsets.map(o => (o > 0 ? '+' : '') + o + 'w');
+      const ds = [];
+      const band = (b, col) => b ? [
+        { label: 'p75', data: b.p75, borderColor: 'transparent', pointRadius: 0, fill: false },
+        { label: 'p25', data: b.p25, borderColor: 'transparent', pointRadius: 0, fill: '-1', backgroundColor: col },
+      ] : [];
+      ds.push(...band(M.troughs, 'rgba(34,197,94,.10)'), ...band(M.peaks, 'rgba(239,68,68,.10)'));
+      if (M.troughs) ds.push({ label: `Troughs (n=${M.troughs.n})`, data: M.troughs.median, borderColor: '#22c55e', borderWidth: 2, pointRadius: 0, tension: .25 });
+      if (M.peaks) ds.push({ label: `Peaks (n=${M.peaks.n})`, data: M.peaks.median, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: .25 });
+      ds.push({ label: 'All weeks', data: E.offsets.map(() => M.all_weeks.median), borderColor: '#9ba8c0', borderWidth: 1, borderDash: [4, 4], pointRadius: 0 });
+      const ann = { pivot: { type: 'line', xMin: E.offsets.indexOf(0), xMax: E.offsets.indexOf(0), borderColor: 'rgba(255,255,255,.25)', borderWidth: 1, label: { display: true, content: 'Turn', position: 'start', color: '#9ba8c0', backgroundColor: 'rgba(0,0,0,0)', font: { size: 9 } } } };
+      if (M.current != null) ann.today = { type: 'line', yMin: M.current, yMax: M.current, borderColor: '#f59e0b', borderWidth: 1.5, borderDash: [2, 3], label: { display: true, content: `Today ${M.current.toFixed(cycMetric === 'cot' ? 0 : 1)}`, position: 'end', color: '#f59e0b', backgroundColor: 'rgba(13,17,23,.85)', font: { size: 9 } } };
+      safeCreateChart(canvas, {
+        type: 'line', data: { labels, datasets: ds },
+        options: {
+          ...CHART_BASE, plugins: { ...CHART_BASE.plugins, zoom: undefined, annotation: { annotations: ann }, tooltip: plainTooltip({
+            title: items => `${items[0].label} from the turn`,
+            label: item => ['p25', 'p75'].includes(item.dataset.label) ? null : ` ${item.dataset.label}: ${item.raw == null ? '—' : item.raw.toFixed(cycMetric === 'cot' ? 0 : 2)}`
+          }) },
+          scales: { x: { ticks: { color: '#5c6b8a', font: { size: 9 }, maxTicksLimit: 9, maxRotation: 0 }, grid: { color: 'rgba(37,48,71,.4)' } },
+            y: { ...CHART_BASE.scales.y, ...(cycMetric === 'cot' ? { min: 0, max: 100 } : {}), title: { display: true, text: M.label, color: '#5c6b8a', font: { size: 8 } } } }
+        }
+      });
+      const sub = document.getElementById('cyc-event-sub');
+      if (sub) sub.textContent = `${P.label}, ${P.start.slice(0, 4)}–${P.end.slice(0, 4)}. Median and interquartile range, 12 weeks either side of each confirmed turn.`;
+    }
+
+    function renderCycPassage() {
+      const canvas = ctaEnsureCanvas('cv-cyc-passage'); if (!canvas || !CYCLE_DATA) return;
+      const F = CYCLE_DATA.first_passage[cycLevel]; if (!F) return;
+      const bm = F.by_month, base = F.conditions.all_weeks.p_up_first, curM = +CYCLE_DATA.meta.as_of.slice(5, 7) - 1;
+      safeCreateChart(canvas, {
+        type: 'bar',
+        data: { labels: MONTH_NAMES, datasets: [
+          { label: '95% interval', data: bm.map(b => b.ci ? [b.ci[0] * 100, b.ci[1] * 100] : null), backgroundColor: 'rgba(147,197,253,.18)', borderColor: 'rgba(147,197,253,.45)', borderWidth: 1, grouped: false, barPercentage: .8 },
+          { label: 'Up first', data: bm.map(b => b.p_up_first != null ? b.p_up_first * 100 : null), backgroundColor: MONTH_NAMES.map((_, i) => i === curM ? '#60a5fa' : 'rgba(59,130,246,.75)'), grouped: false, barPercentage: .35 },
+        ] },
+        options: {
+          ...CHART_BASE, plugins: { ...CHART_BASE.plugins, zoom: undefined, tooltip: plainTooltip({
+            label: item => { const b = bm[item.dataIndex]; return item.datasetIndex === 1 ? [` Up ${cycLevel}% first: ${pctTxt(b.p_up_first)}`, ` 95%: ${pctTxt(b.ci?.[0])}–${pctTxt(b.ci?.[1])}`, ` ${b.n} weeks (~${b.n_effective} independent), resolves in ~${Math.round(b.median_weeks)}w`] : null; }
+          }), annotation: { annotations: { base: { type: 'line', yMin: base * 100, yMax: base * 100, borderColor: '#9ba8c0', borderWidth: 1, borderDash: [4, 4], label: { display: true, content: `All weeks ${pctTxt(base)}`, position: 'end', color: '#9ba8c0', backgroundColor: 'rgba(13,17,23,.85)', font: { size: 9 } } },
+            half: { type: 'line', yMin: 50, yMax: 50, borderColor: 'rgba(255,255,255,.12)', borderWidth: 1 } } } },
+          scales: { x: { ticks: { color: '#5c6b8a', font: { size: 9 } }, grid: { display: false } }, y: { ...CHART_BASE.scales.y, min: 0, max: 100, ticks: { ...CHART_BASE.scales.y.ticks, callback: v => v + '%' } } }
+        }
+      });
+      const sub = document.getElementById('cyc-pass-sub');
+      if (sub) sub.textContent = `Share of weeks where price rose ${cycLevel}% before falling ${cycLevel}%, by starting month (roll-adjusted, horizon-free).`;
+    }
+
+    const COND_LABELS = {
+      all_weeks: 'Every week since 2006',
+      season: 'Same season (this month ±1)',
+      swing_state: 'Same swing state',
+      positioning: 'Same fund positioning bucket',
+      season_and_swing: 'Season + swing state',
+      all_three: 'Season + swing state + positioning',
+    };
+    function renderCycConditions() {
+      const el = document.getElementById('cyc-cond-table'); if (!el || !CYCLE_DATA) return;
+      const F = CYCLE_DATA.first_passage[cycLevel]; const cn = CYCLE_DATA.meta.params.conditions_now;
+      const base = F.conditions.all_weeks.p_up_first;
+      el.innerHTML = `<table class="cta-table"><thead><tr><th>History filtered to</th><th>Weeks</th><th>~Indep.</th><th>Up ${cycLevel}% first</th><th>95% interval</th><th>vs all weeks</th></tr></thead><tbody>${
+        Object.entries(COND_LABELS).map(([k, lbl]) => { const r = F.conditions[k]; if (!r || !r.n) return `<tr><td>${lbl}</td><td colspan="5" style="text-align:left;color:var(--text3)">no matching history</td></tr>`;
+          const sigDiff = r.ci && (r.ci[0] > base || r.ci[1] < base);
+          return `<tr><td>${lbl}</td><td>${r.n}</td><td>${r.n_effective}</td><td style="font-weight:700">${pctTxt(r.p_up_first)}</td><td>${pctTxt(r.ci?.[0])}–${pctTxt(r.ci?.[1])}</td>
+          <td>${k === 'all_weeks' ? '—' : sigDiff ? `<span class="cyc-tag ${r.p_up_first > base ? 'yes' : 'no'}">${r.p_up_first > base ? 'higher' : 'lower'}</span>` : '<span class="cyc-tag weak">not different</span>'}</td></tr>`; }).join('')
+      }</tbody></table><div class="cta-note" style="margin-top:6px">Today: months ${cn.months.map(m => MONTH_NAMES[m - 1]).join('/')}, swing ${cn.swing_state}, fund COT bucket "${cn.mm_cot_bucket}" (NYMEX MM: short &le;20, long &ge;80). "~Indep." counts overlapping weeks once per typical resolution time, so the interval is honest about how much history there really is.</div>`;
+    }
+
+    function renderCycRead() {
+      const el = document.getElementById('cyc-read'); if (!el || !CYCLE_DATA) return;
+      const c = CYCLE_DATA.current, s = CYCLE_DATA.swing_stats, pv = c.since_pivot;
+      const P = CYCLE_DATA.positioning[cycSource], F = CYCLE_DATA.first_passage[cycLevel];
+      const base = F.conditions.all_weeks.p_up_first;
+      const pick = F.conditions.all_three?.n_effective >= 8 ? ['all_three', F.conditions.all_three] : ['season_and_swing', F.conditions.season_and_swing];
+      const odds = pick[1];
+      const curM = +CYCLE_DATA.meta.as_of.slice(5, 7) - 1, nxt = (curM + 1) % 12;
+      const pk = s.peaks_by_month[curM] + s.peaks_by_month[nxt], tr = s.troughs_by_month[curM] + s.troughs_by_month[nxt];
+      const sc = P.scorecard; const active = sc.filter(r => r.active_now);
+      const cs = sc.find(r => r.key === 'crowded_short'), cl = sc.find(r => r.key === 'crowded_long');
+      const dirWord = c.direction === 'up' ? 'rally' : 'decline';
+      const dirPlural = c.direction === 'up' ? 'rallies' : 'declines';
+      const edge = odds?.ci && (odds.ci[0] > 0.5 || odds.ci[1] < 0.5);
+      const verdict = !odds?.n ? 'There is not enough matching history to estimate odds for today’s conditions.'
+        : edge ? `Under today’s conditions price has resolved <strong>${odds.p_up_first > 0.5 ? 'upward' : 'downward'}</strong> first in ${pctTxt(odds.p_up_first)} of cases (95% ${pctTxt(odds.ci[0])}–${pctTxt(odds.ci[1])}), a statistically meaningful tilt.`
+        : `Under today’s conditions price has risen ${cycLevel}% first in ${pctTxt(odds.p_up_first)} of cases, but the 95% interval (${pctTxt(odds.ci?.[0])}–${pctTxt(odds.ci?.[1])}) includes 50%. <strong>The data does not support a confident directional call.</strong>`;
+      el.innerHTML = `
+        <p><span class="cyc-tag ${c.direction === 'up' ? 'yes' : 'no'}">SWING</span>NG is in a <strong>${dirWord}</strong> from the ${pv.type} of <strong>$${fmt(pv.front_price, 3)}</strong> on ${pv.date}: ${signedPct(c.move_pct, 1)} so far over ${Math.round(c.weeks)} weeks (best ${signedPct(c.extreme_move_pct, 1)}). That is longer than ${Math.round(c.duration_pctile)}% of past ${dirPlural} and ${c.amplitude_pctile < 1 ? `smaller than every completed ${dirWord} (median ${signedPct(c.typical_amplitude_pct)})` : `smaller than ${Math.round(100 - c.amplitude_pctile)}% of them`}${c.duration_pctile > 60 && c.amplitude_pctile < 25 ? `: a slow, shallow ${dirWord}` : ''}. ${c.confirm_rule}.</p>
+        <p><span class="cyc-tag weak">SEASON</span>Since ${CYCLE_DATA.series.dates[0].slice(0, 4)}, ${MONTH_NAMES[curM]}–${MONTH_NAMES[nxt]} produced ${pk} confirmed peaks and ${tr} troughs. ${pk > tr * 1.5 ? 'Seasonally this is more often a topping window than a bottoming one.' : tr > pk * 1.5 ? 'Seasonally this is more often a bottoming window.' : 'Seasonality gives no clear tilt for these months.'}</p>
+        <p><span class="cyc-tag ${P.current.cot <= 10 || P.current.cot >= 90 ? 'weak' : 'yes'}">FUNDS</span>Managed Money sits at a 3-year COT index of <strong>${Math.round(P.current.cot)}</strong> (Z ${fmtZ(P.current.z)}). ${P.current.cot <= 10 ? `Funds are as short as they get, but in this market that has <strong>not</strong> reliably marked bottoms: crowded-short weeks fell near a trough ${cs ? `${pctTxt(cs.hit_rate)} of the time vs a ${pctTxt(cs.base_rate)} base rate (lift ${cs.lift?.toFixed(2)})` : 'no more often than chance'}. A short squeeze is possible; it is not something the data lets you count on.` : P.current.cot >= 90 ? `Funds are crowded long. This is the one positioning extreme with a measurable record: it fell near a peak ${cl ? `${pctTxt(cl.hit_rate)} of the time vs ${pctTxt(cl.base_rate)} (lift ${cl.lift?.toFixed(2)})` : 'more often than chance'}.` : 'Positioning is not at an extreme.'} ${active.length ? `Active now: ${active.map(r => `${r.label} (lift ${r.lift?.toFixed(2) ?? '—'})`).join('; ')}.` : 'No scorecard signal is active this week.'}</p>
+        <p><span class="cyc-tag ${edge ? 'yes' : 'weak'}">ODDS</span>${verdict} Across all weeks since 2006 the up-first rate is ${pctTxt(base)}${base < 0.48 ? ': on a roll-adjusted basis NG has drifted lower over time (rolling a long position through contango costs money), so a down move first is the slightly more common outcome in general' : ''}.</p>
+        <p style="color:var(--text3);font-size:11px">Read this as a map of where the evidence points and how strong it is, not as a forecast. Every number here is historical and the samples behind the conditional odds are small.</p>`;
+    }
+
+    function renderCycScorecard() {
+      const el = document.getElementById('cyc-scorecard'); if (!el || !CYCLE_DATA) return;
+      const P = CYCLE_DATA.positioning[cycSource]; if (!P) return;
+      const tag = r => r.lift == null ? '<span class="cyc-tag weak">never fired</span>' : r.lift >= 1.5 ? '<span class="cyc-tag yes">useful</span>' : r.lift >= 1.15 ? '<span class="cyc-tag weak">weak</span>' : '<span class="cyc-tag no">no edge</span>';
+      el.innerHTML = `<table class="cta-table"><thead><tr><th>Signal</th><th>Should mark</th><th>Rule</th><th>Fired (wks / episodes)</th><th>Near the turn</th><th>Base rate</th><th>Lift</th><th>Turns caught</th><th>Verdict</th><th>Now</th></tr></thead><tbody>${
+        P.scorecard.map(r => `<tr><td>${r.label}</td><td>${r.marks}</td><td style="font-family:var(--font);font-size:10px;color:var(--text3);white-space:normal;min-width:180px">${r.rule}</td>
+          <td>${r.weeks_fired} / ${r.episodes}</td><td>${pctTxt(r.hit_rate)}</td><td>${pctTxt(r.base_rate)}</td>
+          <td style="font-weight:700">${r.lift == null ? '—' : r.lift.toFixed(2) + 'x'}</td><td>${r.pivots_caught} / ${r.pivots_total}</td><td>${tag(r)}</td>
+          <td>${r.active_now ? '<span class="cyc-tag weak">ACTIVE</span>' : `<span style="color:var(--text3)">${r.last_fired || 'never'}</span>`}</td></tr>`).join('')
+      }</tbody></table><div class="cta-note" style="margin-top:6px">"Near the turn": share of firing weeks within 4 weeks of a confirmed ${CYCLE_DATA.meta.params.swing_threshold_pct}% ${'turn'} of the type the signal should mark. Base rate: share of ALL weeks that are that close to such a turn. Lift = ratio; 1.0x means no better than chance. Firing weeks cluster, so "episodes" is the more honest sample size. ${P.label}, ${P.start.slice(0, 4)}–${P.end.slice(0, 4)}.</div>`;
+    }
+
+    function renderCycMethod() {
+      const el = document.getElementById('cyc-method'); if (!el || !CYCLE_DATA) return;
+      const m = CYCLE_DATA.meta;
+      el.innerHTML = `<ul>
+        <li><strong>Prices:</strong> ${m.price_source}. ${m.rolls_neutralised} contract-roll days were neutralised so roll gaps (up to ~30% in winter) neither create nor hide swings. Pivot markers show the actual front-month price on the day.</li>
+        <li><strong>Swings:</strong> zigzag with a ${m.params.swing_threshold_pct}% reversal. A peak is confirmed once price falls ${m.params.swing_threshold_pct}% from the swing high (and vice versa), so a turn is only known in real time a few weeks after it happens. At 15% the same method finds about 2.5 cycles a year; 20% keeps the major swings.</li>
+        <li><strong>Positioning around turns:</strong> event study of Managed Money's 3-year COT index and 4-week flow, ${m.params.event_window_weeks} weeks either side of each confirmed turn, against the distribution over all weeks.</li>
+        <li><strong>Scorecard:</strong> each signal uses only information available that week. It counts as near a turn if a matching confirmed turn falls within &plusmn;${m.params.hit_window_weeks} weeks. Lift compares that with the share of all weeks that close to a turn.</li>
+        <li><strong>Which way moves resolve:</strong> for every week, whether price first rose or first fell by the chosen percentage, with no fixed horizon. Overlapping windows make neighbouring weeks dependent, so the 95% intervals use roughly one independent observation per typical resolution time.</li>
+        <li><strong>Limits:</strong> about 30 cycles of positioning history is a small sample; weather, storage and LNG shocks drive NG and are not in this data. Treat everything here as context for judgement, not as a trading system.</li>
+        <li><strong>Refresh:</strong> rebuilt every weekday after settlement and after each CFTC report. Last run ${m.generated_at.replace('T', ' ').replace('Z', ' UTC')}.</li>
       </ul>`;
     }
 

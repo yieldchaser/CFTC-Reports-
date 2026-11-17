@@ -448,24 +448,25 @@ def seasonal_stats(net: pd.Series, dates):
     return avg_arr, std_arr, dev
 
 
-def composite_score(mm_z, mm_cot, prod_z, nonrept_z=None):
-    """Return integer -3 to +3 with non-reportable contrarian logic."""
-    if mm_z is None or (isinstance(mm_z, float) and np.isnan(mm_z)):
+def composite_score(mm_z, mm_cot):
+    """Managed Money positioning EXTENSION score, -3 (crowded short) .. +3
+    (crowded long). It describes how stretched positioning is; it is not a
+    direction call. Tested on NG swing pivots since 2009 (see
+    scripts/update_cycle_analysis.py): crowded long has marked peaks ~1.6-1.9x
+    more often than chance, crowded short has NOT reliably marked troughs.
+    Earlier producer and non-reportable "confirmation" rules were dropped:
+    neither group showed any relationship with turning points."""
+    def ok(v):
+        return v is not None and not (isinstance(v, float) and np.isnan(v))
+    if not ok(mm_z):
         return 0
     score = 0
-    if mm_z >= 1.5:  score += 1
-    if mm_z >= 2.0:  score += 1
-    if mm_cot is not None and not (isinstance(mm_cot, float) and np.isnan(mm_cot)) and mm_cot >= 80: score += 1
+    if mm_z >= 1.5: score += 1
+    if mm_z >= 2.0: score += 1
+    if ok(mm_cot) and mm_cot >= 80: score += 1
     if mm_z <= -1.5: score -= 1
     if mm_z <= -2.0: score -= 1
-    if mm_cot is not None and not (isinstance(mm_cot, float) and np.isnan(mm_cot)) and mm_cot <= 20: score -= 1
-    if prod_z is not None and not (isinstance(prod_z, float) and np.isnan(prod_z)):
-        if mm_z > 1.0 and prod_z < -1.0: score += 1
-        if mm_z < -1.0 and prod_z > 1.0: score -= 1
-    # Non-reportable contrarian signal
-    if nonrept_z is not None and not (isinstance(nonrept_z, float) and np.isnan(nonrept_z)):
-        if nonrept_z > 1.5 and mm_z < 0:  score -= 1
-        if nonrept_z < -1.5 and mm_z > 0: score += 1
+    if ok(mm_cot) and mm_cot <= 20: score -= 1
     return int(np.clip(score, -3, 3))
 
 
@@ -486,29 +487,25 @@ def momentum_score(change_net: pd.Series) -> pd.Series:
     return pd.Series(np.clip(score.values, 0, 100), index=change_net.index)
 
 
-def lagged_corr(net: pd.Series, price: pd.Series, lags=(1, 2, 3, 4), window=20) -> dict:
-    """Rolling correlation of net position with future price changes."""
-    result = {}
-    pct_chg = price.pct_change()
-    for lag in lags:
-        future = pct_chg.shift(-lag)
-        result[f'lag_{lag}w'] = net.rolling(window).corr(future).tolist()
-    return result
-
-
 def compute_trader_stats(net: pd.Series, long_s: pd.Series, short_s: pd.Series,
                          oi: pd.Series, price_series: pd.Series, dates_raw,
-                         change_long: pd.Series, change_short: pd.Series) -> dict:
+                         change_long: pd.Series, change_short: pd.Series,
+                         ret_series: pd.Series = None) -> dict:
     """Standardized statistical calculation for a trader category."""
     with np.errstate(divide="ignore", invalid="ignore"):
         pct_oi = np.where(oi > 0, (long_s + short_s) / oi, np.nan)
 
     z_score      = expanding_zscore(net)
     pct_rank_s   = fast_pct_rank(net)
-    rolling_corr = net.rolling(20).corr(price_series)
     cot_indices  = {lb: cot_index(net, w).tolist() for lb, w in COT_LOOKBACKS.items()}
-    
     change_net   = change_long - change_short
+    # 20w correlation of weekly FLOW with weekly price return (stationary). The
+    # former level-vs-level correlation of two trending series swung between
+    # +/-1 on noise (|r| > 0.4 ~74% of weeks for NYMEX) and carried no signal.
+    # Returns from the roll-adjusted price when available (contract-roll gaps of
+    # up to ~30% would otherwise dominate weekly returns).
+    rets = ret_series if ret_series is not None else price_series.pct_change()
+    rolling_corr = change_net.rolling(20).corr(rets)
     avg_by_week, std_by_week, deviation = seasonal_stats(net, dates_raw)
     mom_score    = momentum_score(change_net)
 
@@ -564,6 +561,9 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
     merged = inst_df.join(price_aligned, on="report_date_as_yyyy_mm_dd")
     price_series = pd.to_numeric(merged.get("price", pd.Series(np.nan)), errors="coerce")
     price_series.index = inst_df.index
+    adj_series = pd.to_numeric(merged.get("price_adj", pd.Series(np.nan, index=merged.index)), errors="coerce")
+    adj_series.index = inst_df.index
+    ret_series = adj_series.pct_change() if adj_series.notna().any() else None
     price_pct_change = price_series.pct_change()
 
     season = ["Withdrawal" if m in WITHDRAWAL_MONTHS else "Injection"
@@ -640,16 +640,13 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
             "change_long": chg_l, "change_short": chg_s
         }
 
-        t_dict = compute_trader_stats(net, long_s, short_s, oi, price_series, dates_raw, chg_l, chg_s)
+        t_dict = compute_trader_stats(net, long_s, short_s, oi, price_series, dates_raw, chg_l, chg_s, ret_series)
         
         # Managed Money specifics
         if trader == "managed_money":
-            z_s = t_dict.pop("_z_score_series")
-            edge = (z_s - z_s.shift(1)) - (price_pct_change * 5)
-            t_dict["edge"] = edge.tolist()
+            t_dict.pop("_z_score_series")
             t_dict["seasonal_avg_by_week"] = t_dict.pop("_seasonal_avg")
             t_dict["seasonal_std_by_week"] = t_dict.pop("_seasonal_std")
-            t_dict["lagged_corr"] = lagged_corr(net, price_series)
             
             # Spread
             spread_col = cols.get("spread")
@@ -677,11 +674,10 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
     spec_chg_l = mm_raw["change_long"] + ot_raw["change_long"]
     spec_chg_s = mm_raw["change_short"] + ot_raw["change_short"]
     
-    spec_dict = compute_trader_stats(spec_net, spec_long, spec_short, oi, price_series, dates_raw, spec_chg_l, spec_chg_s)
+    spec_dict = compute_trader_stats(spec_net, spec_long, spec_short, oi, price_series, dates_raw, spec_chg_l, spec_chg_s, ret_series)
     spec_dict.pop("_z_score_series", None)
     spec_dict.pop("_seasonal_avg", None)
     spec_dict.pop("_seasonal_std", None)
-    spec_dict["lagged_corr"] = lagged_corr(spec_net, price_series)
     result["total_speculative"] = spec_dict
 
     # Net Option Delta Calculation
@@ -717,25 +713,18 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
 
     # Composite scores (-3 to +3)
     mm  = result.get("managed_money", {})
-    pr  = result.get("producers", {})
-    nr  = result.get("non_reportables", {})
     mm_z_list = mm.get("z_score", [])
-    pr_z_list = pr.get("z_score", [])
-    nr_z_list = nr.get("z_score", [])
     cot_list  = (mm.get("cot_index", {}) or {}).get("w156", [])
-    comp = []
-    for i in range(len(dates_str)):
-        mz = mm_z_list[i] if i < len(mm_z_list) else None
-        pz = pr_z_list[i] if i < len(pr_z_list) else None
-        nz = nr_z_list[i] if i < len(nr_z_list) else None
-        ct = cot_list[i]  if i < len(cot_list)  else None
-        comp.append(composite_score(mz, ct, pz, nz))
+    comp = [composite_score(mm_z_list[i] if i < len(mm_z_list) else None,
+                            cot_list[i] if i < len(cot_list) else None)
+            for i in range(len(dates_str))]
     result["composite_scores"] = comp
 
     result["_raw"] = {
         "dates_raw": dates_raw,
         "oi": oi,
         "price_series": price_series,
+        "adj_series": adj_series,
         "trader_data_raw": trader_data_raw,
         "spec_long": spec_long,
         "spec_short": spec_short,
@@ -778,6 +767,9 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
     ref = instruments_out["nat_gas_nyme"]["_raw"]
     ref_price = pd.Series(ref["price_series"].values, index=ref["dates_raw"].values)
     price_series = pd.Series(ref_price.reindex(dates_raw.values).values, index=dates_raw.index, dtype="float64")
+    ref_adj = pd.Series(ref["adj_series"].values, index=ref["dates_raw"].values)
+    adj_c = pd.Series(ref_adj.reindex(dates_raw.values).values, index=dates_raw.index, dtype="float64")
+    ret_series = adj_c.pct_change() if adj_c.notna().any() else None
     price_pct_change = price_series.pct_change()
 
     comp_oi = pd.Series(0.0, index=dates_raw.index)
@@ -841,15 +833,12 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
         chg_l   = t_agg["change_long"]
         chg_s   = t_agg["change_short"]
         
-        t_dict = compute_trader_stats(net, long_s, short_s, comp_oi, price_series, dates_raw, chg_l, chg_s)
+        t_dict = compute_trader_stats(net, long_s, short_s, comp_oi, price_series, dates_raw, chg_l, chg_s, ret_series)
         
         if trader == "managed_money":
-            z_s = t_dict.pop("_z_score_series")
-            edge = (z_s - z_s.shift(1)) - (price_pct_change * 5)
-            t_dict["edge"] = edge.tolist()
+            t_dict.pop("_z_score_series")
             t_dict["seasonal_avg_by_week"] = t_dict.pop("_seasonal_avg")
             t_dict["seasonal_std_by_week"] = t_dict.pop("_seasonal_std")
-            t_dict["lagged_corr"] = lagged_corr(net, price_series)
             
             # Spread
             sp = t_agg["spread"]
@@ -869,11 +858,10 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
     spec_net   = spec_long - spec_short
     spec_chg_l = spec_agg["change_long"]
     spec_chg_s = spec_agg["change_short"]
-    spec_dict = compute_trader_stats(spec_net, spec_long, spec_short, comp_oi, price_series, dates_raw, spec_chg_l, spec_chg_s)
+    spec_dict = compute_trader_stats(spec_net, spec_long, spec_short, comp_oi, price_series, dates_raw, spec_chg_l, spec_chg_s, ret_series)
     spec_dict.pop("_z_score_series", None)
     spec_dict.pop("_seasonal_avg", None)
     spec_dict.pop("_seasonal_std", None)
-    spec_dict["lagged_corr"] = lagged_corr(spec_net, price_series)
     result["total_speculative"] = spec_dict
 
     # Net Option Delta for Prompt Composite
@@ -898,19 +886,11 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
 
     # Composite scores (-3 to +3)
     mm  = result.get("managed_money", {})
-    pr  = result.get("producers", {})
-    nr  = result.get("non_reportables", {})
     mm_z_list = mm.get("z_score", [])
-    pr_z_list = pr.get("z_score", [])
-    nr_z_list = nr.get("z_score", [])
     cot_list  = (mm.get("cot_index", {}) or {}).get("w156", [])
-    comp = []
-    for i in range(len(dates_str)):
-        mz = mm_z_list[i] if i < len(mm_z_list) else None
-        pz = pr_z_list[i] if i < len(pr_z_list) else None
-        nz = nr_z_list[i] if i < len(nr_z_list) else None
-        ct = cot_list[i]  if i < len(cot_list)  else None
-        comp.append(composite_score(mz, ct, pz, nz))
+    comp = [composite_score(mm_z_list[i] if i < len(mm_z_list) else None,
+                            cot_list[i] if i < len(cot_list) else None)
+            for i in range(len(dates_str))]
     result["composite_scores"] = comp
 
     print(f"  {comp_key}: {len(dates_str)} dates, Latest OI: {comp_oi.iloc[-1]:,.0f}")
@@ -1041,6 +1021,12 @@ def main():
     # Build price alignment map
     price_df_sorted = price_s.reset_index().rename(columns={"date": "price_date"}).sort_values("price_date")
     price_df_sorted["price_date"] = pd.to_datetime(price_df_sorted["price_date"]).astype("datetime64[ns]")
+    # Roll-adjusted price (contract-roll returns zeroed, same method as the CTA
+    # model). Used for every flow-vs-return statistic; levels shown are unadjusted.
+    from update_cta_model import roll_adjusted_log_price
+    adj_logp, n_rolls = roll_adjusted_log_price(price_s)
+    price_df_sorted["price_adj"] = np.exp(adj_logp).reindex(pd.DatetimeIndex(price_df_sorted["price_date"])).values
+    print(f"  Roll-adjusted price: {n_rolls} roll days neutralised")
     cftc_dates_sorted = pd.DataFrame({
         "report_date_as_yyyy_mm_dd": cftc_comb_df["report_date_as_yyyy_mm_dd"].drop_duplicates().sort_values().values
     })
@@ -1104,6 +1090,12 @@ def main():
         },
         "instruments":        instruments_out,
         "correlation_matrix": corr_matrix,
+        # Roll-adjusted NG front-month on every report date (for return-based
+        # charts in the UI; scaled so the latest value equals the latest front price)
+        "price_adjusted": {
+            "dates": [d.strftime("%Y-%m-%d") for d in price_aligned.index],
+            "values": price_aligned["price_adj"].tolist(),
+        },
     }
 
     print("\n[Sanitise] Cleaning NaN/Inf...")
