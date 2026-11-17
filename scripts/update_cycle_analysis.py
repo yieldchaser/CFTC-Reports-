@@ -179,8 +179,20 @@ def episodes(mask: pd.Series, gap: int = 2):
     return eps
 
 
-def _period_stats(fire, hit_mask, period_mask):
-    f, h = fire[period_mask], hit_mask[period_mask]
+def resolved_mask(W: pd.DatetimeIndex, hit_mask: pd.Series, last_confirmed: pd.Timestamp) -> pd.Series:
+    """A week's outcome is final once every turn that could fall in its
+    +/-HIT_WINDOW window is known. Zigzag pivots are confirmed in order, so any
+    turn not yet confirmed must be dated after the last confirmed pivot: a week
+    is resolved if it already has a confirmed matching turn nearby (a hit can't
+    be undone) or its whole window ends on/before the last confirmed pivot.
+    Everything else is PENDING and is left out of the statistics, otherwise a
+    signal that fired in the last few weeks would always count as a miss."""
+    return hit_mask | (W + pd.Timedelta(weeks=HIT_WINDOW) <= last_confirmed)
+
+
+def _period_stats(fire, hit_mask, period_mask, resolved):
+    m = period_mask & resolved
+    f, h = fire[m], hit_mask[m]
     n = int(f.sum())
     eps = episodes(f)
     base = float(h.mean()) if len(h) else 0.0
@@ -190,38 +202,93 @@ def _period_stats(fire, hit_mask, period_mask):
             "lift": (hits / n) / base if n and base > 0 else None}
 
 
-def scorecard(pos: pd.DataFrame, pivots_T, pivots_P) -> list:
+def scorecard(pos: pd.DataFrame, pivots_T, pivots_P, last_confirmed: pd.Timestamp) -> list:
     W = pos.index
     pT = [t for t in pivots_T if W[0] <= t <= W[-1]]
     pP = [t for t in pivots_P if W[0] <= t <= W[-1]]
     nearT, nearP = near_pivot(W, pT, HIT_WINDOW), near_pivot(W, pP, HIT_WINDOW)
     out = []
     for key, label, typ, rule, desc in SIGNALS:
-        fire = rule(pos).reindex(W).fillna(False).astype(bool)
+        fire_all = rule(pos).reindex(W).fillna(False).astype(bool)
         hit_mask, opp_mask = (nearT, nearP) if typ == "T" else (nearP, nearT)
+        res = resolved_mask(W, hit_mask, last_confirmed)
+        fire = fire_all & res                          # scored firings only
         pts = pT if typ == "T" else pP
         n = int(fire.sum())
         hits = int((fire & hit_mask).sum())
-        base = float(hit_mask.mean())
+        base = float(hit_mask[res].mean()) if res.any() else 0.0
         eps = episodes(fire)
         ep_hits = sum(1 for e in eps if hit_mask.loc[e].any())
         lo, hi = wilson(ep_hits, len(eps))
-        caught = sum(1 for t in pts if fire[(W >= t - pd.Timedelta(weeks=HIT_WINDOW)) & (W <= t + pd.Timedelta(weeks=HIT_WINDOW))].any())
+        caught = sum(1 for t in pts if fire_all[(W >= t - pd.Timedelta(weeks=HIT_WINDOW)) & (W <= t + pd.Timedelta(weeks=HIT_WINDOW))].any())
+        pending_weeks = int((fire_all & ~res).sum())
         out.append({
             "key": key, "label": label, "marks": "trough" if typ == "T" else "peak", "rule": desc,
             "weeks_fired": n, "episodes": len(eps), "episodes_hit": ep_hits,
+            "pending_weeks": pending_weeks,
             "hit_rate": hits / n if n else None, "base_rate": base,
             "lift": (hits / n) / base if n and base > 0 else None,
             "episode_hit_rate": ep_hits / len(eps) if eps else None, "episode_ci": [lo, hi],
             "opposite_rate": float((fire & opp_mask).sum() / n) if n else None,
             "pivots_caught": caught, "pivots_total": len(pts),
-            "active_now": bool(fire.iloc[-1]),
+            "active_now": bool(fire_all.iloc[-1]),
             "combination": key in COMBINATION_SIGNALS,
-            "in_sample": _period_stats(fire, hit_mask, W < pd.Timestamp(OOS_SPLIT)),
-            "out_of_sample": _period_stats(fire, hit_mask, W >= pd.Timestamp(OOS_SPLIT)),
-            "last_fired": fire[fire].index[-1].strftime("%Y-%m-%d") if n else None,
+            "in_sample": _period_stats(fire_all, hit_mask, W < pd.Timestamp(OOS_SPLIT), res),
+            "out_of_sample": _period_stats(fire_all, hit_mask, W >= pd.Timestamp(OOS_SPLIT), res),
+            "last_fired": fire_all[fire_all].index[-1].strftime("%Y-%m-%d") if fire_all.any() else None,
         })
     return out
+
+
+def signal_log(pos: pd.DataFrame, pivots_T, pivots_P, last_confirmed: pd.Timestamp) -> dict:
+    """Automatically maintained record, rebuilt on every run so it grows as new
+    reports arrive: every firing episode of every signal with its outcome
+    (hit / miss / pending), and every confirmed turn with the signals that
+    flagged it, including whether they were PUBLISHED before the turn
+    (CFTC releases Tuesday positions on Friday)."""
+    W = pos.index
+    pub = lambda t: t + pd.Timedelta(days=3)  # noqa: E731
+    pT = [t for t in pivots_T if t >= W[0]]
+    pP = [t for t in pivots_P if t >= W[0]]
+    nearT, nearP = near_pivot(W, pT, HIT_WINDOW), near_pivot(W, pP, HIT_WINDOW)
+    win = pd.Timedelta(weeks=HIT_WINDOW)
+    eps_out, fires = [], {}
+    for key, label, typ, rule, _desc in SIGNALS:
+        fire = rule(pos).reindex(W).fillna(False).astype(bool)
+        fires[key] = (fire, typ, label)
+        hit_mask = nearT if typ == "T" else nearP
+        res = resolved_mask(W, hit_mask, last_confirmed)
+        pts = pT if typ == "T" else pP
+        for e in episodes(fire):
+            start, end = e[0], e[-1]
+            match = [t for t in pts if start - win <= t <= end + win]
+            outcome = "hit" if match else ("miss" if res.loc[e].all() else "pending")
+            eps_out.append({
+                "signal": key, "label": label, "marks": "trough" if typ == "T" else "peak",
+                "start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d"),
+                "published": pub(start).strftime("%Y-%m-%d"), "weeks": len(e),
+                "active": bool(end == W[-1]), "outcome": outcome,
+                "turn": match[0].strftime("%Y-%m-%d") if match else None,
+                "lead_weeks": round((match[0] - pub(start)).days / 7, 1) if match else None,
+            })
+    turns = []
+    for typ, pts in (("T", pT), ("P", pP)):
+        for t in pts:
+            flags = []
+            for key, (fire, ftyp, label) in fires.items():
+                if ftyp != typ:
+                    continue
+                wk = fire[(W >= t - win) & (W <= t + win) & fire]
+                if len(wk):
+                    first = wk.index[0]
+                    flags.append({"signal": key, "label": label, "first": first.strftime("%Y-%m-%d"),
+                                  "in_advance": bool(pub(first) <= t)})
+            turns.append({"date": t.strftime("%Y-%m-%d"), "type": "trough" if typ == "T" else "peak",
+                          "flags": flags, "flagged_in_advance": any(f["in_advance"] for f in flags)})
+    eps_out.sort(key=lambda x: x["start"], reverse=True)
+    turns.sort(key=lambda x: x["date"], reverse=True)
+    return {"episodes": eps_out, "turns": turns,
+            "resolved_through": (last_confirmed - win).strftime("%Y-%m-%d")}
 
 
 def event_study(pos: pd.DataFrame, adj_w: pd.Series, pivots_T, pivots_P) -> dict:
@@ -332,6 +399,7 @@ def build(daily_front: pd.Series, cftc: dict) -> dict:
             "swing_pct": (adj_ext.iloc[p["i"]] / adj_ext.iloc[prev["i"]] - 1) * 100 if prev else None,
             "swing_weeks": (ix[p["i"]] - ix[prev["i"]]).days / 7 if prev else None,
         })
+    last_confirmed = ix[piv[-1]["i"]] if piv else ix[0]
     piv_T = [ix[p["i"]] for p in piv if p["type"] == "T"]
     piv_P = [ix[p["i"]] for p in piv if p["type"] == "P"]
 
@@ -385,7 +453,8 @@ def build(daily_front: pd.Series, cftc: dict) -> dict:
         positioning[key] = {
             "label": label, "start": pos.index[0].strftime("%Y-%m-%d"), "end": pos.index[-1].strftime("%Y-%m-%d"),
             "event_study": event_study(pos, adj_w, piv_T, piv_P),
-            "scorecard": scorecard(pos, piv_T, piv_P),
+            "scorecard": scorecard(pos, piv_T, piv_P, last_confirmed),
+            "signal_log": signal_log(pos, piv_T, piv_P, last_confirmed),
             "current": {"cot": float(pos.cot.iloc[-1]), "z": float(pos.z.iloc[-1]),
                         "flow4z": float(pos.flow4z.iloc[-1]) if pd.notna(pos.flow4z.iloc[-1]) else None,
                         "spec_cot": float(pos.spec_cot.iloc[-1]), "nonrept_cot": float(pos.nonrept_cot.iloc[-1]),
