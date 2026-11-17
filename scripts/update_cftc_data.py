@@ -194,13 +194,22 @@ COT_LOOKBACKS    = {"w26": 26, "w52": 52, "w156": 156}
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
+def _num(v: float):
+    """3 decimals is beyond display precision for every field; whole numbers
+    (contract counts) are written as ints. Keeps the 20-year payload light."""
+    if math.isnan(v) or math.isinf(v):
+        return None
+    if v.is_integer() and abs(v) < 1e15:
+        return int(v)
+    return round(v, 3)
+
+
 def sanitise(obj):
-    """Recursively replace NaN/Inf with None; round floats to 4dp."""
+    """Recursively replace NaN/Inf with None; compact floats (see _num)."""
     if isinstance(obj, float):
-        return None if (math.isnan(obj) or math.isinf(obj)) else round(obj, 4)
+        return _num(obj)
     if isinstance(obj, (np.floating,)):
-        v = float(obj)
-        return None if (math.isnan(v) or math.isinf(v)) else round(v, 4)
+        return _num(float(obj))
     if isinstance(obj, (np.integer,)):
         return int(obj)
     if isinstance(obj, dict):
