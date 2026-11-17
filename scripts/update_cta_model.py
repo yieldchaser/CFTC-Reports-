@@ -244,6 +244,34 @@ def future_sessions(after: pd.Timestamp, n: int) -> pd.DatetimeIndex:
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
+def decompose(exposure: pd.Series, target: pd.Series, k: float) -> dict:
+    """Split weekly Managed Money net ($bn) into a trend-following part (the CTA
+    replica, k x exposure) and everything else (discretionary and structural
+    positioning), after Bouchouev, Sun & Fattouh (OIES 2026). Also measures the
+    trend-follower share of fund FLOWS: rolling 52-week R^2 of weekly changes in
+    MM $ on weekly changes in the trend component. A share near zero means funds
+    are trading against, or regardless of, price trends."""
+    e = exposure.dropna().reindex(target.index, method="ffill")
+    df = pd.DataFrame({"mm": target, "trend": e * k}).dropna()
+    df["other"] = df.mm - df.trend
+    share = df.mm.diff().rolling(52, min_periods=40).corr(df.trend.diff()) ** 2
+    oz = (df.other - df.other.rolling(156, min_periods=104).mean()) / df.other.rolling(156, min_periods=104).std()
+    d = lambda ix: [x.strftime("%Y-%m-%d") for x in ix]  # noqa: E731
+    last = df.index[-1]
+    return {
+        "dates": d(df.index), "mm_usd_bn": df.mm.tolist(), "trend_usd_bn": df.trend.tolist(),
+        "other_usd_bn": df.other.tolist(), "trend_share": share.reindex(df.index).tolist(),
+        "latest": {
+            "date": last.strftime("%Y-%m-%d"), "mm": float(df.mm.iloc[-1]), "trend": float(df.trend.iloc[-1]),
+            "other": float(df.other.iloc[-1]),
+            "other_z": float(oz.iloc[-1]) if pd.notna(oz.iloc[-1]) else None,
+            "trend_share": float(share.iloc[-1]) if pd.notna(share.iloc[-1]) else None,
+            "trend_share_median_5y": float(share.iloc[-260:].median()),
+            "trend_share_pctile": float((share.dropna() < share.iloc[-1]).mean() * 100) if pd.notna(share.iloc[-1]) else None,
+        },
+    }
+
+
 def build(front: pd.Series, cftc: dict) -> dict:
     logp, n_rolls = roll_adjusted_log_price(front)
     r = logp.diff()
@@ -331,6 +359,7 @@ def build(front: pd.Series, cftc: dict) -> dict:
                        "trigger": {h: st["sma"][h][tail_m].tolist() for h in HORIZONS}},
         "position": {"dates": d(idx[tail_m]), "usd_bn": position.iloc[tail_m].tolist()},
         "cftc_mm_usd_bn": {"dates": d(target.index), "values": target.tolist()},
+        "decomposition": decompose(exposure, target, k),
         "projections": {"dates": d(fut), "scenarios": projections},
     }
     return out
