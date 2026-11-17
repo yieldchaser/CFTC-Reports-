@@ -122,6 +122,8 @@ def fetch_daily_prices(rng: str = "10y") -> pd.Series:
     s = s[~s.index.duplicated(keep="last")]
     if len(s) < 400:
         raise RuntimeError(f"Too little NG=F history ({len(s)} rows)")
+    if (s.index >= s.index.max() - pd.Timedelta(days=30)).sum() < 12:
+        raise RuntimeError("NG=F feed is not daily; refusing to build the model on coarse bars")
     print(f"  [Prices] {len(s)} sessions {s.index[0].date()} -> {s.index[-1].date()}, last {s.iloc[-1]:.3f}")
     return s
 

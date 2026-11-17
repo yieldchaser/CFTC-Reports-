@@ -278,6 +278,13 @@ def run_suite_3_schema_guardrails(data: dict):
     log_test(suite, "Chronological & Unique Date Ordering", dates_ordered_ok,
              "All instruments strictly chronological without duplicate dates" if dates_ordered_ok else f"Issues in: {bad_date_insts}")
 
+    # 3.2c Price alignment is weekly-fresh (guards against a coarse/monthly price feed)
+    ny = insts["nat_gas_nyme"]
+    recent_px = [p for p in ny["price"][-12:] if p is not None]
+    distinct = len(set(recent_px))
+    log_test(suite, "Report-Date Prices Are Weekly-Fresh", distinct >= 8,
+             f"{distinct} distinct prices across the last {len(recent_px)} report dates (monthly feed would give ~3)")
+
     # 3.3 Strict JSON Numerical Literal Validation (No JSON NaN / Infinity constants)
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         raw_text = f.read()

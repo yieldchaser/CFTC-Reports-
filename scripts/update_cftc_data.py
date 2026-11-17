@@ -327,9 +327,13 @@ def fetch_prices() -> pd.Series:
     import urllib.parse
 
     symbol = urllib.parse.quote("NG=F")
+    # Explicit period bounds, NOT range=max: Yahoo silently downgrades
+    # range=max to monthly bars, which would leave weekly COT dates with a
+    # stale month-old price. period1/period2 keep true daily closes.
+    p1, p2 = 946684800, int(time.time()) + 86400   # 2000-01-01 .. tomorrow
     urls = [
-        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=max",
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=max",
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&period1={p1}&period2={p2}",
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&period1={p1}&period2={p2}",
     ]
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -376,6 +380,9 @@ def fetch_prices() -> pd.Series:
     df["price"] = pd.to_numeric(df["price"], errors="coerce").ffill()
 
     price = df.set_index("date")["price"]
+    recent = price[price.index >= price.index.max() - pd.Timedelta(days=30)]
+    if len(recent) < 12:
+        raise RuntimeError(f"Price feed is not daily ({len(recent)} bars in last 30 days); refusing to align COT to stale prices")
     print(f"  Price range: {price.index.min().date()} to {price.index.max().date()}")
     print("[Phase 1.3] Price OK\n")
     return price
