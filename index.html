@@ -1483,6 +1483,10 @@
     }
     .cta-grid > .chart-panel, #panel-cta > *, #panel-cycles > * { min-width: 0 }
     .cta-grid > .span-full { grid-column: 1 / -1 }
+    select { max-width: 100% }
+    .chart-actions { flex-wrap: wrap; min-width: 0; max-width: 100% }
+    #cyc-source { min-width: 0; text-overflow: ellipsis }
+    @media(max-width:640px) { #cyc-source { width: 100% } .insp-controls { width: 100% } }
     .cyc-read { font-size: 12px; line-height: 1.6; color: var(--text2) }
     .cyc-read p { margin: 0 0 8px }
     .cyc-read strong { color: var(--text) }
@@ -1840,6 +1844,11 @@
       <div id="cyc-status"></div>
       <div id="cyc-kpis"></div>
 
+      <div class="chart-panel">
+        <div class="chart-header"><div><div class="chart-title">What the Evidence Says Now</div><div class="chart-sub">Generated from the statistics on this tab; no discretionary view</div></div></div>
+        <div class="cyc-read" id="cyc-read"></div>
+      </div>
+
       <div class="cta-grid">
         <div class="chart-panel span-full">
           <div class="chart-header">
@@ -1910,13 +1919,9 @@
           <div class="chart-container h240"><canvas id="cv-cyc-passage"></canvas></div>
         </div>
 
-        <div class="chart-panel">
+        <div class="chart-panel span-full">
           <div class="chart-header"><div><div class="chart-title">Odds Under Today's Conditions</div><div class="chart-sub" id="cyc-cond-sub">Price rises X% before falling X%: history filtered to conditions that match now</div></div></div>
           <div class="cta-scroll" id="cyc-cond-table"></div>
-        </div>
-        <div class="chart-panel">
-          <div class="chart-header"><div><div class="chart-title">What the Evidence Says Now</div><div class="chart-sub">Generated from the statistics on this page; no discretionary view</div></div></div>
-          <div class="cyc-read" id="cyc-read"></div>
         </div>
 
         <div class="chart-panel span-full">
@@ -4620,7 +4625,8 @@
     // Rendered from data/cycle_analysis.json (scripts/update_cycle_analysis.py).
     const CYCLE_MODEL_ID = 'hh_cycle_v1';
     let CYCLE_DATA = null, CYCLE_ERROR = null;
-    let cycMetric = 'cot', cycLevel = '20', cycSource = 'comp_hh_prompt';
+    // NYMEX by default: its 2006+ history is what makes the before/after-2018 test meaningful
+    let cycMetric = 'cot', cycLevel = '20', cycSource = 'nat_gas_nyme';
     chartRanges['cv-cyc-price'] = chartRanges['cv-cyc-price'] || '5Y';
 
     async function loadCycle() {
@@ -4933,7 +4939,8 @@
       const moved = m2 == null ? null : want === 'down' ? m2 < 0 : m2 > 0;
       const priceVerdict = m2 == null ? 'Not enough data after this date yet.' :
         nearMatch.length ? `<span class="cyc-tag yes">CONFIRMED TURN</span>A confirmed 20% ${wantTurn} on ${nearMatch.map(p => p.date).join(', ')} is within 3 weeks of this date.` :
-        moved ? `<span class="cyc-tag weak">MOVED, NO MAJOR TURN</span>Price moved ${want} over the next 2 weeks (${signedPct(m2, 1)}), but no 20% ${wantTurn} formed within 3 weeks.` :
+        moved && Math.abs(m2) >= 10 ? `<span class="cyc-tag yes">STRONG MOVE</span>Price moved ${want} ${signedPct(m2, 1)} over the next 2 weeks. (It is not a confirmed 20% ${wantTurn} on roll-adjusted prices, usually because an earlier, lower ${want === 'up' ? 'low' : 'high'} still stands once contract-roll costs are removed.)` :
+        moved ? `<span class="cyc-tag weak">MOVED</span>Price moved ${want} over the next 2 weeks (${signedPct(m2, 1)}), but modestly, and no 20% ${wantTurn} formed within 3 weeks.` :
         `<span class="cyc-tag no">NOT SUPPORTED</span>Price moved ${m2 >= 0 ? 'up' : 'down'} ${signedPct(m2, 1)} over the next 2 weeks.`;
 
       // 2) Positioning as published by the date
@@ -4944,12 +4951,16 @@
         if (k < 0) posHtml = `<div class="no-data">No report published before this date (history starts ${H.dates[0]}).</div>`;
         else {
           const sc = Object.fromEntries(src.scorecard.map(r => [r.key, r]));
-          const act = Object.entries(H.signals).filter(([key, arr]) => arr[k] === 1).map(([key]) => sc[key]).filter(Boolean);
+          // Signals active in any of the last 4 published reports (the scorecard counts a
+          // signal as near a turn within 4 weeks, so the inspector uses the same window)
+          const lastFired = {};
+          for (let j = Math.max(0, k - 3); j <= k; j++) Object.entries(H.signals).forEach(([key, arr]) => { if (arr[j] === 1) lastFired[key] = H.dates[j]; });
+          const act = Object.keys(lastFired).map(key => ({ ...sc[key], firedOn: lastFired[key] })).filter(r => r.key);
           const rel = act.filter(r => (want === 'down' ? r.marks === 'peak' : r.marks === 'trough'));
           const opp = act.filter(r => !rel.includes(r));
           const oosTxt = r => r.out_of_sample?.lift != null && r.out_of_sample.episodes >= 3 ? `OOS lift ${r.out_of_sample.lift.toFixed(2)}x` : 'too few out-of-sample episodes';
-          const verdict = rel.length ? `<span class="cyc-tag ${rel.some(r => (r.out_of_sample?.lift ?? 0) >= 1.3) ? 'yes' : 'weak'}">FLAGGED</span>${rel.map(r => `${r.label} (${oosTxt(r)})`).join('; ')}.`
-            : `<span class="cyc-tag no">NOT FLAGGED</span>No ${want === 'down' ? 'peak' : 'trough'} signal was active in the report available on this date.`;
+          const verdict = rel.length ? `<span class="cyc-tag ${rel.some(r => (r.out_of_sample?.lift ?? 0) >= 1.3) ? 'yes' : 'weak'}">FLAGGED</span>${rel.map(r => `${r.label}, report ${r.firedOn} (${oosTxt(r)})`).join('; ')}.`
+            : `<span class="cyc-tag no">NOT FLAGGED</span>No ${want === 'down' ? 'peak' : 'trough'} signal in the last 4 reports published before this date.${(H.spec_cot[k] ?? 50) <= 10 && want === 'down' ? ' Speculators were already near their most short in 3 years, so the peak signals (which need speculators long or buying) could not fire.' : ''}`;
           posHtml = `
             <div class="insp-row"><span>Report used (published ${new Date(tsOf(H.dates[k]) + 3 * 86400000).toISOString().slice(0, 10)})</span><span>${H.dates[k]}</span></div>
             <div class="insp-row"><span>Managed Money COT (3y) / Z</span><span>${Math.round(H.mm_cot[k] ?? NaN)} / ${fmtZ(H.mm_z[k])}</span></div>
