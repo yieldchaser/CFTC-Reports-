@@ -58,6 +58,13 @@ Event-based analysis of where Henry Hub sits in its swing cycle and whether posi
 
 Key findings from the data: Managed Money is a coincident trend follower (weekly flows track same-week price, r about +0.4, and do not lead it). Managed Money crowded short has NOT marked troughs in either period. Single-group signals are weak, but cross-group combinations hold out of sample (lift roughly 1.8-2.1x on NYMEX, 2018+). Several older single-group signals faded after 2018 and are labelled as such. Early September is the only calendar window with a statistically robust recurring move (up in 15 of 19 years).
 
+### Ideas adopted from Ilia Bouchouev's research (CMU Commodities Quant Lab)
+Each idea was tested on 20 years of natural gas data before being adopted; ideas that did not hold up were left out.
+- **Hedging pressure via swap dealers.** Producers hedge mostly over the counter with their banks, so producer hedging reaches futures through the swap-dealer category. Signal: *Hedgers selling into strength* (swap dealers + producers cut net position by more than 1% of open interest over 2 weeks while price rises) has marked tops at about 1.3–1.6x chance both before and since 2018. The mirror case (hedgers buying dips) showed no edge and is not used.
+- **Trend-following vs discretionary decomposition** (after Bouchouev, Sun & Fattouh, OIES 2026): Managed Money dollars split into the CTA-model component and everything else, plus the trend-follower share of fund trading (rolling 52-week R²). CTA & Flows tab.
+- **Who trades against whom:** weekly flow correlations between trader groups and with price (his Table 1, for natural gas). Multi-Trader tab.
+- **Not adopted:** treating Managed Money and Other Reportables separately did not improve the top signals in natural gas (the combined version held up better out of sample). Curve-shape, options-skew and swap-repository hedging indicators need data this pipeline does not collect.
+
 ### CTA & Flows Tab
 Dollar-sized positioning plus a daily trend-follower (CTA) model for Henry Hub.
 

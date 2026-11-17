@@ -122,6 +122,19 @@ def positioning_frame(cftc: dict, key: str) -> pd.DataFrame:
         cols[f"{g}_flow4z"] = (f4 - f4.rolling(156, min_periods=52).mean()) / f4.rolling(156, min_periods=52).std()
     df = pd.DataFrame(cols)
     df["z"] = pd.Series(inst["managed_money"]["z_score"], index=idx, dtype="float64")
+    # Hedgers = swap dealers + producers/merchants. US gas and oil producers hedge
+    # mostly over the counter with their banks, so their hedging reaches futures
+    # through the swap-dealer category (Bouchouev, CQL WP 2026-01).
+    oi = pd.Series(inst["open_interest"], index=idx, dtype="float64")
+    hedgers = (pd.Series(inst["swap_dealers"]["net"], index=idx, dtype="float64")
+               + pd.Series(inst["producers"]["net"], index=idx, dtype="float64"))
+    df["hedger_d2_pct"] = (hedgers - hedgers.shift(2)) / oi * 100
+    pa = cftc.get("price_adjusted")
+    if pa and pa.get("dates"):
+        px = pd.Series(pa["values"], index=pd.to_datetime(pa["dates"]), dtype="float64").reindex(idx)
+    else:
+        px = pd.Series(inst["price"], index=idx, dtype="float64")
+    df["price_up2"] = px > px.shift(2)
     df["cot"], df["flow"], df["flow2"], df["flow4z"] = df.mm_cot, df.mm_flow, df.mm_flow2, df.mm_flow4z
     return df[df.index >= idx[0] + pd.Timedelta(weeks=COT_WARMUP_WEEKS)]
 
@@ -153,8 +166,16 @@ SIGNALS = [
      lambda d: (d.mm_flow4z > 1) & (d.other_flow2 < 0), "4w MM flow > +1 sd while Other Reportables sell over 2w"),
     ("nonrept_crowded_short", "Small traders crowded short", "T",
      lambda d: d.nonrept_cot <= 20, "Non-reportable COT <= 20"),
+    # Hedging pressure: commercial hedgers adding shorts into a rally tends to cap
+    # it. Tested on NYMEX and both composites before and since 2018 (about 1.3-1.6x
+    # chance at 20% tops in both periods); the mirror case, hedgers buying into
+    # weakness, showed no edge at bottoms and is not used.
+    ("hedgers_selling_strength", "Hedgers selling into strength", "P",
+     lambda d: (d.hedger_d2_pct < -1) & d.price_up2,
+     "Swap dealers + producers cut net position by >1% of OI over 2w while price rises"),
 ]
-COMBINATION_SIGNALS = {"spec_crowded_selling", "prod_short_spec_buying", "mm_surge_other_selling", "nonrept_crowded_short"}
+COMBINATION_SIGNALS = {"spec_crowded_selling", "prod_short_spec_buying", "mm_surge_other_selling", "nonrept_crowded_short",
+                       "hedgers_selling_strength"}
 
 
 def near_pivot(weeks: pd.DatetimeIndex, pivot_dates, window: int) -> pd.Series:

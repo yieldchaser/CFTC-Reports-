@@ -1839,6 +1839,16 @@
         <span style="font-size:11px;color:var(--text2)" data-tooltip="Sets the range of every chart in the grid; each chart can still be changed individually.">Range (all):</span>
         <span id="three-range-all"></span>
       </div>
+      <div class="chart-panel" style="margin-bottom:12px">
+        <div class="chart-header">
+          <div><div class="chart-title">Who Trades Against Whom</div><div class="chart-sub" id="flowcorr-sub">Correlation of weekly position changes between trader groups, and with the weekly price change, over the full history</div></div>
+          <div class="chart-actions"><select id="flowcorr-inst" onchange="renderFlowCorr()" aria-label="Contract"></select></div>
+        </div>
+        <div class="cta-grid" style="align-items:start">
+          <div class="cta-scroll" id="flowcorr-table"></div>
+          <div class="cyc-read" id="flowcorr-read" style="font-size:11.5px"></div>
+        </div>
+      </div>
       <div id="three-trader-grid" class="three-grid"></div>
     </div>
 
@@ -2034,6 +2044,33 @@
             <div class="leg-item"><div class="leg-line" style="background:#fbbf24"></div>NG Price (front month)</div>
           </div>
           <div class="chart-container h240"><canvas id="cv-cta-pmpu"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title" data-tooltip="Managed Money net position in dollars (HH Prompt composite, NYMEX-equivalent) split into the part a trend-following model explains and everything else (discretionary and structural positioning). Approach after Bouchouev, Sun &amp; Fattouh (Oxford Institute for Energy Studies, 2026).">What Is Driving Fund Positioning</div>
+      <div class="cta-grid">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">Trend-Following vs Discretionary ($bn)</div><div class="chart-sub" id="dec-sub">Managed Money net split into the trend-model component and the rest</div></div>
+            <div class="chart-actions"><span id="rng-cv-dec"></span><button class="reset-zoom-btn" onclick="resetChartZoom('cv-dec')">Reset</button></div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>Managed Money net</div>
+            <div class="leg-item"><div class="leg-line" style="background:#f59e0b"></div>Trend-following component</div>
+            <div class="leg-item"><div class="leg-line" style="background:#a855f7"></div>Discretionary &amp; structural</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-dec"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">Trend-Follower Share of Fund Trading</div><div class="chart-sub" id="share-sub">How much of the weekly change in fund positions the trend model explains (rolling 52 weeks)</div></div>
+            <div class="chart-actions"><span id="rng-cv-share"></span><button class="reset-zoom-btn" onclick="resetChartZoom('cv-share')">Reset</button></div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#f59e0b"></div>Trend-follower share</div>
+            <div class="leg-item"><div class="leg-line" style="background:#9ba8c0"></div>5-year median</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-share"></canvas></div>
         </div>
       </div>
 
@@ -4054,6 +4091,7 @@
     }
 
     function renderThreeTraderGrid() {
+      renderFlowCorr();
       const grid = document.getElementById('three-trader-grid'); if (!grid) return;
       grid.innerHTML = '';
 
@@ -4349,6 +4387,63 @@
       return document.getElementById(canvasId);
     }
 
+
+    // ── Trend vs discretionary decomposition (CTA & Flows tab) ──────────
+    function renderDecomposition() {
+      const D = CTA_DATA?.decomposition;
+      ['cv-dec', 'cv-share'].forEach(id => { const el = document.getElementById('rng-' + id); if (el) el.innerHTML = rangeControl(id); CHART_RERENDER[id] = renderDecomposition; });
+      if (!D?.dates?.length) { ctaNoData('cv-dec', 'Available after the next model run'); ctaNoData('cv-share', 'Available after the next model run'); return; }
+      const { dates, arrays: [mm, tr, ot] } = applyRange('cv-dec', D.dates, D.mm_usd_bn, D.trend_usd_bn, D.other_usd_bn);
+      const c1 = ctaEnsureCanvas('cv-dec');
+      if (c1 && dates.length) {
+        const P = a => dates.map((d, i) => ({ x: tsOf(d), y: a[i] }));
+        const opts = ctaBaseOptions(tsOf(dates[0]), tsOf(dates[dates.length - 1]), ctaTooltip({ label: it => ` ${it.dataset.label}: ${fmtBn(it.parsed.y)}` }), 'index');
+        opts.scales.y = { ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => (v > 0 ? '+' : '') + v + 'b' }, grid: { color: 'rgba(37,48,71,.25)' } };
+        opts.plugins.annotation = { annotations: { z: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(155,168,192,.35)', borderWidth: 1 } } };
+        safeCreateChart(c1, { type: 'line', data: { datasets: [
+          { label: 'Managed Money net', data: P(mm), borderColor: '#3b82f6', borderWidth: 2, pointRadius: 0, tension: 0 },
+          { label: 'Trend-following', data: P(tr), borderColor: '#f59e0b', borderWidth: 1.5, pointRadius: 0, tension: 0 },
+          { label: 'Discretionary & structural', data: P(ot), borderColor: '#a855f7', borderWidth: 1.5, pointRadius: 0, tension: 0 },
+        ] }, options: opts });
+      }
+      const L = D.latest, sub = document.getElementById('dec-sub');
+      if (sub && L) sub.textContent = `Latest ${L.date}: ${fmtBn(L.mm)} = trend ${fmtBn(L.trend)} + discretionary & structural ${fmtBn(L.other)}${L.other_z != null ? ` (${L.other_z >= 0 ? '+' : '−'}${Math.abs(L.other_z).toFixed(1)}σ vs 3 years)` : ''}`;
+      const r2 = applyRange('cv-share', D.dates, D.trend_share);
+      const c2 = ctaEnsureCanvas('cv-share');
+      if (c2 && r2.dates.length) {
+        const pts = r2.dates.map((d, i) => ({ x: tsOf(d), y: r2.arrays[0][i] }));
+        const opts = ctaBaseOptions(tsOf(r2.dates[0]), tsOf(r2.dates[r2.dates.length - 1]), ctaTooltip({ label: it => ` Trend-follower share: ${(it.parsed.y * 100).toFixed(0)}%` }), 'index');
+        opts.scales.y = { min: 0, max: 1, ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => Math.round(v * 100) + '%' }, grid: { color: 'rgba(37,48,71,.25)' } };
+        if (L?.trend_share_median_5y != null) opts.plugins.annotation = { annotations: { m: { type: 'line', yMin: L.trend_share_median_5y, yMax: L.trend_share_median_5y, borderColor: '#9ba8c0', borderWidth: 1, borderDash: [4, 4] } } };
+        safeCreateChart(c2, { type: 'line', data: { datasets: [{ label: 'Trend-follower share', data: pts, borderColor: '#f59e0b', borderWidth: 1.8, pointRadius: 0, tension: 0, fill: { target: 'origin', above: 'rgba(245,158,11,.10)' } }] }, options: opts });
+      }
+      const ss = document.getElementById('share-sub');
+      if (ss && L?.trend_share != null) ss.textContent = `Now ${(L.trend_share * 100).toFixed(0)}% vs a 5-year median of ${(L.trend_share_median_5y * 100).toFixed(0)}%${L.trend_share_pctile != null && L.trend_share_pctile < 5 ? ': among the lowest readings on record. Funds are positioning against, or regardless of, the price trend' : ''}.`;
+    }
+
+    // ── Who trades against whom (Multi-Trader tab) ─────────────────────
+    function renderFlowCorr() {
+      const sel = document.getElementById('flowcorr-inst'); if (!sel || !CFTC_DATA) return;
+      if (!sel.options?.length) { sel.innerHTML = INSTRUMENT_KEYS.filter(k => CFTC_DATA.instruments[k]).map(k => `<option value="${k}">${INSTRUMENT_LABELS[k] || k}</option>`).join(''); sel.value = 'nat_gas_nyme'; }
+      const key = CFTC_DATA.instruments[sel.value] ? sel.value : 'nat_gas_nyme', inst = CFTC_DATA.instruments[key]; if (!inst) return;
+      const G = [['producers', 'Producers'], ['swap_dealers', 'Swap Dealers'], ['managed_money', 'Managed Money'], ['other_reportables', 'Other Reportables'], ['non_reportables', 'Non-Reportables']];
+      const series = G.map(([k]) => inst[k]?.change_net || []);
+      const rets = instReturns(inst);
+      const all = [...series, rets], names = [...G.map(g => g[1]), 'Price change'];
+      const M = all.map(a => all.map(b => pearsonXY(a, b).r));
+      const cell = v => { if (v == null) return '<td>—</td>'; const a = Math.min(1, Math.abs(v)); const col = v >= 0 ? `rgba(34,197,94,${(a * 0.55).toFixed(2)})` : `rgba(239,68,68,${(a * 0.55).toFixed(2)})`; return `<td style="background:${col};text-align:center">${v.toFixed(2)}</td>`; };
+      const tbl = document.getElementById('flowcorr-table');
+      if (tbl) tbl.innerHTML = `<table class="cta-table"><thead><tr><th></th>${names.map(n => `<th style="text-align:center">${n.replace(' ', '<br>')}</th>`).join('')}</tr></thead><tbody>${
+        names.map((n, i) => `<tr><td style="font-family:var(--font);white-space:nowrap">${n}</td>${M[i].map((v, j) => i === j ? '<td style="text-align:center;color:var(--text3)">1</td>' : cell(v)).join('')}</tr>`).join('')}</tbody></table>`;
+      const mmIdx = 2, pIdx = all.length - 1;
+      const counter = G.map((g, i) => ({ n: g[1], r: M[mmIdx][i] })).filter((x, i) => i !== mmIdx && x.r != null).sort((a, b) => a.r - b.r);
+      const byPrice = G.map((g, i) => ({ n: g[1], r: M[pIdx][i] })).filter(x => x.r != null).sort((a, b) => b.r - a.r);
+      const rd = document.getElementById('flowcorr-read');
+      if (rd && counter.length && byPrice.length) rd.innerHTML = `
+        <p><strong>Main counterparty to Managed Money:</strong> ${counter[0].n} (${counter[0].r.toFixed(2)}), then ${counter[1].n} (${counter[1].r.toFixed(2)}). When funds buy, these groups are the ones selling.</p>
+        <p><strong>Trades with the price:</strong> ${byPrice[0].n} (${byPrice[0].r.toFixed(2)}): they buy in weeks when price rises. <strong>Trades against it:</strong> ${byPrice[byPrice.length - 1].n} (${byPrice[byPrice.length - 1].r.toFixed(2)}): they sell into rallies and buy dips.</p>
+        <p style="color:var(--text3)">Green = the two groups tend to add in the same weeks; red = when one adds, the other cuts. ${INSTRUMENT_LABELS[key] || key}, ${inst.dates[0].slice(0, 4)}–${inst.dates[inst.dates.length - 1].slice(0, 4)}; price changes are roll-adjusted.</p>`;
+    }
     // ── Controls ──
     function setCtaInst(k) { if (USD_INSTRUMENT_KEYS.includes(k)) { ctaInst = k; renderCTA(); } }
     function setCtaPosTrader(t) { if (CTA_TRADER_LABELS[t]) { ctaPosTrader = t; renderCtaPositionCharts(); } }
@@ -4465,6 +4560,7 @@
       renderCtaStatus();
       renderCtaKpis();
       renderCtaPositionCharts();
+      renderDecomposition();
       renderCtaThresholdChart();
       renderCtaProjectionChart();
       renderCtaTables();
@@ -4495,6 +4591,7 @@
         ${L ? item('NG Front Month', `$${fmt(L.price, 3)}`, `${fmtSignedPct(L.price_chg_1d_pct)} 1d &middot; ${L.date}`) : ''}
         ${L ? item('CTA Model Position', fmtBn(L.position_usd_bn), `${fmtBn(L.position_chg_1w_usd_bn)} 1w`, posNegColour(L.position_usd_bn), 'Simulated trend-follower net length, scaled to CFTC Managed Money dollars.') : ''}
         ${L ? item('Realized Vol (60d)', `${L.realized_vol_ann_pct.toFixed(0)}%`, `1m &sigma; &plusmn;${L.one_month_sigma_pct.toFixed(1)}%`) : ''}
+        ${CTA_DATA?.decomposition?.latest ? (() => { const L = CTA_DATA.decomposition.latest; return item('Fund position drivers', `${fmtBn(L.trend, 1)} trend / ${fmtBn(L.other, 1)} other`, L.trend_share != null ? `trend-follower share ${(L.trend_share * 100).toFixed(0)}% (5y median ${(L.trend_share_median_5y * 100).toFixed(0)}%)` : '', 'var(--text)', 'Managed Money net split into the trend-following model component and discretionary/structural positioning.'); })() : ''}
         ${cal ? item('Model Fit vs CFTC MM', `r = ${cal.corr.toFixed(2)}`, `${cal.corr < 0.3 ? 'weak fit: dollar level is indicative' : cal.corr < 0.5 ? 'moderate fit' : 'good fit'} &middot; ${Math.round(cal.n_obs / 52)} years`, cal.corr >= 0.4 ? '#22c55e' : cal.corr >= 0.2 ? '#f59e0b' : '#ef4444', 'Correlation of model exposure with weekly CFTC Managed Money $ over the calibration window. Low values mean discretionary/structural flows dominate MM, not trend-following.') : ''}
       </div>`;
     }
