@@ -1496,7 +1496,10 @@
     .cyc-tag.no { background: rgba(239,68,68,.12); color: #f87171; border: 1px solid rgba(239,68,68,.35) }
     .cyc-tag.combo { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.35) }
     .insp-controls input[type=date] { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); border-radius: var(--r); padding: 4px 8px; font-size: 11px; font-family: var(--mono); color-scheme: dark }
-    .insp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }
+    .insp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; align-items: center }
+    .log-row { cursor: pointer }
+    .cta-table th.txt, .cta-table td.txt { text-align: left }
+    .log-row:hover td { background: rgba(79,142,247,.06) }
     .insp-chip { font-size: 10px; padding: 3px 9px; border-radius: 12px; border: 1px solid var(--border2); background: var(--bg4); color: var(--text2); cursor: pointer; font-family: var(--font) }
     .insp-chip:hover, .insp-chip.active { border-color: var(--accent); color: var(--text) }
     .insp-chip.active { background: rgba(79,142,247,.18) }
@@ -1926,6 +1929,26 @@
 
         <div class="chart-panel span-full">
           <div class="chart-header">
+            <div><div class="chart-title">Signal Log</div><div class="chart-sub" id="log-sub">Maintained automatically: every signal that fires and every confirmed turn is added as new reports arrive, and outcomes update when turns are confirmed</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn active" id="log-view-flags" onclick="setLogView('flags')">Signals fired</button>
+                <button class="hm-btn" id="log-view-turns" onclick="setLogView('turns')">Confirmed turns</button>
+              </span>
+              <span class="cta-seg" id="log-filter-wrap">
+                <button class="hm-btn active" id="log-f-all" onclick="setLogFilter('all')">All</button>
+                <button class="hm-btn" id="log-f-pending" onclick="setLogFilter('pending')">Pending</button>
+                <button class="hm-btn" id="log-f-hit" onclick="setLogFilter('hit')">Hits</button>
+                <button class="hm-btn" id="log-f-miss" onclick="setLogFilter('miss')">Misses</button>
+              </span>
+            </div>
+          </div>
+          <div class="cta-scroll" id="log-body"></div>
+          <div style="display:flex;justify-content:center;margin-top:8px"><button class="hm-btn" id="log-more" onclick="logShowMore()">Show more</button></div>
+        </div>
+
+        <div class="chart-panel span-full">
+          <div class="chart-header">
             <div><div class="chart-title">Date Inspector</div><div class="chart-sub">What price did around any date, what the data showed using only reports published by then, and whether the same date behaved the same way in other years</div></div>
             <div class="chart-actions insp-controls">
               <input type="date" id="insp-date" onchange="setInspDate(this.value)" aria-label="Date to inspect">
@@ -1935,6 +1958,7 @@
               </span>
             </div>
           </div>
+          <div class="insp-chips" id="insp-chips-auto"></div>
           <div class="insp-chips" id="insp-chips"></div>
           <div class="insp-grid" id="insp-body"></div>
         </div>
@@ -3785,7 +3809,8 @@
       const avgByWeek = td.seasonal_avg_by_week || [];
       const stdByWeek = td.seasonal_std_by_week || [];
       const allDates = inst.dates || [], allNet = td.net || [];
-      const nowYear = new Date().getFullYear();
+      // Highlight the latest year that has data (on Jan 1-8 the browser year has no reports yet)
+      const nowYear = +((inst.dates || []).at(-1) || String(new Date().getFullYear())).slice(0, 4);
       const allYears = [...new Set(allDates.map(d => +d.slice(0, 4)))].sort();
       const displayYears = allYears.slice(-5);
       // Build year toggles if not built
@@ -4644,7 +4669,7 @@
 
     function setCycMetric(m) { cycMetric = m; setCtaSeg('cyc-met-', m); renderCycEvent(); }
     function setCycLevel(l) { cycLevel = l; setCtaSeg('cyc-lvl-', l); renderCycPassage(); renderCycConditions(); renderCycRead(); }
-    function setCycSource(k) { if (CYCLE_DATA?.positioning?.[k]) { cycSource = k; renderCycEvent(); renderCycScorecard(); renderCycRead(); renderInspector(); } }
+    function setCycSource(k) { if (CYCLE_DATA?.positioning?.[k]) { cycSource = k; renderCycEvent(); renderCycScorecard(); renderCycRead(); renderSignalLog(); renderInspector(); } }
     const pctTxt = (v, d = 0) => v == null || isNaN(v) ? '—' : `${(v * 100).toFixed(d)}%`;
     const signedPct = (v, d = 0) => v == null || isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`;
     const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -4664,7 +4689,7 @@
       const rng = document.getElementById('rng-cv-cyc-price'); if (rng) rng.innerHTML = rangeControl('cv-cyc-price');
       CHART_RERENDER['cv-cyc-price'] = renderCycPrice;
       renderCycKpis(); renderCycPrice(); renderCycMap(); renderCycSeason(); renderCycEvent(); renderCycPassage();
-      renderCycConditions(); renderCycRead(); renderInspector(); renderCycScorecard(); renderCycMethod();
+      renderCycConditions(); renderCycRead(); renderSignalLog(); renderInspector(); renderCycScorecard(); renderCycMethod();
     }
 
     function renderCycKpis() {
@@ -4894,6 +4919,43 @@
       }</tbody></table><div class="cta-note" style="margin-top:6px">Lift = how much more often the signal fires within 4 weeks of a confirmed ${CYCLE_DATA.meta.params.swing_threshold_pct}% turn of its type than a random week does (1.0x = chance). Brackets: episodes near a turn / episodes fired. The four <span class="cyc-tag combo">combination</span> signals came from testing 1,104 single and paired conditions across all trader groups on NYMEX data before ${yr}, and were kept only if they also worked on ${yr}–today data they were not chosen on. The "${yr} on" column is the honest test for every signal. ${P.label}, ${P.start.slice(0, 4)}–${P.end.slice(0, 4)}.</div>`;
     }
 
+    // ── Signal Log (automatically maintained by the pipeline) ──────────
+    let logView = 'flags', logFilter = 'all', logLimit = 15;
+    function setLogView(v) { logView = v; logLimit = 15; setCtaSeg('log-view-', v); const fw = document.getElementById('log-filter-wrap'); if (fw) fw.style.display = v === 'flags' ? '' : 'none'; renderSignalLog(); }
+    function setLogFilter(f) { logFilter = f; logLimit = 15; setCtaSeg('log-f-', f); renderSignalLog(); }
+    function logShowMore() { logLimit += 25; renderSignalLog(); }
+    function renderSignalLog() {
+      const el = document.getElementById('log-body'); if (!el || !CYCLE_DATA) return;
+      const P = CYCLE_DATA.positioning[cycSource]; const L = P?.signal_log;
+      const more = document.getElementById('log-more');
+      if (!L) { el.innerHTML = '<div class="no-data">The signal log appears after the next pipeline run.</div>'; if (more) more.style.display = 'none'; return; }
+      const sc = Object.fromEntries(P.scorecard.map(r => [r.key, r]));
+      const sub = document.getElementById('log-sub');
+      if (sub) sub.innerHTML = `Maintained automatically from ${P.label.split(' (')[0]}: each new report adds rows, and outcomes update as turns are confirmed. Outcomes are final through <strong>${L.resolved_through}</strong>; later firings stay <em>pending</em> until the current swing's turn is confirmed.`;
+      let rows, total;
+      if (logView === 'turns') {
+        const T = L.turns; total = T.length; rows = T.slice(0, logLimit);
+        el.innerHTML = `<table class="cta-table"><thead><tr><th>Confirmed turn</th><th>Type</th><th>Flagged in advance?</th><th class="txt">Signals within 4 weeks (first report)</th></tr></thead><tbody>${
+          rows.map(t => `<tr class="log-row" onclick="inspectFromLog('${t.date}','${t.type === 'peak' ? 'down' : 'up'}')"><td>${t.date}</td><td>${t.type}</td>
+            <td>${t.flagged_in_advance ? '<span class="cyc-tag yes">yes</span>' : t.flags.length ? '<span class="cyc-tag weak">only after</span>' : '<span class="cyc-tag no">no</span>'}</td>
+            <td style="font-family:var(--font);white-space:normal;text-align:left">${t.flags.length ? t.flags.map(f => `${f.label} <span style="color:var(--text3)">(${f.first}${f.in_advance ? ', in advance' : ', after'})</span>`).join('; ') : '<span style="color:var(--text3)">none</span>'}</td></tr>`).join('')
+        }</tbody></table>`;
+      } else {
+        let E = L.episodes; if (logFilter !== 'all') E = E.filter(e => e.outcome === logFilter);
+        total = E.length; rows = E.slice(0, logLimit);
+        const outTag = e => e.outcome === 'pending' ? '<span class="cyc-tag weak">pending</span>'
+          : e.outcome === 'miss' ? '<span class="cyc-tag no">miss</span>'
+          : e.lead_weeks >= 0 ? `<span class="cyc-tag yes">hit: ${e.lead_weeks}w early</span>` : `<span class="cyc-tag weak">hit: ${Math.abs(e.lead_weeks)}w after</span>`;
+        el.innerHTML = rows.length ? `<table class="cta-table"><thead><tr><th>Published</th><th class="txt">Signal</th><th>Marks</th><th>Reports</th><th>Active</th><th>Outcome</th><th>Turn</th><th>Signal record since 2018</th></tr></thead><tbody>${
+          rows.map(e => { const r = sc[e.signal]; const oos = r?.out_of_sample?.lift != null && r.out_of_sample.episodes >= 3 ? r.out_of_sample.lift.toFixed(2) + 'x' : '—';
+            return `<tr class="log-row" onclick="inspectFromLog('${e.published}','${e.marks === 'peak' ? 'down' : 'up'}')"><td>${e.published}</td><td class="txt" style="font-family:var(--font)">${e.label}${r?.combination ? ' <span class="cyc-tag combo">combination</span>' : ''}</td>
+            <td>${e.marks}</td><td>${e.start === e.end ? e.start : e.start + ' → ' + e.end}</td><td>${e.active ? '<span class="cyc-tag weak">NOW</span>' : ''}</td>
+            <td>${outTag(e)}</td><td>${e.turn || '—'}</td><td>${oos}</td></tr>`; }).join('')
+        }</tbody></table>` : '<div class="no-data">No entries for this filter.</div>';
+      }
+      if (more) more.style.display = total > logLimit ? '' : 'none';
+    }
+
     // ── Date Inspector ────────────────────────────────────────────────
     // Answers "did the data support a move on date X?" with three separate
     // checks: what price actually did, what the positioning data showed using
@@ -4907,19 +4969,36 @@
     let inspDate = null, inspDir = 'down';
     function setInspDate(d) { if (d) { inspDate = d; renderInspector(); } }
     function setInspDir(d) { inspDir = d === 'up' ? 'up' : 'down'; setCtaSeg('insp-dir-', inspDir); renderInspector(); }
+    // Auto chips: the most recent confirmed turns and the most recent signal firings
+    // (as published), rebuilt from the data on every load, so they move with the market.
+    function autoInspItems() {
+      const L = CYCLE_DATA?.positioning?.[cycSource]?.signal_log; if (!L) return [];
+      const out = [];
+      (L.episodes || []).slice(0, 4).forEach(e => out.push({ date: e.published, dir: e.marks === 'peak' ? 'down' : 'up', label: `${e.label} (${e.published})` }));
+      (L.turns || []).slice(0, 3).forEach(t => out.push({ date: t.date, dir: t.type === 'peak' ? 'down' : 'up', label: `Confirmed ${t.type} ${t.date}` }));
+      return out;
+    }
+    function setInspAuto(i) { const it = autoInspItems()[i]; if (!it) return; inspDate = it.date; inspDir = it.dir; const el = document.getElementById('insp-date'); if (el) el.value = it.date; renderInspector(); }
+    function inspectFromLog(date, dir) { inspDate = date; inspDir = dir; const el = document.getElementById('insp-date'); if (el) el.value = date; renderInspector(); document.getElementById('insp-body')?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); }
     function setInspPreset(i) { const [d, dir] = INSP_PRESETS[i]; inspDate = d; inspDir = dir; setCtaSeg('insp-dir-', dir); const el = document.getElementById('insp-date'); if (el) el.value = d; renderInspector(); }
     function binomUpper(k, n, p) { let s = 0; for (let i = k; i <= n; i++) { let c = 1; for (let j = 0; j < i; j++) c = c * (n - j) / (j + 1); s += c * Math.pow(p, i) * Math.pow(1 - p, n - i); } return Math.min(1, s); }
 
     function renderInspector() {
       const body = document.getElementById('insp-body'); if (!body || !CYCLE_DATA) return;
       const S = CYCLE_DATA.series; const sDates = S.dates.map(tsOf);
-      if (!inspDate) inspDate = INSP_PRESETS[INSP_PRESETS.length - 1][0];
+      if (!inspDate) { const a = autoInspItems()[0]; if (a) { inspDate = a.date; inspDir = a.dir; } else inspDate = S.dates[S.dates.length - 1]; }
       const dateEl = document.getElementById('insp-date');
       if (dateEl) { dateEl.value = inspDate; dateEl.min = S.dates[0]; dateEl.max = S.dates[S.dates.length - 1]; }
       setCtaSeg('insp-dir-', inspDir);
       const chips = document.getElementById('insp-chips');
-      if (chips) chips.innerHTML = '<span class="cta-note" style="align-self:center;margin-right:2px">Your 2026 dates:</span>' +
+      if (chips) chips.innerHTML = '<span class="cta-note" style="margin-right:2px">Your 2026 review dates:</span>' +
         INSP_PRESETS.map(([d, dir, lbl], i) => `<button class="insp-chip${d === inspDate ? ' active' : ''}" onclick="setInspPreset(${i})">${lbl} (${dir})</button>`).join('');
+      const auto = document.getElementById('insp-chips-auto');
+      if (auto) {
+        const items = autoInspItems();
+        auto.innerHTML = '<span class="cta-note" style="margin-right:2px">Latest (updates automatically):</span>' +
+          items.map((it, i) => `<button class="insp-chip${it.date === inspDate ? ' active' : ''}" onclick="setInspAuto(${i})">${it.label}</button>`).join('');
+      }
       const T = tsOf(inspDate);
       if (!(T >= sDates[0] && T <= sDates[sDates.length - 1])) { body.innerHTML = `<div class="no-data">Pick a date between ${S.dates[0]} and ${S.dates[S.dates.length - 1]}.</div>`; return; }
       const want = inspDir, wantTurn = want === 'down' ? 'peak' : 'trough';

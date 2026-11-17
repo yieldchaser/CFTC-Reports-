@@ -711,6 +711,33 @@ def run_suite_6_cycle_analysis():
             if h.get("signals", {}).get(r["key"], [0])[-1] != int(r["active_now"]):
                 hist_ok = False
     log_test(suite, "Scorecard In/Out-of-Sample Splits Well-Formed", split_ok, "")
+    # Automatically maintained signal log: outcomes must be consistent with the
+    # resolution cutoff and the confirmed turns, so the log stays trustworthy as it grows
+    log_ok, log_detail = True, []
+    piv_dates = {(p["date"], p["type"]) for p in piv}
+    for key, p in m.get("positioning", {}).items():
+        L = p.get("signal_log")
+        if not L:
+            log_ok = False; log_detail.append(f"{key}: missing"); continue
+        cut = L["resolved_through"]
+        for e in L["episodes"]:
+            if e["outcome"] not in ("hit", "miss", "pending"):
+                log_ok = False; log_detail.append(f"bad outcome {e}")
+            if e["outcome"] == "pending" and e["end"] <= cut:
+                log_ok = False; log_detail.append(f"pending before cutoff {e['start']}")
+            if e["outcome"] == "miss" and e["end"] > cut:
+                log_ok = False; log_detail.append(f"miss after cutoff {e['start']}")
+            if e["outcome"] == "hit":
+                t = pd.Timestamp(e["turn"])
+                if not (pd.Timestamp(e["start"]) - pd.Timedelta(weeks=4) <= t <= pd.Timestamp(e["end"]) + pd.Timedelta(weeks=4)) \
+                        or (e["turn"], e["marks"]) not in piv_dates:
+                    log_ok = False; log_detail.append(f"hit outside window {e['start']}")
+        for t in L["turns"]:
+            if (t["date"], t["type"]) not in piv_dates:
+                log_ok = False; log_detail.append(f"unknown turn {t['date']}")
+        n_pend = sum(e["outcome"] == "pending" for e in L["episodes"])
+        log_detail.append(f"{key}: {len(L['episodes'])} episodes ({n_pend} pending), {len(L['turns'])} turns")
+    log_test(suite, "Signal Log Outcomes Consistent (hit/miss/pending vs confirmed turns)", log_ok, "; ".join(log_detail[:6]))
     log_test(suite, "Signal History Aligned with Scorecard (Date Inspector source)", hist_ok, "")
     log_test(suite, "Signal Scorecards Present for Each Positioning Source", sc_ok and len(m.get("positioning", {})) >= 1, "")
 
