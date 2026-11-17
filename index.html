@@ -1483,6 +1483,10 @@
     }
     .cta-grid > .chart-panel, #panel-cta > *, #panel-cycles > * { min-width: 0 }
     .cta-grid > .span-full { grid-column: 1 / -1 }
+    select { max-width: 100% }
+    .chart-actions { flex-wrap: wrap; min-width: 0; max-width: 100% }
+    #cyc-source { min-width: 0; text-overflow: ellipsis }
+    @media(max-width:640px) { #cyc-source { width: 100% } .insp-controls { width: 100% } }
     .cyc-read { font-size: 12px; line-height: 1.6; color: var(--text2) }
     .cyc-read p { margin: 0 0 8px }
     .cyc-read strong { color: var(--text) }
@@ -1490,6 +1494,25 @@
     .cyc-tag.yes { background: rgba(34,197,94,.15); color: #22c55e; border: 1px solid rgba(34,197,94,.35) }
     .cyc-tag.weak { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.35) }
     .cyc-tag.no { background: rgba(239,68,68,.12); color: #f87171; border: 1px solid rgba(239,68,68,.35) }
+    .cyc-tag.combo { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.35) }
+    .insp-controls input[type=date] { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); border-radius: var(--r); padding: 4px 8px; font-size: 11px; font-family: var(--mono); color-scheme: dark }
+    .insp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }
+    .insp-chip { font-size: 10px; padding: 3px 9px; border-radius: 12px; border: 1px solid var(--border2); background: var(--bg4); color: var(--text2); cursor: pointer; font-family: var(--font) }
+    .insp-chip:hover, .insp-chip.active { border-color: var(--accent); color: var(--text) }
+    .insp-chip.active { background: rgba(79,142,247,.18) }
+    .insp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+    .insp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 12px; min-width: 0 }
+    .insp-card h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); margin: 0 0 8px; font-weight: 700 }
+    .insp-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; padding: 3px 0; border-bottom: 1px solid rgba(37,48,71,.45) }
+    .insp-row:last-child { border-bottom: none }
+    .insp-row span:first-child { color: var(--text3) }
+    .insp-row span:last-child { font-family: var(--mono); color: var(--text); text-align: right }
+    .insp-verdict { font-size: 11px; line-height: 1.5; color: var(--text2); margin-top: 8px }
+    .insp-years { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px }
+    .insp-yr { font-size: 9px; font-family: var(--mono); padding: 2px 4px; border-radius: 3px; background: var(--bg4); color: var(--text3) }
+    .insp-yr.hit { background: rgba(34,197,94,.18); color: #4ade80 }
+    .insp-yr.miss { background: rgba(239,68,68,.14); color: #f87171 }
+    @media(max-width:1100px) { .insp-grid { grid-template-columns: minmax(0, 1fr) } }
     #cta-size-note { overflow-wrap: anywhere }
     @media(max-width:900px) { .cta-grid { grid-template-columns: minmax(0, 1fr) } }
     .cta-hero {
@@ -1821,6 +1844,11 @@
       <div id="cyc-status"></div>
       <div id="cyc-kpis"></div>
 
+      <div class="chart-panel">
+        <div class="chart-header"><div><div class="chart-title">What the Evidence Says Now</div><div class="chart-sub">Generated from the statistics on this tab; no discretionary view</div></div></div>
+        <div class="cyc-read" id="cyc-read"></div>
+      </div>
+
       <div class="cta-grid">
         <div class="chart-panel span-full">
           <div class="chart-header">
@@ -1891,13 +1919,24 @@
           <div class="chart-container h240"><canvas id="cv-cyc-passage"></canvas></div>
         </div>
 
-        <div class="chart-panel">
+        <div class="chart-panel span-full">
           <div class="chart-header"><div><div class="chart-title">Odds Under Today's Conditions</div><div class="chart-sub" id="cyc-cond-sub">Price rises X% before falling X%: history filtered to conditions that match now</div></div></div>
           <div class="cta-scroll" id="cyc-cond-table"></div>
         </div>
-        <div class="chart-panel">
-          <div class="chart-header"><div><div class="chart-title">What the Evidence Says Now</div><div class="chart-sub">Generated from the statistics on this page; no discretionary view</div></div></div>
-          <div class="cyc-read" id="cyc-read"></div>
+
+        <div class="chart-panel span-full">
+          <div class="chart-header">
+            <div><div class="chart-title">Date Inspector</div><div class="chart-sub">What price did around any date, what the data showed using only reports published by then, and whether the same date behaved the same way in other years</div></div>
+            <div class="chart-actions insp-controls">
+              <input type="date" id="insp-date" onchange="setInspDate(this.value)" aria-label="Date to inspect">
+              <span class="cta-seg">
+                <button class="hm-btn" id="insp-dir-up" onclick="setInspDir('up')" data-tooltip="Test the date as a point of upward pressure (a low before a rise).">Up</button>
+                <button class="hm-btn" id="insp-dir-down" onclick="setInspDir('down')" data-tooltip="Test the date as a point of downward pressure (a high before a fall).">Down</button>
+              </span>
+            </div>
+          </div>
+          <div class="insp-chips" id="insp-chips"></div>
+          <div class="insp-grid" id="insp-body"></div>
         </div>
 
         <div class="chart-panel span-full">
@@ -4586,7 +4625,8 @@
     // Rendered from data/cycle_analysis.json (scripts/update_cycle_analysis.py).
     const CYCLE_MODEL_ID = 'hh_cycle_v1';
     let CYCLE_DATA = null, CYCLE_ERROR = null;
-    let cycMetric = 'cot', cycLevel = '20', cycSource = 'comp_hh_prompt';
+    // NYMEX by default: its 2006+ history is what makes the before/after-2018 test meaningful
+    let cycMetric = 'cot', cycLevel = '20', cycSource = 'nat_gas_nyme';
     chartRanges['cv-cyc-price'] = chartRanges['cv-cyc-price'] || '5Y';
 
     async function loadCycle() {
@@ -4604,7 +4644,7 @@
 
     function setCycMetric(m) { cycMetric = m; setCtaSeg('cyc-met-', m); renderCycEvent(); }
     function setCycLevel(l) { cycLevel = l; setCtaSeg('cyc-lvl-', l); renderCycPassage(); renderCycConditions(); renderCycRead(); }
-    function setCycSource(k) { if (CYCLE_DATA?.positioning?.[k]) { cycSource = k; renderCycEvent(); renderCycScorecard(); renderCycRead(); } }
+    function setCycSource(k) { if (CYCLE_DATA?.positioning?.[k]) { cycSource = k; renderCycEvent(); renderCycScorecard(); renderCycRead(); renderInspector(); } }
     const pctTxt = (v, d = 0) => v == null || isNaN(v) ? '—' : `${(v * 100).toFixed(d)}%`;
     const signedPct = (v, d = 0) => v == null || isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}%`;
     const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -4624,7 +4664,7 @@
       const rng = document.getElementById('rng-cv-cyc-price'); if (rng) rng.innerHTML = rangeControl('cv-cyc-price');
       CHART_RERENDER['cv-cyc-price'] = renderCycPrice;
       renderCycKpis(); renderCycPrice(); renderCycMap(); renderCycSeason(); renderCycEvent(); renderCycPassage();
-      renderCycConditions(); renderCycRead(); renderCycScorecard(); renderCycMethod();
+      renderCycConditions(); renderCycRead(); renderInspector(); renderCycScorecard(); renderCycMethod();
     }
 
     function renderCycKpis() {
@@ -4823,21 +4863,147 @@
       el.innerHTML = `
         <p><span class="cyc-tag ${c.direction === 'up' ? 'yes' : 'no'}">SWING</span>NG is in a <strong>${dirWord}</strong> from the ${pv.type} of <strong>$${fmt(pv.front_price, 3)}</strong> on ${pv.date}: ${signedPct(c.move_pct, 1)} so far over ${Math.round(c.weeks)} weeks (best ${signedPct(c.extreme_move_pct, 1)}). That is longer than ${Math.round(c.duration_pctile)}% of past ${dirPlural} and ${c.amplitude_pctile < 1 ? `smaller than every completed ${dirWord} (median ${signedPct(c.typical_amplitude_pct)})` : `smaller than ${Math.round(100 - c.amplitude_pctile)}% of them`}${c.duration_pctile > 60 && c.amplitude_pctile < 25 ? `: a slow, shallow ${dirWord}` : ''}. ${c.confirm_rule}.</p>
         <p><span class="cyc-tag weak">SEASON</span>Since ${CYCLE_DATA.series.dates[0].slice(0, 4)}, ${MONTH_NAMES[curM]}–${MONTH_NAMES[nxt]} produced ${pk} confirmed peaks and ${tr} troughs. ${pk > tr * 1.5 ? 'Seasonally this is more often a topping window than a bottoming one.' : tr > pk * 1.5 ? 'Seasonally this is more often a bottoming window.' : 'Seasonality gives no clear tilt for these months.'}</p>
-        <p><span class="cyc-tag ${P.current.cot <= 10 || P.current.cot >= 90 ? 'weak' : 'yes'}">FUNDS</span>Managed Money sits at a 3-year COT index of <strong>${Math.round(P.current.cot)}</strong> (Z ${fmtZ(P.current.z)}). ${P.current.cot <= 10 ? `Funds are as short as they get, but in this market that has <strong>not</strong> reliably marked bottoms: crowded-short weeks fell near a trough ${cs ? `${pctTxt(cs.hit_rate)} of the time vs a ${pctTxt(cs.base_rate)} base rate (lift ${cs.lift?.toFixed(2)})` : 'no more often than chance'}. A short squeeze is possible; it is not something the data lets you count on.` : P.current.cot >= 90 ? `Funds are crowded long. This is the one positioning extreme with a measurable record: it fell near a peak ${cl ? `${pctTxt(cl.hit_rate)} of the time vs ${pctTxt(cl.base_rate)} (lift ${cl.lift?.toFixed(2)})` : 'more often than chance'}.` : 'Positioning is not at an extreme.'} ${active.length ? `Active now: ${active.map(r => `${r.label} (lift ${r.lift?.toFixed(2) ?? '—'})`).join('; ')}.` : 'No scorecard signal is active this week.'}</p>
+        <p><span class="cyc-tag ${P.current.cot <= 10 || P.current.cot >= 90 ? 'weak' : 'yes'}">FUNDS</span>Managed Money sits at a 3-year COT index of <strong>${Math.round(P.current.cot)}</strong> (Z ${fmtZ(P.current.z)}). ${P.current.cot <= 10 ? `Funds are as short as they get, but in this market that has <strong>not</strong> reliably marked bottoms: crowded-short weeks fell near a trough ${cs ? `${pctTxt(cs.hit_rate)} of the time vs a ${pctTxt(cs.base_rate)} base rate (lift ${cs.lift?.toFixed(2)})` : 'no more often than chance'}. A short squeeze is possible; it is not something the data lets you count on.` : P.current.cot >= 90 ? `Funds are crowded long. This is the one positioning extreme with a measurable record: it fell near a peak ${cl ? `${pctTxt(cl.hit_rate)} of the time vs ${pctTxt(cl.base_rate)} (lift ${cl.lift?.toFixed(2)})` : 'more often than chance'}.` : 'Positioning is not at an extreme.'} ${active.length ? `Active now: ${active.map(r => `${r.label} (${r.out_of_sample?.lift != null && r.out_of_sample.episodes >= 3 ? `lift ${r.out_of_sample.lift.toFixed(2)}x since ${(CYCLE_DATA.meta.params.oos_split || '2018').slice(0, 4)}` : 'too few recent episodes'})`).join('; ')}.` : 'No scorecard signal is active this week.'}</p>
         <p><span class="cyc-tag ${edge ? 'yes' : 'weak'}">ODDS</span>${verdict} Across all weeks since 2006 the up-first rate is ${pctTxt(base)}${base < 0.48 ? ': on a roll-adjusted basis NG has drifted lower over time (rolling a long position through contango costs money), so a down move first is the slightly more common outcome in general' : ''}.</p>
         <p style="color:var(--text3);font-size:11px">Read this as a map of where the evidence points and how strong it is, not as a forecast. Every number here is historical and the samples behind the conditional odds are small.</p>`;
     }
 
+    function oosVerdict(r) {
+      const ok = x => x && x.lift != null && x.episodes >= 3;
+      const I = r.in_sample, O = r.out_of_sample;
+      if (ok(I) && ok(O)) {
+        if (I.lift >= 1.3 && O.lift >= 1.3) return '<span class="cyc-tag yes">holds out of sample</span>';
+        if (I.lift >= 1.3 && O.lift < 1.3) return '<span class="cyc-tag weak">faded out of sample</span>';
+        if (I.lift < 1.0 && O.lift < 1.0) return '<span class="cyc-tag no">no edge</span>';
+        return '<span class="cyc-tag weak">mixed</span>';
+      }
+      if (ok(O)) return O.lift >= 1.3 ? '<span class="cyc-tag weak">recent data only</span>' : '<span class="cyc-tag no">no edge</span>';
+      return r.weeks_fired ? '<span class="cyc-tag weak">too few episodes</span>' : '<span class="cyc-tag weak">never fired</span>';
+    }
     function renderCycScorecard() {
       const el = document.getElementById('cyc-scorecard'); if (!el || !CYCLE_DATA) return;
       const P = CYCLE_DATA.positioning[cycSource]; if (!P) return;
-      const tag = r => r.lift == null ? '<span class="cyc-tag weak">never fired</span>' : r.lift >= 1.5 ? '<span class="cyc-tag yes">useful</span>' : r.lift >= 1.15 ? '<span class="cyc-tag weak">weak</span>' : '<span class="cyc-tag no">no edge</span>';
-      el.innerHTML = `<table class="cta-table"><thead><tr><th>Signal</th><th>Should mark</th><th>Rule</th><th>Fired (wks / episodes)</th><th>Near the turn</th><th>Base rate</th><th>Lift</th><th>Turns caught</th><th>Verdict</th><th>Now</th></tr></thead><tbody>${
-        P.scorecard.map(r => `<tr><td>${r.label}</td><td>${r.marks}</td><td style="font-family:var(--font);font-size:10px;color:var(--text3);white-space:normal;min-width:180px">${r.rule}</td>
-          <td>${r.weeks_fired} / ${r.episodes}</td><td>${pctTxt(r.hit_rate)}</td><td>${pctTxt(r.base_rate)}</td>
-          <td style="font-weight:700">${r.lift == null ? '—' : r.lift.toFixed(2) + 'x'}</td><td>${r.pivots_caught} / ${r.pivots_total}</td><td>${tag(r)}</td>
+      const split = CYCLE_DATA.meta.params.oos_split || '2018-01-01', yr = split.slice(0, 4);
+      const lf = x => !x || x.lift == null ? '—' : `${x.lift.toFixed(2)}x <span style="color:var(--text3)">(${x.episodes_hit}/${x.episodes})</span>`;
+      el.innerHTML = `<table class="cta-table"><thead><tr><th>Signal</th><th>Should mark</th><th>Rule</th><th>Lift, all years</th><th>Before ${yr}</th><th>${yr} on</th><th>Turns caught</th><th>Verdict</th><th>Now</th></tr></thead><tbody>${
+        P.scorecard.map(r => `<tr><td>${r.label}${r.combination ? ' <span class="cyc-tag combo">combination</span>' : ''}</td><td>${r.marks}</td>
+          <td style="font-family:var(--font);font-size:10px;color:var(--text3);white-space:normal;min-width:180px">${r.rule}</td>
+          <td style="font-weight:700">${r.lift == null ? '—' : r.lift.toFixed(2) + 'x'}</td><td>${lf(r.in_sample)}</td><td>${lf(r.out_of_sample)}</td>
+          <td>${r.pivots_caught} / ${r.pivots_total}</td><td>${oosVerdict(r)}</td>
           <td>${r.active_now ? '<span class="cyc-tag weak">ACTIVE</span>' : `<span style="color:var(--text3)">${r.last_fired || 'never'}</span>`}</td></tr>`).join('')
-      }</tbody></table><div class="cta-note" style="margin-top:6px">"Near the turn": share of firing weeks within 4 weeks of a confirmed ${CYCLE_DATA.meta.params.swing_threshold_pct}% ${'turn'} of the type the signal should mark. Base rate: share of ALL weeks that are that close to such a turn. Lift = ratio; 1.0x means no better than chance. Firing weeks cluster, so "episodes" is the more honest sample size. ${P.label}, ${P.start.slice(0, 4)}–${P.end.slice(0, 4)}.</div>`;
+      }</tbody></table><div class="cta-note" style="margin-top:6px">Lift = how much more often the signal fires within 4 weeks of a confirmed ${CYCLE_DATA.meta.params.swing_threshold_pct}% turn of its type than a random week does (1.0x = chance). Brackets: episodes near a turn / episodes fired. The four <span class="cyc-tag combo">combination</span> signals came from testing 1,104 single and paired conditions across all trader groups on NYMEX data before ${yr}, and were kept only if they also worked on ${yr}–today data they were not chosen on. The "${yr} on" column is the honest test for every signal. ${P.label}, ${P.start.slice(0, 4)}–${P.end.slice(0, 4)}.</div>`;
+    }
+
+    // ── Date Inspector ────────────────────────────────────────────────
+    // Answers "did the data support a move on date X?" with three separate
+    // checks: what price actually did, what the positioning data showed using
+    // only reports published by then (Tuesday positions are released Friday),
+    // and whether the same calendar date behaved the same way in other years.
+    const INSP_PRESETS = [
+      ['2025-12-05', 'down', 'Dec 5 2025 top'], ['2026-01-16', 'up', 'Jan 16 low'], ['2026-01-28', 'down', 'Jan 28 top'],
+      ['2026-03-06', 'down', 'Mar 6'], ['2026-06-04', 'down', 'Jun 4'], ['2026-09-01', 'up', 'Sep 1'],
+      ['2026-09-24', 'down', 'Sep 24'], ['2026-10-12', 'down', 'Oct 12 top'],
+    ];
+    let inspDate = null, inspDir = 'down';
+    function setInspDate(d) { if (d) { inspDate = d; renderInspector(); } }
+    function setInspDir(d) { inspDir = d === 'up' ? 'up' : 'down'; setCtaSeg('insp-dir-', inspDir); renderInspector(); }
+    function setInspPreset(i) { const [d, dir] = INSP_PRESETS[i]; inspDate = d; inspDir = dir; setCtaSeg('insp-dir-', dir); const el = document.getElementById('insp-date'); if (el) el.value = d; renderInspector(); }
+    function binomUpper(k, n, p) { let s = 0; for (let i = k; i <= n; i++) { let c = 1; for (let j = 0; j < i; j++) c = c * (n - j) / (j + 1); s += c * Math.pow(p, i) * Math.pow(1 - p, n - i); } return Math.min(1, s); }
+
+    function renderInspector() {
+      const body = document.getElementById('insp-body'); if (!body || !CYCLE_DATA) return;
+      const S = CYCLE_DATA.series; const sDates = S.dates.map(tsOf);
+      if (!inspDate) inspDate = INSP_PRESETS[INSP_PRESETS.length - 1][0];
+      const dateEl = document.getElementById('insp-date');
+      if (dateEl) { dateEl.value = inspDate; dateEl.min = S.dates[0]; dateEl.max = S.dates[S.dates.length - 1]; }
+      setCtaSeg('insp-dir-', inspDir);
+      const chips = document.getElementById('insp-chips');
+      if (chips) chips.innerHTML = '<span class="cta-note" style="align-self:center;margin-right:2px">Your 2026 dates:</span>' +
+        INSP_PRESETS.map(([d, dir, lbl], i) => `<button class="insp-chip${d === inspDate ? ' active' : ''}" onclick="setInspPreset(${i})">${lbl} (${dir})</button>`).join('');
+      const T = tsOf(inspDate);
+      if (!(T >= sDates[0] && T <= sDates[sDates.length - 1])) { body.innerHTML = `<div class="no-data">Pick a date between ${S.dates[0]} and ${S.dates[S.dates.length - 1]}.</div>`; return; }
+      const want = inspDir, wantTurn = want === 'down' ? 'peak' : 'trough';
+      const idxAt = t => { let lo = 0, hi = sDates.length - 1, a = sDates.length; while (lo <= hi) { const m = (lo + hi) >> 1; if (sDates[m] >= t) { a = m; hi = m - 1; } else lo = m + 1; } return a; };
+
+      // 1) Price
+      // Nearest available close (daily data covers the last ~5 years; earlier dates use weekly closes)
+      let i0 = idxAt(T); if (i0 > 0 && (i0 >= sDates.length || Math.abs(sDates[i0 - 1] - T) < Math.abs(sDates[i0] - T))) i0 -= 1;
+      const mv = k => i0 + k < S.adjusted.length ? (S.adjusted[i0 + k] / S.adjusted[i0] - 1) * 100 : null;
+      const m2 = mv(2), m4 = mv(4);
+      let front = null, frontDate = null;
+      const cp = CTA_DATA?.price;
+      if (cp?.dates?.length && T >= tsOf(cp.dates[0])) { let j = cp.dates.findIndex(d => tsOf(d) >= T); if (j < 0) j = cp.dates.length - 1; front = cp.front[j]; frontDate = cp.dates[j]; }
+      else { front = S.front[i0]; frontDate = S.dates[i0] + ' (weekly close)'; }
+      const near = CYCLE_DATA.pivots.filter(p => Math.abs(tsOf(p.date) - T) <= 21 * 86400000);
+      const nearMatch = near.filter(p => p.type === wantTurn);
+      const moved = m2 == null ? null : want === 'down' ? m2 < 0 : m2 > 0;
+      const priceVerdict = m2 == null ? 'Not enough data after this date yet.' :
+        nearMatch.length ? `<span class="cyc-tag yes">CONFIRMED TURN</span>A confirmed 20% ${wantTurn} on ${nearMatch.map(p => p.date).join(', ')} is within 3 weeks of this date.` :
+        moved && Math.abs(m2) >= 10 ? `<span class="cyc-tag yes">STRONG MOVE</span>Price moved ${want} ${signedPct(m2, 1)} over the next 2 weeks. (It is not a confirmed 20% ${wantTurn} on roll-adjusted prices, usually because an earlier, lower ${want === 'up' ? 'low' : 'high'} still stands once contract-roll costs are removed.)` :
+        moved ? `<span class="cyc-tag weak">MOVED</span>Price moved ${want} over the next 2 weeks (${signedPct(m2, 1)}), but modestly, and no 20% ${wantTurn} formed within 3 weeks.` :
+        `<span class="cyc-tag no">NOT SUPPORTED</span>Price moved ${m2 >= 0 ? 'up' : 'down'} ${signedPct(m2, 1)} over the next 2 weeks.`;
+
+      // 2) Positioning as published by the date
+      const src = CYCLE_DATA.positioning[cycSource]; const H = src?.history;
+      let posHtml = '<div class="no-data">No positioning history for this source.</div>';
+      if (H?.dates?.length) {
+        let k = -1; for (let j = H.dates.length - 1; j >= 0; j--) { if (tsOf(H.dates[j]) + 3 * 86400000 <= T) { k = j; break; } }
+        if (k < 0) posHtml = `<div class="no-data">No report published before this date (history starts ${H.dates[0]}).</div>`;
+        else {
+          const sc = Object.fromEntries(src.scorecard.map(r => [r.key, r]));
+          // Signals active in any of the last 4 published reports (the scorecard counts a
+          // signal as near a turn within 4 weeks, so the inspector uses the same window)
+          const lastFired = {};
+          for (let j = Math.max(0, k - 3); j <= k; j++) Object.entries(H.signals).forEach(([key, arr]) => { if (arr[j] === 1) lastFired[key] = H.dates[j]; });
+          const act = Object.keys(lastFired).map(key => ({ ...sc[key], firedOn: lastFired[key] })).filter(r => r.key);
+          const rel = act.filter(r => (want === 'down' ? r.marks === 'peak' : r.marks === 'trough'));
+          const opp = act.filter(r => !rel.includes(r));
+          const oosTxt = r => r.out_of_sample?.lift != null && r.out_of_sample.episodes >= 3 ? `OOS lift ${r.out_of_sample.lift.toFixed(2)}x` : 'too few out-of-sample episodes';
+          const verdict = rel.length ? `<span class="cyc-tag ${rel.some(r => (r.out_of_sample?.lift ?? 0) >= 1.3) ? 'yes' : 'weak'}">FLAGGED</span>${rel.map(r => `${r.label}, report ${r.firedOn} (${oosTxt(r)})`).join('; ')}.`
+            : `<span class="cyc-tag no">NOT FLAGGED</span>No ${want === 'down' ? 'peak' : 'trough'} signal in the last 4 reports published before this date.${(H.spec_cot[k] ?? 50) <= 10 && want === 'down' ? ' Speculators were already near their most short in 3 years, so the peak signals (which need speculators long or buying) could not fire.' : ''}`;
+          posHtml = `
+            <div class="insp-row"><span>Report used (published ${new Date(tsOf(H.dates[k]) + 3 * 86400000).toISOString().slice(0, 10)})</span><span>${H.dates[k]}</span></div>
+            <div class="insp-row"><span>Managed Money COT (3y) / Z</span><span>${Math.round(H.mm_cot[k] ?? NaN)} / ${fmtZ(H.mm_z[k])}</span></div>
+            <div class="insp-row"><span>MM 2-week flow / 4w flow z</span><span>${fmtChg(H.mm_flow2[k])} / ${fmtZ(H.mm_flow4z[k])}</span></div>
+            <div class="insp-row"><span>Speculators (MM + Other) COT</span><span>${Math.round(H.spec_cot[k] ?? NaN)}</span></div>
+            <div class="insp-row"><span>Producers COT / Small traders COT</span><span>${Math.round(H.prod_cot[k] ?? NaN)} / ${Math.round(H.nonrept_cot[k] ?? NaN)}</span></div>
+            <div class="insp-verdict">${verdict}${opp.length ? `<br><span style="color:var(--text3)">Also active (pointing the other way): ${opp.map(r => r.label).join('; ')}.</span>` : ''}</div>`;
+        }
+      }
+
+      // 3) Same calendar date in other years (roll-adjusted, 2-week direction vs base rate)
+      const md = inspDate.slice(5), selYear = +inspDate.slice(0, 4);
+      const ups = []; for (let j = 0; j + 2 < S.adjusted.length; j++) ups.push(S.adjusted[j + 2] > S.adjusted[j]);
+      const baseUp = ups.filter(Boolean).length / ups.length;
+      const p0 = want === 'up' ? baseUp : 1 - baseUp;
+      const yrs = [];
+      for (let y = +S.dates[0].slice(0, 4); y <= +S.dates[S.dates.length - 1].slice(0, 4); y++) {
+        if (y === selYear) continue;
+        const t = tsOf(`${y}-${md}`); if (t < sDates[0]) continue;
+        const j = idxAt(t); if (j + 2 >= S.adjusted.length) continue;
+        const r = (S.adjusted[j + 2] / S.adjusted[j] - 1) * 100; const ok = want === 'down' ? r < 0 : r > 0;
+        const turn = CYCLE_DATA.pivots.some(p => p.type === wantTurn && Math.abs(tsOf(p.date) - t) <= 21 * 86400000);
+        yrs.push({ y, r, ok, turn });
+      }
+      const k2 = yrs.filter(o => o.ok).length, n2 = yrs.length, pv = n2 ? binomUpper(k2, n2, p0) : 1;
+      const turns = yrs.filter(o => o.turn).length;
+      const seasonVerdict = !n2 ? 'No comparable years.' : pv < 0.01 ? `<span class="cyc-tag yes">RECURRING</span>` : pv < 0.1 ? `<span class="cyc-tag weak">SUGGESTIVE</span>` : `<span class="cyc-tag no">NO PATTERN</span>`;
+      body.innerHTML = `
+        <div class="insp-card"><h4>1. What price did</h4>
+          <div class="insp-row"><span>Front month on ${frontDate}</span><span>$${fmt(front, 3)}</span></div>
+          <div class="insp-row"><span>Next 2 weeks (roll-adjusted)</span><span style="color:${posNegColour(m2)}">${signedPct(m2, 1)}</span></div>
+          <div class="insp-row"><span>Next 4 weeks (roll-adjusted)</span><span style="color:${posNegColour(m4)}">${signedPct(m4, 1)}</span></div>
+          <div class="insp-row"><span>20% turns within 3 weeks</span><span>${near.length ? near.map(p => `${p.type} ${p.date}`).join(', ') : 'none'}</span></div>
+          <div class="insp-verdict">${priceVerdict}</div></div>
+        <div class="insp-card"><h4>2. Positioning as published (${src?.label?.split(' (')[0] || ''})</h4>${posHtml}</div>
+        <div class="insp-card"><h4>3. Same date in other years</h4>
+          <div class="insp-row"><span>Moved ${want} over next 2 weeks</span><span>${k2} of ${n2} years</span></div>
+          <div class="insp-row"><span>Typical rate for any 2 weeks</span><span>${pctTxt(p0)}</span></div>
+          <div class="insp-row"><span>Chance of ${k2}+ by luck (one-sided)</span><span>${pv < 0.001 ? '<0.001' : pv.toFixed(3)}</span></div>
+          <div class="insp-row"><span>Years with a 20% ${wantTurn} within 3 weeks</span><span>${turns} of ${n2}</span></div>
+          <div class="insp-verdict">${seasonVerdict}${n2 ? ` ${(k2 / n2 * 100).toFixed(0)}% vs ${pctTxt(p0)} typical.${pv >= 0.01 && pv < 0.1 ? ' Not strong enough to rely on, especially when several dates are checked.' : ''}` : ''}</div>
+          <div class="insp-years">${yrs.map(o => `<span class="insp-yr ${o.ok ? 'hit' : 'miss'}" title="${o.y}: ${signedPct(o.r, 1)}${o.turn ? ', ' + wantTurn + ' nearby' : ''}">${String(o.y).slice(2)}${o.turn ? '*' : ''}</span>`).join('')}</div>
+          <div class="cta-note" style="margin-top:4px">Green = moved ${want}; * = a 20% ${wantTurn} within 3 weeks.</div></div>`;
     }
 
     function renderCycMethod() {

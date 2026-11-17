@@ -52,9 +52,11 @@ Event-based analysis of where Henry Hub sits in its swing cycle and whether posi
 - **Fund positioning around turns**: event study of the Managed Money COT index and 4-week flow, 12 weeks either side of each turn.
 - **Which way moves resolve**: share of weeks where price rose X% before falling X% (first passage), by month and under today's conditions, with overlap-adjusted intervals.
 - **Signal scorecard**: every positioning signal judged as a turning-point detector (hit rate vs base rate, lift, turns caught).
-- **What the evidence says now**: a generated summary of the above, including when the data does not support a directional call.
+- **What the evidence says now**: a generated summary at the top of the tab, including when the data does not support a directional call.
+- **Date Inspector**: pick any date to see what price did afterwards, what the positioning data showed using only reports published by then (CFTC releases Tuesday positions on Friday), which signals were active, and whether the same calendar date behaved the same way in other years (tested against the drift-adjusted base rate).
+- **Signal scorecard with out-of-sample test**: every signal shows its lift before and after 2018. Four cross-group combination signals were found by testing 1,104 single and paired conditions across all trader groups (selected on 2009–2017, kept only if they held on 2018+): speculators crowded long and selling, producers heavily short while speculators buy, a Managed Money surge while Other Reportables sell (peaks), and small traders crowded short (troughs).
 
-Key findings from the data: Managed Money is a coincident trend follower (weekly flows track same-week price, r about +0.4, and do not lead it). Crowded long positioning has marked peaks about 1.7-1.9x more often than chance, while crowded short has NOT reliably marked troughs. Producers, swap dealers, Other Reportables and non-reportables show no relationship with turns.
+Key findings from the data: Managed Money is a coincident trend follower (weekly flows track same-week price, r about +0.4, and do not lead it). Managed Money crowded short has NOT marked troughs in either period. Single-group signals are weak, but cross-group combinations hold out of sample (lift roughly 1.8-2.1x on NYMEX, 2018+). Several older single-group signals faded after 2018 and are labelled as such. Early September is the only calendar window with a statistically robust recurring move (up in 15 of 19 years).
 
 ### CTA & Flows Tab
 Dollar-sized positioning plus a daily trend-follower (CTA) model for Henry Hub.

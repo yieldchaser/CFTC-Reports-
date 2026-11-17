@@ -31,8 +31,11 @@ jobs:
       - name: Install dependencies
         run: pip install requests pandas numpy
 
+      # Each model may fail independently (e.g. a price-feed hiccup); the other
+      # still commits, and the dashboard shows a stale banner for the failed one.
       - name: Run CTA model
         id: cta
+        continue-on-error: true
         run: python scripts/update_cta_model.py
 
       # Swing state (current swing, confirmation level) moves with daily prices
@@ -40,6 +43,16 @@ jobs:
         id: cycle
         continue-on-error: true
         run: python scripts/update_cycle_analysis.py
+
+      - name: Install Node (headless UI audit)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Same quality gate as the weekly workflow: nothing is committed if any
+      # output (or the UI rendering it) fails validation.
+      - name: Run Quantitative Parity Audit
+        run: python scripts/run_quantitative_parity_audit.py
 
       - name: Commit and push
         if: steps.cta.outputs.cta_changed == 'true' || steps.cycle.outputs.cycle_changed == 'true'
