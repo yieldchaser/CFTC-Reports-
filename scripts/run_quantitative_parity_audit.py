@@ -400,6 +400,7 @@ def run_suite_4_ui_rendering(data: dict):
     const rawData = fs.readFileSync('data/cftc_processed.json', 'utf8');
     const cftcData = JSON.parse(rawData);
     const ctaData = fs.existsSync('data/cta_model.json') ? JSON.parse(fs.readFileSync('data/cta_model.json', 'utf8')) : null;
+    const cycData = fs.existsSync('data/cycle_analysis.json') ? JSON.parse(fs.readFileSync('data/cycle_analysis.json', 'utf8')) : null;
     const html = fs.readFileSync('index.html', 'utf8');
     const scriptStart = html.indexOf('<script>');
     const scriptEnd = html.lastIndexOf('</script>');
@@ -478,9 +479,10 @@ def run_suite_4_ui_rendering(data: dict):
       update() {}
     };
 
-    global.fetch = async (url) => String(url).includes('cta_model.json')
-      ? (ctaData ? { ok: true, status: 200, json: async () => ctaData } : { ok: false, status: 404, json: async () => ({}) })
-      : { ok: true, status: 200, json: async () => cftcData };
+    const respond = (d) => d ? { ok: true, status: 200, json: async () => d } : { ok: false, status: 404, json: async () => ({}) };
+    global.fetch = async (url) => String(url).includes('cta_model.json') ? respond(ctaData)
+      : String(url).includes('cycle_analysis.json') ? respond(cycData)
+      : respond(cftcData);
 
     const bridge = `
       global.loadData = loadData;
@@ -499,6 +501,9 @@ def run_suite_4_ui_rendering(data: dict):
       global.renderCtaHeroStrip = renderCtaHeroStrip;
       global.usdSeries = usdSeries;
       global.getCTA = () => CTA_DATA;
+      global.loadCycle = loadCycle;
+      global.renderCycles = renderCycles;
+      global.getCycle = () => CYCLE_DATA;
     `;
 
     (async () => {
@@ -532,6 +537,9 @@ def run_suite_4_ui_rendering(data: dict):
         const usd = global.usdSeries('comp_hh_prompt', 'managed_money', 'net');
         if (!usd.dates.length || !usd.values.every(Number.isFinite)) throw new Error('usdSeries produced no finite values');
         console.log("CTA_RENDER_SUCCESS:" + (global.getCTA() ? 'model' : 'nomodel'));
+        await global.loadCycle();
+        global.renderCycles();
+        console.log("CYCLE_RENDER_SUCCESS:" + (global.getCycle() ? 'model' : 'nomodel'));
       } catch (e) {
         console.error("HEADLESS_RENDER_ERROR:" + e.stack);
         process.exit(1);
@@ -562,6 +570,9 @@ def run_suite_4_ui_rendering(data: dict):
     cta_ok = "CTA_RENDER_SUCCESS:" in output
     log_test(suite, "Headless CTA & Flows Tab Render (with dollar sizing)", cta_ok,
              "renderCTA() + usdSeries() executed without errors")
+
+    log_test(suite, "Headless Cycles & Signals Tab Render", "CYCLE_RENDER_SUCCESS:" in output,
+             "renderCycles() executed without errors")
 
     # 4.4 Verified DOM Structure & Containers
     has_inst_desc = 'id="instrument-description"' in html
@@ -645,6 +656,46 @@ def run_suite_5_cta_model():
              f"method={cal.get('method')} K={cal.get('k_usd_bn_per_unit')} corr={cal.get('corr')} n={cal.get('n_obs')}")
 
 
+def run_suite_6_cycle_analysis():
+    print("\n" + "=" * 75)
+    print("SUITE 6: SWING-CYCLE ANALYSIS INTEGRITY AUDIT")
+    print("=" * 75)
+    suite = "Suite 6: Cycle Analysis"
+    path = "data/cycle_analysis.json"
+    if not os.path.exists(path):
+        print("  [SKIP] data/cycle_analysis.json not generated yet")
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    log_test(suite, "Cycle JSON Free of NaN/Infinity", "NaN" not in raw and "Infinity" not in raw, "")
+    m = json.loads(raw)
+    log_test(suite, "Cycle Model Identifier", m.get("meta", {}).get("model") == "hh_cycle_v1", "")
+    piv = m.get("pivots", [])
+    alt = all(piv[i]["type"] != piv[i + 1]["type"] for i in range(len(piv) - 1))
+    ordered = all(piv[i]["date"] < piv[i + 1]["date"] for i in range(len(piv) - 1))
+    log_test(suite, "Pivots Alternate Trough/Peak in Date Order", len(piv) >= 20 and alt and ordered, f"{len(piv)} pivots")
+    th = m["meta"]["params"]["swing_threshold_pct"]
+    sw = [abs(p["swing_pct"]) for p in piv if p.get("swing_pct") is not None]
+    log_test(suite, "Every Completed Swing Meets the Reversal Threshold", all(x >= th - 1e-6 for x in sw),
+             f"min swing {min(sw):.1f}% vs threshold {th}%" if sw else "no swings")
+    lag_ok = all(p["confirmed"] >= p["date"] for p in piv)
+    log_test(suite, "Confirmation Never Precedes the Pivot (no look-ahead)", lag_ok, "")
+    c = m.get("current", {})
+    d = c.get("direction")
+    conf_ok = (d == "up" and c["confirm_level"] < c["extreme_level"]) or (d == "down" and c["confirm_level"] > c["extreme_level"])
+    log_test(suite, "Current Swing Confirmation Level Consistent", conf_ok,
+             f"{d}: extreme {c.get('extreme_level')}, confirm at {c.get('confirm_level')}")
+    ok_p = True
+    for lvl, fp in m.get("first_passage", {}).items():
+        for r in fp["by_month"] + list(fp["conditions"].values()):
+            if r.get("n"):
+                if not (0 <= r["p_up_first"] <= 1 and r["ci"][0] <= r["p_up_first"] <= r["ci"][1]):
+                    ok_p = False
+    log_test(suite, "First-Passage Probabilities in [0,1] Inside Their Intervals", ok_p, "")
+    sc_ok = all(isinstance(p.get("scorecard"), list) and len(p["scorecard"]) >= 6 for p in m.get("positioning", {}).values())
+    log_test(suite, "Signal Scorecards Present for Each Positioning Source", sc_ok and len(m.get("positioning", {})) >= 1, "")
+
+
 def main():
     print("=" * 75)
     print("BLUE PULSE CFTC PLATFORM: QUANTITATIVE AUDIT & RECONCILIATION")
@@ -662,6 +713,7 @@ def main():
     run_suite_3_schema_guardrails(data)
     run_suite_4_ui_rendering(data)
     run_suite_5_cta_model()
+    run_suite_6_cycle_analysis()
 
     print("\n" + "=" * 75)
     print("AUDIT SUMMARY REPORT")

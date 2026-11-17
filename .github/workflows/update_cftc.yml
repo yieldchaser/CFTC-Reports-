@@ -56,6 +56,11 @@ jobs:
         continue-on-error: true
         run: python scripts/update_cta_model.py
 
+      - name: Refresh cycle analysis
+        if: steps.pipeline.outputs.new_data == 'true'
+        continue-on-error: true
+        run: python scripts/update_cycle_analysis.py
+
       - name: Commit and push
         if: steps.pipeline.outputs.new_data == 'true'
         run: |
@@ -63,6 +68,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/cftc_processed.json
           if [ -f data/cta_model.json ]; then git add data/cta_model.json; fi
+          if [ -f data/cycle_analysis.json ]; then git add data/cycle_analysis.json; fi
           git diff --staged --quiet && exit 0
           git commit -m "chore: update CFTC data $(date -u +%Y-%m-%d)"
           for i in 1 2 3; do
