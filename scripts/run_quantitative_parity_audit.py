@@ -149,9 +149,17 @@ def run_suite_1_bloomberg_parity(data: dict):
     prompt_df = pd.DataFrame({"date": pd.to_datetime(prompt_dates), "short": prompt_spec_s})
     prompt_2024_max = prompt_df[prompt_df["date"].dt.year == 2024]["short"].max()
     prompt_2026_max = prompt_df[prompt_df["date"].dt.year == 2026]["short"].max()
-    log_test(suite, "Macro Prompt Composite Scale Reconciliation", True,
-             f"comp_hh_prompt 2024 peak: {prompt_2024_max:,.0f}, 2026 peak: {prompt_2026_max:,.0f}. "
-             f"Reconciled: Prompt composite is ~3x outright NYMEX due to integration of cleared swaps (LD1, ICE PEN).")
+    # Composite is NYMEX-equivalent: each component scaled by contract size / 10,000 MMBtu
+    comp = insts["comp_hh_prompt"]
+    scale = comp.get("component_scale", {})
+    comp_dates = comp["dates"]
+    expected = np.zeros(len(comp_dates))
+    for k, f in scale.items():
+        expected += pd.Series(insts[k]["total_speculative"]["short"], index=insts[k]["dates"]).reindex(comp_dates).values * f
+    diff = float(np.nanmax(np.abs(expected - np.array(prompt_spec_s, dtype=float)))) if scale else float("inf")
+    log_test(suite, "Prompt Composite NYMEX-Equivalent Reconciliation", diff <= 1e-3,
+             f"2024 peak {prompt_2024_max:,.0f}, 2026 peak {prompt_2026_max:,.0f} NYMEX-eq contracts; "
+             f"scaled component sum max |diff| = {diff:.4f} (scales: {scale})")
 
 
 # ==============================================================================
@@ -189,10 +197,11 @@ def run_suite_2_option_delta_integrity(data: dict):
     prompt_dates = insts["comp_hh_prompt"]["dates"]
     mm_expected = np.zeros(len(prompt_dates), dtype=float)
     spec_expected = np.zeros(len(prompt_dates), dtype=float)
-    for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]:
+    scale = insts["comp_hh_prompt"].get("component_scale") or {k: 1.0 for k in ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]}
+    for k, f in scale.items():
         k_dates = insts[k]["dates"]
-        mm_expected += pd.Series(insts[k]["managed_money"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values
-        spec_expected += pd.Series(insts[k]["total_speculative"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values
+        mm_expected += pd.Series(insts[k]["managed_money"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values * f
+        spec_expected += pd.Series(insts[k]["total_speculative"]["option_delta_net"], index=k_dates).reindex(prompt_dates).fillna(0).values * f
 
     mm_actual = np.array(insts["comp_hh_prompt"]["managed_money"]["option_delta_net"], dtype=float)
     mm_diff = float(np.max(np.abs(mm_expected - mm_actual)))
@@ -219,8 +228,9 @@ def run_suite_3_schema_guardrails(data: dict):
 
     # 3.1 Instrument Count
     total_inst_count = len(insts)
-    log_test(suite, "Total Instrument Count == 15", total_inst_count == 15,
-             f"Found {total_inst_count} instruments (13 physical/cleared swaps/basis + 2 composites)")
+    n_comp = sum(1 for k in insts if k.startswith("comp_"))
+    log_test(suite, "Instrument Universe (>= 15, incl. 2 composites)", total_inst_count >= 15 and n_comp == 2,
+             f"Found {total_inst_count} instruments ({total_inst_count - n_comp} markets + {n_comp} composites)")
 
     # 3.2 Array Length Uniformity
     trader_keys = ["managed_money", "swap_dealers", "producers", "other_reportables", "non_reportables", "total_speculative"]
@@ -267,6 +277,13 @@ def run_suite_3_schema_guardrails(data: dict):
             bad_date_insts.append(k)
     log_test(suite, "Chronological & Unique Date Ordering", dates_ordered_ok,
              "All instruments strictly chronological without duplicate dates" if dates_ordered_ok else f"Issues in: {bad_date_insts}")
+
+    # 3.2c Price alignment is weekly-fresh (guards against a coarse/monthly price feed)
+    ny = insts["nat_gas_nyme"]
+    recent_px = [p for p in ny["price"][-12:] if p is not None]
+    distinct = len(set(recent_px))
+    log_test(suite, "Report-Date Prices Are Weekly-Fresh", distinct >= 8,
+             f"{distinct} distinct prices across the last {len(recent_px)} report dates (monthly feed would give ~3)")
 
     # 3.3 Strict JSON Numerical Literal Validation (No JSON NaN / Infinity constants)
     with open(DATA_PATH, "r", encoding="utf-8") as f:
@@ -333,7 +350,7 @@ def run_suite_3_schema_guardrails(data: dict):
     matrix_insts = corr.get("instruments", [])
     matrix = corr.get("matrix", [])
     dim = len(matrix_insts)
-    is_matrix_valid = (dim == 7 and len(matrix) == 7 and all(len(row) == 7 for row in matrix))
+    is_matrix_valid = (dim >= 7 and len(matrix) == dim and all(len(row) == dim for row in matrix))
 
     diag_ok = all(matrix[i][i] == 1.0 for i in range(dim))
     symm_ok = True
@@ -347,7 +364,7 @@ def run_suite_3_schema_guardrails(data: dict):
                 if matrix[j][i] is not None and abs(val - matrix[j][i]) > 1e-4:
                     symm_ok = False
 
-    log_test(suite, "Correlation Matrix Mathematical Properties (7x7, Diag=1, Symm, [-1,1])",
+    log_test(suite, "Correlation Matrix Mathematical Properties (NxN, Diag=1, Symm, [-1,1])",
              (is_matrix_valid and diag_ok and symm_ok and range_ok),
              f"Dim={dim}x{dim}, Diag=1.0: {diag_ok}, Symmetric: {symm_ok}, Range valid: {range_ok}")
 
@@ -506,7 +523,7 @@ def run_suite_4_ui_rendering(data: dict):
             renderedCount++;
           }
         }
-        console.log("HEADLESS_RENDER_SUCCESS:" + renderedCount);
+        console.log("HEADLESS_RENDER_SUCCESS:" + renderedCount + ":" + keys.length);
 
         // CTA & Flows tab: render with and without the model file present
         await global.loadCTA();
@@ -529,8 +546,12 @@ def run_suite_4_ui_rendering(data: dict):
     try:
         res = subprocess.run(["node", node_test_path], capture_output=True, text=True, timeout=30)
         output = res.stdout + res.stderr
-        success = ("HEADLESS_RENDER_SUCCESS:90" in output)
-        log_test(suite, "Headless Node.js UI Render Validation (90 Views Checked)", success,
+        import re as _re
+        m_ok = _re.search(r"HEADLESS_RENDER_SUCCESS:(\d+):(\d+)", output)
+        ui_keys = int(m_ok.group(2)) if m_ok else 0
+        expected_views = 6 * ui_keys
+        success = bool(m_ok) and int(m_ok.group(1)) == expected_views and ui_keys >= len(data["instruments"])
+        log_test(suite, f"Headless Node.js UI Render Validation ({expected_views} Views Checked)", success,
                  f"Process exit code: {res.returncode}. Output: {output.strip()}")
     except Exception as e:
         log_test(suite, "Headless Node.js UI Render Validation", False, f"Exception: {e}")
