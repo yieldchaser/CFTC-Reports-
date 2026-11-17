@@ -29,8 +29,8 @@ Model choices, stated plainly so they can be challenged:
   * Exposure = mean(signals) * (vol_target / realized_vol_60d).
   * Dollar scale K: OLS slope of weekly CFTC MM net $ on model exposure over
     the last 156 weeks (the intercept soaks up NG's structural MM short, which
-    is not trend-driven). If the fit is weak (corr < 0.2 or slope <= 0) a
-    dispersion match (std ratio) is used instead; the method is in the JSON.
+    is not trend-driven). Only if the slope is <= 0 is a dispersion match (std
+    ratio) used instead. Fit quality (corr) is published and shown in the UI.
   * Projections hold volatility at its as-of estimate (a smooth scenario path
     would otherwise shrink realized vol and inflate leverage).
 """
@@ -218,10 +218,14 @@ def calibrate(exposure: pd.Series, target: pd.Series) -> dict:
     sx, sy = float(np.std(x)), float(np.std(y))
     corr = float(np.corrcoef(x, y)[0, 1]) if sx > 0 and sy > 0 else 0.0
     slope = corr * sy / sx if sx > 0 else 0.0
-    if slope > 0 and corr >= 0.2:
+    # A weak positive slope is still the unbiased estimate of $ per unit of trend
+    # exposure. Matching dispersion would assign ALL Managed Money variance to
+    # trend-following and overstate CTA flows several-fold when the fit is weak
+    # (it does in NG: much of MM is structural/discretionary). Dispersion
+    # matching is used only when the slope is non-positive.
+    if slope > 0:
         k, method = slope, "ols_slope"
     else:
-        # Weak/negative fit: match dispersion so the $ scale is still realistic
         k, method = (sy / sx if sx > 0 else 0.0), "dispersion_match"
     info.update({"method": method, "k_usd_bn_per_unit": k, "corr": corr, "r2": corr ** 2,
                  "intercept_usd_bn": float(y.mean() - k * x.mean()),
