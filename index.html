@@ -1360,6 +1360,94 @@
       text-align: center
     }
 
+    /* === CTA & Flows tab === */
+    .cta-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+    .cta-controls label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-weight: 600
+    }
+    .cta-seg {
+      display: inline-flex;
+      gap: 3px
+    }
+    .cta-note {
+      font-size: 10px;
+      color: var(--text3);
+      line-height: 1.5
+    }
+    .cta-note strong { color: var(--text2) }
+    .cta-table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      font-size: 11px;
+      font-family: var(--mono)
+    }
+    .cta-table th {
+      font-family: var(--font);
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      text-align: right;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: default
+    }
+    .cta-table th:first-child, .cta-table td:first-child { text-align: left }
+    .cta-table td {
+      text-align: right;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(37, 48, 71, .5);
+      white-space: nowrap
+    }
+    .cta-table tr:last-child td { border-bottom: none }
+    .cta-swatch {
+      display: inline-block;
+      width: 10px;
+      height: 3px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 6px
+    }
+    .cta-scroll { overflow-x: auto; max-width: 100% }
+    .cta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px
+    }
+    .cta-grid > .chart-panel, #panel-cta > * { min-width: 0 }
+    #cta-size-note { overflow-wrap: anywhere }
+    @media(max-width:900px) { .cta-grid { grid-template-columns: minmax(0, 1fr) } }
+    .cta-hero {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color .2s
+    }
+    .cta-hero:hover { border-color: var(--accent) }
+    .cta-method summary {
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2)
+    }
+    .cta-method ul { margin: 8px 0 0 16px }
+    .cta-method li { margin-bottom: 4px }
+
     /* === Responsive === */
     /* ── Tablet (≤ 900px) ──────────────────────────────────────── */
     @media(max-width:900px) {
@@ -1490,6 +1578,7 @@
     <button class="tab-btn active" id="tab-overview" onclick="switchTab('overview')" role="tab" data-tooltip="High-level dashboard with top signals, heatmaps, and weekly positioning summary across all variants.">Overview</button>
     <button class="tab-btn" id="tab-instrument" onclick="switchTab('instrument')" role="tab" data-tooltip="Detailed time-series positioning charts and momentum metrics for individual natural gas variants.">By Instrument</button>
     <button class="tab-btn" id="tab-three" onclick="switchTab('three')" role="tab" data-tooltip="Comparative view displaying multiple trader categories side-by-side for a specific instrument.">Multi-Trader View</button>
+    <button class="tab-btn" id="tab-cta" onclick="switchTab('cta')" role="tab" data-tooltip="Dollar-sized positioning (Managed Money net, PMPU gross) plus a daily CTA trend model: momentum thresholds, flip levels and 1-month conditional flow projections.">CTA &amp; Flows</button>
   </div>
 
   <div class="toolbar">
@@ -1522,6 +1611,7 @@
       <!-- Top Signals & Macro Regime Banner -->
       <div id="top-signals-banner" style="margin-bottom:12px">
         <div id="macro-regime-hero"></div>
+        <div id="cta-hero-strip"></div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px">
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center">
             <svg class="icon-svg" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-1px;margin-right:4px"><polygon points="8,1 3,9 8,9 7,15 13,7 8,7"/></svg>Top Actionable Signals This Week</div>
@@ -1666,6 +1756,112 @@
         <button class="toggle-btn" id="btn-sort-name" onclick="setThreeSort('name')" data-tooltip="Sort instruments alphabetically.">A–Z</button>
       </div>
       <div id="three-trader-grid" class="three-grid"></div>
+    </div>
+
+    <!-- CTA & FLOWS TAB -->
+    <div id="panel-cta" class="tab-panel">
+      <div id="cta-status"></div>
+      <div id="cta-kpis"></div>
+
+      <div class="section-title" data-tooltip="CFTC positions converted to dollar notional: contracts x contract size (MMBtu, from CFTC contract_units) x Henry Hub front-month price. Unlike raw contract counts this is comparable across NYMEX (10,000 MMBtu) and ICE (2,500 MMBtu) contracts and across price regimes.">Dollar Positioning</div>
+      <div class="chart-panel" style="padding:10px 13px">
+        <div class="cta-controls">
+          <label for="cta-inst">Market</label>
+          <select id="cta-inst" onchange="setCtaInst(this.value)"></select>
+          <span id="cta-size-note" class="cta-note"></span>
+        </div>
+      </div>
+      <div class="cta-grid">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title" id="cta-pos-title">Managed Money Net Length ($bn)</div><div class="chart-sub" id="cta-pos-sub"></div></div>
+            <div class="chart-actions">
+              <select id="cta-pos-trader" onchange="setCtaPosTrader(this.value)" data-tooltip="Trader category to dollarise.">
+                <option value="managed_money">Managed Money</option>
+                <option value="total_speculative">Total Spec (MM + Other)</option>
+                <option value="other_reportables">Other Reportables</option>
+                <option value="swap_dealers">Swap Dealers</option>
+                <option value="producers">Producers / Merchants</option>
+              </select>
+              <button class="reset-zoom-btn" onclick="resetChartZoom('cv-cta-pos')" data-tooltip="Reset chart zoom and pan to default view.">Reset</button>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div><span id="cta-pos-leg">MM Net ($bn)</span></div>
+            <div class="leg-item"><div class="leg-line" style="background:#fbbf24"></div>NG Price (front month)</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cta-pos"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title" id="cta-pmpu-title">PMPU Gross Longs ($bn)</div><div class="chart-sub">Producer / Merchant / Processor / User &middot; physical hedgers</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn active" id="cta-pmpu-long" onclick="setCtaPmpuSide('long')" data-tooltip="Gross long positions of commercial hedgers (consumers, utilities, LNG buyers locking in supply).">Longs</button>
+                <button class="hm-btn" id="cta-pmpu-short" onclick="setCtaPmpuSide('short')" data-tooltip="Gross short positions of commercial hedgers (producers locking in sales).">Shorts</button>
+              </span>
+              <button class="reset-zoom-btn" onclick="resetChartZoom('cv-cta-pmpu')" data-tooltip="Reset chart zoom and pan to default view.">Reset</button>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div><span id="cta-pmpu-leg">PMPU Gross Longs ($bn)</span></div>
+            <div class="leg-item"><div class="leg-line" style="background:#fbbf24"></div>NG Price (front month)</div>
+          </div>
+          <div class="chart-container h240"><canvas id="cv-cta-pmpu"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title" data-tooltip="Daily trend-following (CTA) model on roll-adjusted Henry Hub front-month prices. Recomputed every weekday after NYMEX settlement and re-calibrated after every CFTC report.">CTA Trend Model &mdash; Henry Hub</div>
+      <div class="cta-grid">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">CTA Momentum Thresholds (%)</div><div class="chart-sub">Price distance above (+) / below (&minus;) each horizon's trend reference. Crossing 0 flips that horizon's signal.</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn" id="cta-thr-126" onclick="setCtaThrRange(126)">6m</button>
+                <button class="hm-btn active" id="cta-thr-252" onclick="setCtaThrRange(252)">1y</button>
+                <button class="hm-btn" id="cta-thr-0" onclick="setCtaThrRange(0)">3y</button>
+              </span>
+              <button class="reset-zoom-btn" onclick="resetChartZoom('cv-cta-thr')" data-tooltip="Reset chart zoom and pan to default view.">Reset</button>
+            </div>
+          </div>
+          <div class="chart-legend" id="cta-thr-legend"></div>
+          <div class="chart-container h240"><canvas id="cv-cta-thr"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div><div class="chart-title">1m Conditional Projections ($bn)</div><div class="chart-sub">Simulated CTA net length: realized path, then 21 sessions forward under five price scenarios</div></div>
+            <div class="chart-actions">
+              <span class="cta-seg">
+                <button class="hm-btn active" id="cta-hist-63" onclick="setCtaProjHist(63)">3m</button>
+                <button class="hm-btn" id="cta-hist-126" onclick="setCtaProjHist(126)">6m</button>
+                <button class="hm-btn" id="cta-hist-252" onclick="setCtaProjHist(252)">1y</button>
+              </span>
+              <button class="reset-zoom-btn" onclick="resetChartZoom('cv-cta-proj')" data-tooltip="Reset chart zoom and pan to default view.">Reset</button>
+            </div>
+          </div>
+          <div class="chart-legend" id="cta-proj-legend"></div>
+          <div class="chart-container h240"><canvas id="cv-cta-proj"></canvas></div>
+        </div>
+      </div>
+
+      <div class="cta-grid">
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">Signal Flip Levels</div><div class="chart-sub">Front-month price at which each horizon turns</div></div></div>
+          <div class="cta-scroll" id="cta-levels-table"></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-header"><div><div class="chart-title">Scenario Flow Table</div><div class="chart-sub">Where the model ends after 21 sessions, and the implied 1-month flow</div></div></div>
+          <div class="cta-scroll" id="cta-scenario-table"></div>
+        </div>
+      </div>
+
+      <div class="chart-panel cta-method">
+        <details>
+          <summary>Methodology &amp; caveats</summary>
+          <div class="cta-note" id="cta-method-body"></div>
+        </details>
+      </div>
     </div>
 
   </div>
@@ -2052,6 +2248,12 @@
         checkStaleness();
         populateDateFilter();
         initDashboard();
+        lastCftcLoad = Date.now();
+        loadCTA().then(() => {
+          renderCtaHeroStrip();
+          if (document.getElementById('panel-cta')?.classList.contains('active')) renderCTA();
+          startLiveRefresh();
+        });
         document.getElementById('loading').style.opacity = '0';
         setTimeout(() => document.getElementById('loading').style.display = 'none', 400);
       } catch (e) {
@@ -2269,7 +2471,7 @@
       document.querySelectorAll('.tab-panel.active').forEach(p => p.classList.remove('active'));
 
       document.getElementById('tab-' + name).classList.add('active');
-      const panelId = { overview: 'panel-overview', instrument: 'panel-instrument', three: 'panel-three' }[name];
+      const panelId = { overview: 'panel-overview', instrument: 'panel-instrument', three: 'panel-three', cta: 'panel-cta' }[name];
       document.getElementById(panelId).classList.add('active');
       document.getElementById('trader-wrap').style.display = name === 'instrument' ? 'flex' : 'none';
 
@@ -2277,6 +2479,7 @@
       if (name === 'overview') { renderSignalCards(); renderHeatmap(); renderCorrelationMatrix(); renderOILeaderboard(); renderWeeklyTable(); }
       if (name === 'instrument') renderByInstrument();
       if (name === 'three') renderThreeTraderGrid();
+      if (name === 'cta') renderCTA();
     }
 
     function redrawAll() {
@@ -2285,6 +2488,7 @@
       if (active.id === 'panel-overview') { renderSignalCards(); renderHeatmap(); renderCorrelationMatrix(); renderOILeaderboard(); renderWeeklyTable(); }
       if (active.id === 'panel-instrument') renderByInstrument();
       if (active.id === 'panel-three') renderThreeTraderGrid();
+      if (active.id === 'panel-cta') renderCTA();
     }
 
     // ── Overview tab renderers ────────────────────────────────────
@@ -2346,6 +2550,15 @@
                   <span class="hero-metric-val">${fmt(mmNet)}</span>
                   <span class="hero-delta ${(mmDelta||0)>=0?'wow-up':'wow-dn'}">${(mmDelta||0)>=0?'▲':'▼'}${fmt(Math.abs(mmDelta||0))}</span>
                 </div>
+                ${(() => {
+                  const u = usdSeries('comp_hh_prompt', 'managed_money', 'net');
+                  const v = last(u.values), p = u.values.length > 1 ? u.values[u.values.length - 2] : null;
+                  return v == null ? '' : `<div class="hero-metric" data-tooltip="Managed Money net in dollars, sized per contract (NYMEX 10,000 vs ICE 2,500 MMBtu) at the front-month price. Comparable across venues and price regimes, unlike the raw contract sum.">
+                  <span class="hero-metric-lbl">MM Net $ (sized)</span>
+                  <span class="hero-metric-val" style="color:${posNegColour(v)}">${fmtBn(v)}</span>
+                  <span class="hero-delta ${(v - (p ?? v)) >= 0 ? 'wow-up' : 'wow-dn'}">${p == null ? '' : fmtBn(v - p)}</span>
+                </div>`;
+                })()}
                 <div class="hero-metric">
                   <span class="hero-metric-lbl">Aggregate OI</span>
                   <span class="hero-metric-val">${fmt(oi)}</span>
@@ -2369,6 +2582,8 @@
           `;
         }
       }
+
+      renderCtaHeroStrip();
 
       // Top Actionable Signals chips
       const signals = [];
@@ -3630,6 +3845,468 @@
         });
         chart.userData = { type: 'multi_trader', instrumentKey: key, traderKey: null };
       }
+    }
+
+    // ══ CTA & Flows tab ═══════════════════════════════════════════════════
+    // Dollar positioning is derived here from the CFTC payload (contracts x
+    // MMBtu/contract x front-month price). The CTA trend model is computed by
+    // scripts/update_cta_model.py into data/cta_model.json (daily refresh).
+    const CTA_MODEL_ID = 'hh_cta_trend_v1';
+    const CTA_POLL_MS = 10 * 60 * 1000;          // light poll of the small CTA file
+    const CFTC_RELOAD_MS = 6 * 60 * 60 * 1000;   // full CFTC re-fetch at most every 6h
+    // Fallback only: the pipeline writes contract_size_mmbtu parsed from CFTC contract_units.
+    const CONTRACT_SIZE_FALLBACK = {
+      nat_gas_nyme: 10000, nat_gas_ld1: 2500, nat_gas_ice_pen: 2500, hh_last_day: 10000,
+      hh_penult_fin: 10000, hh_index_ice: 2500, opt_eur_nyme: 10000
+    };
+    const COMPOSITE_COMPONENTS = {
+      comp_hh_prompt: ['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'opt_eur_nyme'],
+      comp_hh_clean: ['nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen', 'hh_last_day', 'hh_penult_fin', 'hh_index_ice']
+    };
+    // Henry Hub-priced markets only: basis contracts settle on a differential, so
+    // contracts x HH price would not be their dollar exposure.
+    const USD_INSTRUMENT_KEYS = ['comp_hh_prompt', 'comp_hh_clean', 'nat_gas_nyme', 'nat_gas_ld1', 'nat_gas_ice_pen',
+      'opt_eur_nyme', 'hh_last_day', 'hh_penult_fin', 'hh_index_ice'];
+    const CTA_TRADER_LABELS = {
+      managed_money: 'Managed Money', total_speculative: 'Total Spec', other_reportables: 'Other Reportables',
+      swap_dealers: 'Swap Dealers', producers: 'Producers / Merchants'
+    };
+    const CTA_HORIZON_LABELS = { short: 'Short Trend', medium: 'Medium Trend', long: 'Long Trend' };
+    const CTA_HORIZON_COLOURS = { short: '#3b82f6', medium: '#7dd3fc', long: '#f87171' };
+    const CTA_SCENARIO_ORDER = ['up_big', 'up_small', 'flat', 'down_small', 'down_big'];
+    const CTA_SCENARIO_COLOURS = { up_big: '#22c55e', up_small: '#3b82f6', flat: '#9ba8c0', down_small: '#fca5a5', down_big: '#ef4444' };
+    const CTA_PRICE_COLOUR = '#fbbf24';
+
+    let CTA_DATA = null, CTA_ERROR = null;
+    let ctaInst = 'comp_hh_prompt', ctaPosTrader = 'managed_money', ctaPmpuSide = 'long';
+    let ctaThrRange = 252, ctaProjHist = 63;
+    let lastCftcLoad = Date.now(), liveTimer = null;
+
+    // Interaction mode: snap to the nearest point of dataset 0 only, so weekly
+    // CFTC points stay hoverable even with a denser daily price line on top.
+    if (typeof Chart !== 'undefined' && Chart.Interaction && Chart.Interaction.modes) {
+      Chart.Interaction.modes.firstDatasetX = function (chart, e) {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) return [];
+        let best = -1, bd = Infinity;
+        meta.data.forEach((pt, i) => { const d = Math.abs(pt.x - e.x); if (d < bd) { bd = d; best = i; } });
+        return best < 0 ? [] : [{ element: meta.data[best], datasetIndex: 0, index: best }];
+      };
+    }
+
+    const tsOf = d => Date.parse(d + 'T00:00:00Z');
+    function fmtTsDate(ts) { return new Date(ts).toISOString().slice(0, 10); }
+    function fmtBn(v, dec = 2) { return v == null || isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}$${Math.abs(v).toFixed(dec)}bn`; }
+    function fmtSignedPct(v, dec = 1) { return v == null || isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec)}%`; }
+    function posNegColour(v) { return v == null || isNaN(v) ? 'var(--text2)' : v >= 0 ? '#22c55e' : '#ef4444'; }
+
+    function contractSize(key) {
+      const inst = CFTC_DATA?.instruments?.[key];
+      const size = inst?.contract_size_mmbtu || CONTRACT_SIZE_FALLBACK[key] || null;
+      return { size, source: inst?.contract_size_mmbtu ? (inst.contract_size_source || 'cftc') : 'fallback' };
+    }
+    function componentsOf(key) {
+      return CFTC_DATA?.instruments?.[key]?.components || COMPOSITE_COMPONENTS[key] || [key];
+    }
+
+    // Dollar notional ($bn) of trader[field] for an instrument or composite.
+    // Composites are sized per component and only dated where every component reports.
+    function usdSeries(key, trader, field) {
+      const insts = CFTC_DATA?.instruments || {};
+      const comps = componentsOf(key);
+      const acc = new Map();
+      let used = 0;
+      for (const k of comps) {
+        const inst = insts[k]; const { size } = contractSize(k);
+        if (!inst || !size || !inst[trader]) continue;
+        used++;
+        const vals = inst[trader][field] || [];
+        (inst.dates || []).forEach((d, i) => {
+          const v = vals[i], p = inst.price?.[i];
+          if (v == null || p == null || isNaN(v) || isNaN(p)) return;
+          const a = acc.get(d) || { s: 0, n: 0 };
+          a.s += v * size * p / 1e9; a.n++;
+          acc.set(d, a);
+        });
+      }
+      const dates = [...acc.keys()].filter(d => acc.get(d).n === used).sort();
+      return { dates, values: dates.map(d => acc.get(d).s), used, expected: comps.length };
+    }
+
+    // Daily front-month price from the CTA file, else weekly report-date price.
+    function ctaPriceSeries() {
+      const p = CTA_DATA?.price;
+      if (p?.dates?.length) return { ts: p.dates.map(tsOf), vals: p.front, daily: true };
+      const inst = CFTC_DATA?.instruments?.nat_gas_nyme;
+      const ts = [], vals = [];
+      (inst?.dates || []).forEach((d, i) => { const v = inst.price?.[i]; if (v != null) { ts.push(tsOf(d)); vals.push(v); } });
+      return { ts, vals, daily: false };
+    }
+    function priceAt(ps, ts) {   // last price on/before ts (binary search)
+      let lo = 0, hi = ps.ts.length - 1, ans = -1;
+      while (lo <= hi) { const m = (lo + hi) >> 1; if (ps.ts[m] <= ts) { ans = m; lo = m + 1; } else hi = m - 1; }
+      return ans < 0 ? null : ps.vals[ans];
+    }
+
+    function ctaTimeScale(minTs, maxTs) {
+      const spanDays = (maxTs - minTs) / 86400000;
+      return {
+        type: 'linear', min: minTs, max: maxTs,
+        ticks: {
+          color: '#5c6b8a', maxTicksLimit: 7, maxRotation: 0, font: { size: 9 },
+          callback: v => new Date(v).toLocaleDateString('en-US', spanDays < 200
+            ? { day: 'numeric', month: 'short', timeZone: 'UTC' } : { month: 'short', year: '2-digit', timeZone: 'UTC' })
+        },
+        grid: { color: 'rgba(37,48,71,.4)' }
+      };
+    }
+    function ctaTooltip(callbacks) {
+      return {
+        enabled: true, external: undefined, backgroundColor: 'rgba(13,17,23,.96)', borderColor: '#2d3a55', borderWidth: 1,
+        titleColor: '#e8eaf0', bodyColor: '#cbd5e1', titleFont: { size: 10, family: 'JetBrains Mono' },
+        bodyFont: { size: 10, family: 'JetBrains Mono' }, padding: 8, boxWidth: 8, boxHeight: 8,
+        callbacks: { title: items => items.length ? fmtTsDate(items[0].parsed.x) : '', ...callbacks }
+      };
+    }
+    function ctaBaseOptions(minTs, maxTs, tooltip, mode) {
+      return {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 200 }, parsing: false, normalized: true,
+        interaction: { mode: mode || 'index', intersect: false, axis: 'x' },
+        plugins: {
+          legend: { display: false }, tooltip,
+          zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' },
+                  limits: { x: { min: 'original', max: 'original' } } }
+        },
+        scales: { x: ctaTimeScale(minTs, maxTs) }
+      };
+    }
+    function ctaNoData(canvasId, msg) {
+      const c = document.getElementById(canvasId);
+      if (!c) return;
+      const ex = Chart.getChart(c); if (ex) ex.destroy();
+      const wrap = c.closest('.chart-container');
+      if (wrap) wrap.innerHTML = `<div class="no-data">${msg}</div><canvas id="${canvasId}" style="display:none"></canvas>`;
+    }
+    function ctaEnsureCanvas(canvasId) {
+      const c = document.getElementById(canvasId);
+      if (c && c.style && c.style.display === 'none') {
+        const wrap = c.closest('.chart-container');
+        if (wrap) wrap.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+      }
+      return document.getElementById(canvasId);
+    }
+
+    // ── Controls ──
+    function setCtaInst(k) { if (USD_INSTRUMENT_KEYS.includes(k)) { ctaInst = k; renderCTA(); } }
+    function setCtaPosTrader(t) { if (CTA_TRADER_LABELS[t]) { ctaPosTrader = t; renderCtaPositionCharts(); } }
+    function setCtaSeg(prefix, val) {
+      document.querySelectorAll(`[id^=${prefix}]`).forEach(b => b.classList.remove('active'));
+      const b = document.getElementById(prefix + val); if (b) b.classList.add('active');
+    }
+    function setCtaPmpuSide(side) { ctaPmpuSide = side === 'short' ? 'short' : 'long'; setCtaSeg('cta-pmpu-', ctaPmpuSide); renderCtaPositionCharts(); }
+    function setCtaThrRange(n) { ctaThrRange = n; setCtaSeg('cta-thr-', n); renderCtaThresholdChart(); }
+    function setCtaProjHist(n) { ctaProjHist = n; setCtaSeg('cta-hist-', n); renderCtaProjectionChart(); }
+
+    // ── Data loading & live refresh ──
+    async function loadCTA() {
+      try {
+        const r = await fetch(`data/cta_model.json?v=${Date.now()}`);
+        if (!r.ok) throw new Error(r.status === 404 ? 'not generated yet' : `HTTP ${r.status}`);
+        const j = await r.json();
+        if (j?.meta?.model !== CTA_MODEL_ID || !j.latest || !j.projections) throw new Error('unexpected schema');
+        const changed = !CTA_DATA || CTA_DATA.meta.generated_at !== j.meta.generated_at;
+        CTA_DATA = j; CTA_ERROR = null;
+        return changed;
+      } catch (e) {
+        CTA_ERROR = e.message || String(e);
+        return false;
+      }
+    }
+
+    async function refreshCftcData() {
+      const r = await fetch(`data/cftc_processed.json?v=${Date.now()}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      if (!j.meta || !j.instruments) throw new Error('Bad JSON');
+      lastCftcLoad = Date.now();
+      if (j.meta.last_updated === CFTC_DATA?.meta?.last_updated) return false;
+      CFTC_DATA = j;
+      document.getElementById('latest-report').textContent = j.meta.latest_report_date;
+      document.getElementById('last-updated').textContent =
+        new Date(j.meta.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const sb = document.getElementById('stale-banner'); if (sb) sb.style.display = 'none';
+      checkStaleness();
+      populateDateFilter();
+      return true;
+    }
+
+    async function liveRefreshTick() {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      try {
+        const ctaChanged = await loadCTA();
+        const cftcBehind = CTA_DATA?.meta?.cftc_latest_report_date && CFTC_DATA?.meta?.latest_report_date &&
+          CTA_DATA.meta.cftc_latest_report_date > CFTC_DATA.meta.latest_report_date;
+        let cftcChanged = false;
+        if (cftcBehind || Date.now() - lastCftcLoad > CFTC_RELOAD_MS) cftcChanged = await refreshCftcData();
+        if (cftcChanged) redrawAll();
+        else if (ctaChanged) {
+          renderCtaHeroStrip();
+          if (document.getElementById('panel-cta')?.classList.contains('active')) renderCTA();
+        }
+      } catch (e) { /* transient network error: try again next tick */ }
+    }
+
+    function startLiveRefresh() {
+      if (liveTimer) return;
+      liveTimer = setInterval(liveRefreshTick, CTA_POLL_MS);
+      if (liveTimer && typeof liveTimer.unref === 'function') liveTimer.unref();  // never keep headless runs alive
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') liveRefreshTick(); });
+      }
+    }
+
+    function ctaAgeDays() {
+      if (!CTA_DATA?.meta?.as_of) return null;
+      return (Date.now() - tsOf(CTA_DATA.meta.as_of)) / 86400000;
+    }
+
+    // ── Overview strip ──
+    function renderCtaHeroStrip() {
+      const el = document.getElementById('cta-hero-strip'); if (!el) return;
+      if (!CTA_DATA) { el.innerHTML = ''; return; }
+      const L = CTA_DATA.latest, sc = CTA_DATA.projections.scenarios;
+      const age = ctaAgeDays();
+      const lv = h => {
+        const v = L.levels?.[h]; if (!v) return '';
+        return `<div class="hero-metric"><span class="hero-metric-lbl">${CTA_HORIZON_LABELS[h]} &middot; flip $${fmt(v.threshold_price, 3)}</span>
+          <span class="hero-metric-val" style="color:${posNegColour(v.pct_from_threshold)}">${fmtSignedPct(v.pct_from_threshold)}</span></div>`;
+      };
+      el.innerHTML = `
+        <div class="cta-hero" onclick="switchTab('cta')" data-tooltip="Simulated trend-follower positioning in Henry Hub, refreshed daily. Click for thresholds, flip levels and 1-month scenario projections.">
+          <div class="hero-metrics-grid" style="background:none;border:none;padding:0">
+            <div class="hero-metric"><span class="hero-metric-lbl">CTA Trend Model</span>
+              <span class="hero-metric-val" style="color:${posNegColour(L.position_usd_bn)}">${fmtBn(L.position_usd_bn)}</span>
+              <span class="hero-delta" style="color:${posNegColour(L.position_chg_1w_usd_bn)}">${fmtBn(L.position_chg_1w_usd_bn)} 1w</span></div>
+            ${lv('short')}${lv('medium')}${lv('long')}
+            <div class="hero-metric"><span class="hero-metric-lbl">1m flow range (Down Big &rarr; Up Big)</span>
+              <span class="hero-metric-val"><span style="color:${posNegColour(sc.down_big?.flow_usd_bn)}">${fmtBn(sc.down_big?.flow_usd_bn, 1)}</span> &rarr; <span style="color:${posNegColour(sc.up_big?.flow_usd_bn)}">${fmtBn(sc.up_big?.flow_usd_bn, 1)}</span></span></div>
+            <div class="hero-metric" style="margin-left:auto;text-align:right"><span class="hero-metric-lbl">Price as of</span>
+              <span style="font-size:10px;font-family:var(--mono);color:${age != null && age > 5 ? '#f59e0b' : 'var(--text2)'}">${CTA_DATA.meta.as_of}</span></div>
+          </div>
+        </div>`;
+    }
+
+    // ── Tab render ──
+    function renderCTA() {
+      if (!CFTC_DATA) return;
+      const sel = document.getElementById('cta-inst');
+      if (sel) {
+        sel.innerHTML = USD_INSTRUMENT_KEYS.filter(k => CFTC_DATA.instruments[k])
+          .map(k => `<option value="${k}"${k === ctaInst ? ' selected' : ''}>${INSTRUMENT_LABELS[k] || k}</option>`).join('');
+        sel.value = ctaInst;
+      }
+      const tsel = document.getElementById('cta-pos-trader'); if (tsel) tsel.value = ctaPosTrader;
+      renderCtaStatus();
+      renderCtaKpis();
+      renderCtaPositionCharts();
+      renderCtaThresholdChart();
+      renderCtaProjectionChart();
+      renderCtaTables();
+      renderCtaMethod();
+    }
+
+    function renderCtaStatus() {
+      const el = document.getElementById('cta-status'); if (!el) return;
+      const age = ctaAgeDays();
+      if (!CTA_DATA) {
+        el.innerHTML = `<div class="basis-spread-banner" style="display:flex">${ICONS.warn}<div>CTA model data unavailable (${CTA_ERROR || 'loading'}). Dollar positioning below still uses the weekly CFTC file; the model refreshes every weekday after NYMEX settlement.</div></div>`;
+      } else if (age != null && age > 5) {
+        el.innerHTML = `<div class="basis-spread-banner" style="display:flex">${ICONS.warn}<div>CTA model last priced ${CTA_DATA.meta.as_of} (${Math.round(age)} days ago). The daily refresh may have failed; values shown are as of that date.</div></div>`;
+      } else el.innerHTML = '';
+    }
+
+    function renderCtaKpis() {
+      const el = document.getElementById('cta-kpis'); if (!el) return;
+      const mm = usdSeries(ctaInst, 'managed_money', 'net');
+      const mmNow = last(mm.values), mmWow = mm.values.length > 1 ? mmNow - mm.values[mm.values.length - 2] : null;
+      const pl = usdSeries(ctaInst, 'producers', 'long');
+      const plNow = last(pl.values), plWow = pl.values.length > 1 ? plNow - pl.values[pl.values.length - 2] : null;
+      const L = CTA_DATA?.latest, cal = CTA_DATA?.meta?.calibration;
+      const item = (lbl, val, sub, col, tip) => `<div class="hero-metric"${tip ? ` data-tooltip="${tip}"` : ''}><span class="hero-metric-lbl">${lbl}</span><span class="hero-metric-val" style="color:${col || 'var(--text)'}">${val}</span>${sub ? `<span class="hero-delta" style="color:var(--text3)">${sub}</span>` : ''}</div>`;
+      el.innerHTML = `<div class="hero-metrics-grid">
+        ${item(`MM Net $ &middot; ${INSTRUMENT_LABELS[ctaInst]}`, fmtBn(mmNow), `${fmtBn(mmWow)} w/w &middot; ${last(mm.dates) || '—'}`, posNegColour(mmNow), 'CFTC Managed Money net length in dollars, NYMEX-equivalent sizing.')}
+        ${item('PMPU Gross Longs $', plNow == null ? '—' : `$${plNow.toFixed(2)}bn`, `${fmtBn(plWow)} w/w`, 'var(--text)', 'Commercial hedger gross longs in dollars.')}
+        ${L ? item('NG Front Month', `$${fmt(L.price, 3)}`, `${fmtSignedPct(L.price_chg_1d_pct)} 1d &middot; ${L.date}`) : ''}
+        ${L ? item('CTA Model Position', fmtBn(L.position_usd_bn), `${fmtBn(L.position_chg_1w_usd_bn)} 1w`, posNegColour(L.position_usd_bn), 'Simulated trend-follower net length, scaled to CFTC Managed Money dollars.') : ''}
+        ${L ? item('Realized Vol (60d)', `${L.realized_vol_ann_pct.toFixed(0)}%`, `1m &sigma; &plusmn;${L.one_month_sigma_pct.toFixed(1)}%`) : ''}
+        ${cal ? item('Model Fit vs CFTC MM', `r = ${cal.corr.toFixed(2)}`, `${cal.method === 'ols_slope' ? 'OLS slope' : 'dispersion match'} &middot; ${cal.n_obs}w${cal.corr < 0.3 ? ' &middot; weak fit, $ scale indicative' : ''}`, cal.corr >= 0.4 ? '#22c55e' : cal.corr >= 0.2 ? '#f59e0b' : '#ef4444', 'Correlation of model exposure with weekly CFTC Managed Money $ over the calibration window. Low values mean discretionary/structural flows dominate MM, not trend-following.') : ''}
+      </div>`;
+    }
+
+    function renderCtaPositionCharts() {
+      const ps = ctaPriceSeries();
+      const sizeNote = document.getElementById('cta-size-note');
+      if (sizeNote) {
+        const parts = componentsOf(ctaInst).map(k => { const c = contractSize(k); return `${INSTRUMENT_LABELS[k] || k}: ${c.size ? c.size.toLocaleString('en-US') : '?'} MMBtu${c.source === 'fallback' ? '*' : ''}`; });
+        const anyFallback = componentsOf(ctaInst).some(k => contractSize(k).source === 'fallback');
+        sizeNote.innerHTML = `Sized per contract: ${parts.join(' &middot; ')}${anyFallback ? ' &middot; <span data-tooltip="Contract size not yet present in the CFTC payload; using the exchange specification. The next pipeline run parses it from CFTC contract_units.">* spec fallback</span>' : ''}`;
+      }
+      const tLbl = CTA_TRADER_LABELS[ctaPosTrader];
+      const t1 = document.getElementById('cta-pos-title'); if (t1) t1.textContent = `${tLbl} Net Length ($bn)`;
+      const l1 = document.getElementById('cta-pos-leg'); if (l1) l1.textContent = `${tLbl} Net ($bn)`;
+      const sub = document.getElementById('cta-pos-sub');
+      if (sub) sub.textContent = `${INSTRUMENT_LABELS[ctaInst]} · weekly CFTC, price ${ps.daily ? 'daily' : 'on report dates'}`;
+      const sideLbl = ctaPmpuSide === 'long' ? 'Gross Longs' : 'Gross Shorts';
+      const t2 = document.getElementById('cta-pmpu-title'); if (t2) t2.textContent = `PMPU ${sideLbl} ($bn)`;
+      const l2 = document.getElementById('cta-pmpu-leg'); if (l2) l2.textContent = `PMPU ${sideLbl} ($bn)`;
+
+      drawUsdChart('cv-cta-pos', usdSeries(ctaInst, ctaPosTrader, 'net'), ps, '#3b82f6', `${tLbl} net`, true);
+      drawUsdChart('cv-cta-pmpu', usdSeries(ctaInst, 'producers', ctaPmpuSide), ps, '#22c55e', `PMPU ${sideLbl.toLowerCase()}`, false);
+    }
+
+    function drawUsdChart(canvasId, series, ps, colour, label, signed) {
+      let { dates, values } = series;
+      if (filterFromDate) {
+        const i = dates.findIndex(d => d >= filterFromDate);
+        if (i > 0) { dates = dates.slice(i); values = values.slice(i); } else if (i === -1) { dates = []; values = []; }
+      }
+      if (!dates.length) { ctaNoData(canvasId, 'No priced CFTC history for this selection'); return; }
+      const canvas = ctaEnsureCanvas(canvasId); if (!canvas) return;
+      const pts = dates.map((d, i) => ({ x: tsOf(d), y: values[i] }));
+      const minTs = pts[0].x, maxTs = Math.max(pts[pts.length - 1].x, ps.ts.length ? ps.ts[ps.ts.length - 1] : 0);
+      const pricePts = [];
+      ps.ts.forEach((t, i) => { if (t >= minTs && t <= maxTs && ps.vals[i] != null) pricePts.push({ x: t, y: ps.vals[i] }); });
+      const tooltip = ctaTooltip({
+        label: item => item.datasetIndex === 0 ? ` ${label}: ${signed ? fmtBn(item.parsed.y) : '$' + item.parsed.y.toFixed(2) + 'bn'}` : null,
+        afterBody: items => {
+          if (!items.length) return [];
+          const i = items[0].dataIndex, x = items[0].parsed.x;
+          const out = [];
+          if (i > 0) { const d = values[i] - values[i - 1]; out.push(` w/w: ${fmtBn(d)}`); }
+          const p = priceAt(ps, x); if (p != null) out.push(` NG price: $${p.toFixed(3)}`);
+          return out;
+        }
+      });
+      const opts = ctaBaseOptions(minTs, maxTs, tooltip, 'firstDatasetX');
+      opts.scales.y = { position: 'left', ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => (signed && v > 0 ? '+' : '') + v + 'b' }, grid: { color: 'rgba(37,48,71,.25)' }, title: { display: true, text: '$bn', color: '#5c6b8a', font: { size: 8 } } };
+      opts.scales.y2 = { position: 'right', ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => '$' + v }, grid: { display: false }, title: { display: true, text: 'NG $/MMBtu', color: '#5c6b8a', font: { size: 8 } } };
+      if (signed) opts.plugins.annotation = { annotations: { zero: { type: 'line', yMin: 0, yMax: 0, yScaleID: 'y', borderColor: 'rgba(155,168,192,.35)', borderWidth: 1 } } };
+      safeCreateChart(canvas, {
+        type: 'line',
+        data: {
+          datasets: [
+            { label, data: pts, yAxisID: 'y', borderColor: colour, borderWidth: 2, pointRadius: 0, pointHoverRadius: 3, tension: 0,
+              fill: signed ? { target: 'origin', above: 'rgba(34,197,94,.10)', below: 'rgba(239,68,68,.10)' } : { target: 'origin', above: colour + '14' } },
+            { label: 'NG price', data: pricePts, yAxisID: 'y2', borderColor: CTA_PRICE_COLOUR, borderWidth: 1.1, pointRadius: 0, tension: 0, fill: false }
+          ]
+        },
+        options: opts
+      });
+    }
+
+    function renderCtaThresholdChart() {
+      const lg = document.getElementById('cta-thr-legend');
+      if (lg) lg.innerHTML = Object.keys(CTA_HORIZON_LABELS).map(h => {
+        const n = CTA_DATA?.meta?.params?.horizons?.[h];
+        return `<div class="leg-item"><div class="leg-line" style="background:${CTA_HORIZON_COLOURS[h]}"></div>${CTA_HORIZON_LABELS[h]}${n ? ` (${n}d)` : ''}</div>`;
+      }).join('');
+      const T = CTA_DATA?.thresholds;
+      if (!T?.dates?.length) { ctaNoData('cv-cta-thr', 'CTA model data not available yet'); return; }
+      const canvas = ctaEnsureCanvas('cv-cta-thr'); if (!canvas) return;
+      const start = ctaThrRange ? Math.max(0, T.dates.length - ctaThrRange) : 0;
+      const ts = T.dates.slice(start).map(tsOf);
+      const datasets = Object.keys(CTA_HORIZON_LABELS).map(h => ({
+        label: CTA_HORIZON_LABELS[h], borderColor: CTA_HORIZON_COLOURS[h], borderWidth: h === 'short' ? 1.4 : 1.8,
+        pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: false, spanGaps: false,
+        data: ts.map((x, i) => ({ x, y: (T[h] || [])[start + i] ?? null })),
+        _trigger: (T.trigger?.[h] || []).slice(start)
+      }));
+      const tooltip = ctaTooltip({
+        label: item => {
+          const ds = item.dataset, trig = ds._trigger?.[item.dataIndex];
+          return ` ${ds.label}: ${fmtSignedPct(item.parsed.y)}${trig != null ? `  flip $${trig.toFixed(3)}` : ''}`;
+        },
+        labelColor: item => ({ borderColor: item.dataset.borderColor, backgroundColor: item.dataset.borderColor })
+      });
+      const opts = ctaBaseOptions(ts[0], ts[ts.length - 1], tooltip, 'index');
+      opts.scales.y = { ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => v + '%' }, grid: { color: 'rgba(37,48,71,.25)' } };
+      opts.plugins.annotation = { annotations: { zero: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(251,191,36,.55)', borderWidth: 1 } } };
+      safeCreateChart(canvas, { type: 'line', data: { datasets }, options: opts });
+    }
+
+    function renderCtaProjectionChart() {
+      const lg = document.getElementById('cta-proj-legend');
+      const P = CTA_DATA?.projections, R = CTA_DATA?.position;
+      if (lg) lg.innerHTML = `<div class="leg-item"><div class="leg-line" style="background:#64748b"></div>Simulated realized</div>` +
+        CTA_SCENARIO_ORDER.map(k => `<div class="leg-item"><div class="leg-line" style="background:${CTA_SCENARIO_COLOURS[k]}"></div>${P?.scenarios?.[k]?.label || k}${P?.scenarios?.[k] ? ` (${fmtSignedPct(P.scenarios[k].move_pct, 0)})` : ''}</div>`).join('');
+      if (!P?.dates?.length || !R?.dates?.length) { ctaNoData('cv-cta-proj', 'CTA model data not available yet'); return; }
+      const canvas = ctaEnsureCanvas('cv-cta-proj'); if (!canvas) return;
+      const start = Math.max(0, R.dates.length - ctaProjHist);
+      const realized = R.dates.slice(start).map((d, i) => ({ x: tsOf(d), y: R.usd_bn[start + i] }));
+      const anchor = realized[realized.length - 1];
+      const projTs = P.dates.map(tsOf);
+      const datasets = [{ label: 'Simulated realized', data: realized, borderColor: '#64748b', borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3, tension: 0,
+        fill: { target: 'origin', above: 'rgba(100,116,139,.12)', below: 'rgba(100,116,139,.12)' } }];
+      CTA_SCENARIO_ORDER.forEach(k => {
+        const s = P.scenarios[k]; if (!s) return;
+        datasets.push({ label: s.label, borderColor: CTA_SCENARIO_COLOURS[k], borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: false,
+          data: [anchor, ...projTs.map((x, i) => ({ x, y: s.position_usd_bn[i] }))], _price: [null, ...s.price] });
+      });
+      const tooltip = ctaTooltip({
+        label: item => {
+          const ds = item.dataset, px = ds._price?.[item.dataIndex];
+          return ` ${ds.label}: ${fmtBn(item.parsed.y)}${px != null ? `  @ $${px.toFixed(2)}` : ''}`;
+        },
+        labelColor: item => ({ borderColor: item.dataset.borderColor, backgroundColor: item.dataset.borderColor })
+      });
+      const opts = ctaBaseOptions(realized[0].x, projTs[projTs.length - 1], tooltip, 'nearest');
+      opts.scales.y = { ticks: { color: '#5c6b8a', font: { size: 9 }, callback: v => (v > 0 ? '+' : '') + v + 'b' }, grid: { color: 'rgba(37,48,71,.25)' }, title: { display: true, text: 'Net length ($bn)', color: '#5c6b8a', font: { size: 8 } } };
+      opts.plugins.annotation = { annotations: {
+        zero: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(155,168,192,.35)', borderWidth: 1 },
+        split: { type: 'line', xMin: anchor.x, xMax: anchor.x, borderColor: 'rgba(155,168,192,.35)', borderWidth: 1, borderDash: [4, 4],
+          label: { display: true, content: 'Projected →', position: 'start', color: '#22c55e', backgroundColor: 'rgba(0,0,0,0)', font: { size: 9 }, xAdjust: 34 } }
+      } };
+      safeCreateChart(canvas, { type: 'line', data: { datasets }, options: opts });
+    }
+
+    function renderCtaTables() {
+      const lvEl = document.getElementById('cta-levels-table'), scEl = document.getElementById('cta-scenario-table');
+      if (!CTA_DATA) {
+        if (lvEl) lvEl.innerHTML = '<div class="no-data">CTA model data not available yet</div>';
+        if (scEl) scEl.innerHTML = '<div class="no-data">CTA model data not available yet</div>';
+        return;
+      }
+      const L = CTA_DATA.latest, P = CTA_DATA.projections.scenarios;
+      const sigTxt = s => s == null ? '—' : Math.abs(s) >= 0.999 ? (s > 0 ? 'Max long' : 'Max short') : `${s >= 0 ? '+' : '−'}${Math.round(Math.abs(s) * 100)}% ${s >= 0 ? 'long' : 'short'}`;
+      if (lvEl) lvEl.innerHTML = `<table class="cta-table"><thead><tr><th>Horizon</th><th>Window</th><th>Flip Price</th><th>Distance</th><th>Signal Strength</th></tr></thead><tbody>${
+        Object.keys(CTA_HORIZON_LABELS).map(h => { const v = L.levels[h]; if (!v) return ''; return `<tr>
+          <td><span class="cta-swatch" style="background:${CTA_HORIZON_COLOURS[h]}"></span>${CTA_HORIZON_LABELS[h]}</td>
+          <td>${v.window_days}d</td><td>$${fmt(v.threshold_price, 3)}</td>
+          <td style="color:${posNegColour(v.pct_from_threshold)}">${fmtSignedPct(v.pct_from_threshold)}</td>
+          <td style="color:${posNegColour(v.signal)}">${sigTxt(v.signal)}</td></tr>`; }).join('')
+      }</tbody></table><div class="cta-note" style="margin-top:6px">Current front month $${fmt(L.price, 3)} on ${L.date}. Flip prices are each horizon's moving average in today's contract terms; they drift as the window rolls.</div>`;
+      if (scEl) scEl.innerHTML = `<table class="cta-table"><thead><tr><th>Scenario</th><th>Price Move</th><th>End Price</th><th>End Position</th><th>1m Flow</th><th>S / M / L at end</th></tr></thead><tbody>${
+        CTA_SCENARIO_ORDER.map(k => { const s = P[k]; if (!s) return ''; const es = s.end_signals || {};
+          const dot = v => `<span style="color:${posNegColour(v)}">${v == null ? '—' : v >= 0 ? '+' : '−'}</span>`;
+          return `<tr><td><span class="cta-swatch" style="background:${CTA_SCENARIO_COLOURS[k]}"></span>${s.label}</td>
+          <td style="color:${posNegColour(s.move_pct)}">${fmtSignedPct(s.move_pct)}</td><td>$${fmt(s.end_price, 3)}</td>
+          <td style="color:${posNegColour(s.end_position_usd_bn)}">${fmtBn(s.end_position_usd_bn)}</td>
+          <td style="color:${posNegColour(s.flow_usd_bn)};font-weight:700">${fmtBn(s.flow_usd_bn)}</td>
+          <td>${dot(es.short)} ${dot(es.medium)} ${dot(es.long)}</td></tr>`; }).join('')
+      }</tbody></table><div class="cta-note" style="margin-top:6px">Moves are &plusmn;1&sigma; / &plusmn;2&sigma; of one-month realized volatility (1&sigma; = ${L.one_month_sigma_pct.toFixed(1)}%), applied as a steady path over ${CTA_DATA.meta.params.projection_days} sessions to ${CTA_DATA.projections.dates.at(-1)}.</div>`;
+    }
+
+    function renderCtaMethod() {
+      const el = document.getElementById('cta-method-body'); if (!el) return;
+      const m = CTA_DATA?.meta, cal = m?.calibration, h = m?.params?.horizons || { short: 20, medium: 60, long: 250 };
+      el.innerHTML = `<ul>
+        <li><strong>Dollar positioning:</strong> CFTC contracts &times; contract size (MMBtu, parsed from CFTC <code>contract_units</code>) &times; NG front-month price on the report date. Composites are sized component by component, because NYMEX NG is 10,000 MMBtu while ICE Henry Hub contracts are 2,500 MMBtu. Basis contracts are excluded: they settle on a regional differential, not the Henry Hub price.</li>
+        <li><strong>Prices:</strong> ${m ? m.price_source : 'Yahoo Finance NG=F'}. The return on each roll day (first session after NYMEX last trade) is zeroed so seasonal roll gaps do not register as trend${m ? ` (${m.roll_days_neutralised} rolls neutralised)` : ''}.</li>
+        <li><strong>Thresholds:</strong> percent distance of price from its ${h.short}/${h.medium}/${h.long}-session moving average. Crossing zero flips that horizon. Signal strength is that distance divided by its random-walk standard deviation (&sigma;&middot;&radic;(N/3)), capped at &plusmn;1.</li>
+        <li><strong>Position:</strong> mean of the three signals &times; (${m ? (m.params.vol_target * 100).toFixed(0) : 15}% vol target &divide; ${m ? m.params.vol_window : 60}-day realized vol), converted to dollars by ${cal ? (cal.method === 'ols_slope' ? `the OLS slope of weekly CFTC Managed Money $ (HH Prompt composite, NYMEX-equivalent) on model exposure, ${cal.start} to ${cal.end} (n=${cal.n_obs}, r=${cal.corr.toFixed(2)})${cal.corr < 0.3 ? '. The fit is weak: most NG Managed Money is structural or discretionary rather than trend-following, so read the dollar level as indicative and the direction, flip levels and relative scenario sizes as the robust part' : ''}` : `matching the dispersion of weekly CFTC Managed Money $ (slope was non-positive: r=${cal.corr.toFixed(2)})`) : 'a fit to weekly CFTC Managed Money dollars'}. The intercept, NG's structural Managed Money short, is not trend-driven and is deliberately left out.</li>
+        <li><strong>Projections:</strong> the model re-run forward ${m ? m.params.projection_days : 21} sessions along five steady price paths, with volatility held at today's estimate. They are conditional "if price does X, trend followers likely do Y" estimates, not forecasts of price.</li>
+        <li><strong>Refresh:</strong> recomputed every weekday after NYMEX settlement and right after each CFTC release; this page polls for new data every ${CTA_POLL_MS / 60000} minutes while open.${m ? ` Last model run ${m.generated_at.replace('T', ' ').replace('Z', ' UTC')}.` : ''}</li>
+      </ul>`;
     }
 
     function initDashboard() {

@@ -149,6 +149,24 @@ CONCENTRATION_COLS = {
     "top8_short": "conc_gross_le_8_tdr_short_all",
 }
 
+# Contract size (MMBtu per contract). The live value is parsed from the CFTC
+# `contract_units` field on every run (see parse_contract_size); this table is
+# only a fallback if CFTC ever omits or reformats that field. Needed because
+# NYMEX NG is 10,000 MMBtu while most ICE Henry Hub contracts are 2,500 MMBtu,
+# so raw contract counts are not comparable across venues.
+CONTRACT_SIZE_FALLBACK = {
+    "nat_gas_nyme": 10000, "nat_gas_ld1": 2500, "nat_gas_ice_pen": 2500,
+    "hh_last_day": 10000, "hh_penult_fin": 10000, "hh_index_ice": 2500,
+    "opt_eur_nyme": 10000,
+    "waha_basis": 2500, "hsc_basis": 2500, "dominion_basis": 2500,
+    "aeco_basis": 2500, "chicago_basis": 2500, "ngpl_txok_basis": 2500,
+}
+
+COMPOSITE_COMPONENTS = {
+    "comp_hh_prompt": ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"],
+    "comp_hh_clean":  ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "hh_last_day", "hh_penult_fin", "hh_index_ice"],
+}
+
 WITHDRAWAL_MONTHS = {11, 12, 1, 2, 3}
 MIN_ZSCORE_OBS   = 20
 COT_LOOKBACKS    = {"w26": 26, "w52": 52, "w156": 156}
@@ -169,6 +187,22 @@ def sanitise(obj):
     if isinstance(obj, list):
         return [sanitise(v) for v in obj]
     return obj
+
+
+def parse_contract_size(units):
+    """Extract MMBtu per contract from a CFTC `contract_units` string,
+    e.g. "(CONTRACTS OF 10,000 MMBTU'S)" -> 10000. Returns None if unparseable."""
+    if not isinstance(units, str):
+        return None
+    import re
+    m = re.search(r"([\d,]+(?:\.\d+)?)\s*MMBTU", units.upper())
+    if not m:
+        return None
+    try:
+        v = float(m.group(1).replace(",", ""))
+    except ValueError:
+        return None
+    return int(v) if v > 0 else None
 
 
 def fetch_with_retry(url, label, timeout=60, retries=3, headers=None):
@@ -506,6 +540,17 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
             if col in inst_df.columns:
                 concentration[k] = pd.to_numeric(inst_df[col], errors="coerce").tolist()
 
+    # Contract size: latest CFTC `contract_units` string, fallback table otherwise
+    units_str = None
+    if "contract_units" in inst_df.columns:
+        nonnull = inst_df["contract_units"].dropna()
+        if len(nonnull):
+            units_str = str(nonnull.iloc[-1]).strip()
+    parsed_size = parse_contract_size(units_str)
+    size_mmbtu = parsed_size or CONTRACT_SIZE_FALLBACK.get(inst_key)
+    print(f"    [Contract] {inst_key}: units='{units_str}' -> {size_mmbtu} MMBtu"
+          f" ({'CFTC' if parsed_size else 'fallback'})")
+
     result = {
         "label":         INSTRUMENT_LABELS.get(inst_key, inst_key),
         "dates":         dates_str,
@@ -514,6 +559,9 @@ def process_instrument(inst_key: str, inst_df: pd.DataFrame, price_aligned: pd.D
         "oi_roc_4w":     oi_roc_4w.tolist(),
         "oi_regime":     oi_regimes,
         "season":        season,
+        "contract_units":       units_str,
+        "contract_size_mmbtu":  size_mmbtu,
+        "contract_size_source": "cftc" if parsed_size else "fallback",
     }
     if concentration:
         result["concentration"] = concentration
@@ -743,6 +791,9 @@ def synthesize_composite(comp_key: str, component_keys: list, instruments_out: d
         "oi_roc_4w":     oi_roc_4w.tolist(),
         "oi_regime":     oi_regimes,
         "season":        season,
+        # Mixed contract sizes: composite counts are raw sums (kept for Bloomberg
+        # parity). Consumers needing MMBtu/$ must size each component separately.
+        "components":    list(component_keys),
     }
 
     # Trader categories
@@ -948,13 +999,13 @@ def main():
 
     # Process Synthetic Composites
     # 1. Primary Prompt Core: nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + opt_eur_nyme
-    prompt_components = ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "opt_eur_nyme"]
+    prompt_components = COMPOSITE_COMPONENTS["comp_hh_prompt"]
     instruments_out["comp_hh_prompt"] = synthesize_composite(
         "comp_hh_prompt", prompt_components, instruments_out, include_options_delta=True
     )
 
     # 2. Clean Outright Curve: nat_gas_nyme + nat_gas_ld1 + nat_gas_ice_pen + hh_last_day + hh_penult_fin + hh_index_ice
-    clean_components = ["nat_gas_nyme", "nat_gas_ld1", "nat_gas_ice_pen", "hh_last_day", "hh_penult_fin", "hh_index_ice"]
+    clean_components = COMPOSITE_COMPONENTS["comp_hh_clean"]
     instruments_out["comp_hh_clean"] = synthesize_composite(
         "comp_hh_clean", clean_components, instruments_out, include_options_delta=False
     )

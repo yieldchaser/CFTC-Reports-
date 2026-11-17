@@ -7,9 +7,14 @@ on:
     - cron: '30 21 * * 1'   # Monday 21:30 UTC   — catch holiday/slip delays (Friday holiday delays update Socrata Monday ~19:30 UTC)
     - cron: '30 21 * * 2'   # Tuesday 21:30 UTC  — catch holiday/slip delays (Monday holiday delays update Socrata Tuesday ~19:30 UTC)
   workflow_dispatch:          # Allow manual trigger from Actions tab
+    inputs:
+      force:
+        description: 'Rebuild even if CFTC has no new report'
+        type: boolean
+        default: false
 
 concurrency:
-  group: cftc-data-pipeline
+  group: data-pipeline-push   # shared with update_cta_model.yml so pushes never race
   cancel-in-progress: false
 
 jobs:
@@ -32,7 +37,7 @@ jobs:
 
       - name: Run CFTC pipeline
         id: pipeline
-        run: python scripts/update_cftc_data.py
+        run: python scripts/update_cftc_data.py ${{ inputs.force && '--force' || '' }}
 
       - name: Verify output exists and is non-empty
         if: steps.pipeline.outputs.new_data == 'true'
@@ -44,11 +49,24 @@ jobs:
         if: steps.pipeline.outputs.new_data == 'true' || github.event_name == 'workflow_dispatch'
         run: python scripts/run_quantitative_parity_audit.py
 
+      # Re-fit the CTA model's $ scale to the new COT report. A Yahoo outage must
+      # not block the CFTC commit, and the daily CTA workflow will retry anyway.
+      - name: Refresh CTA model
+        if: steps.pipeline.outputs.new_data == 'true'
+        continue-on-error: true
+        run: python scripts/update_cta_model.py
+
       - name: Commit and push
         if: steps.pipeline.outputs.new_data == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/cftc_processed.json
-          git diff --staged --quiet || git commit -m "chore: update CFTC data $(date -u +%Y-%m-%d)"
-          git push
+          if [ -f data/cta_model.json ]; then git add data/cta_model.json; fi
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: update CFTC data $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
