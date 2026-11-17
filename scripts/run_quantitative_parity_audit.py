@@ -693,6 +693,25 @@ def run_suite_6_cycle_analysis():
                     ok_p = False
     log_test(suite, "First-Passage Probabilities in [0,1] Inside Their Intervals", ok_p, "")
     sc_ok = all(isinstance(p.get("scorecard"), list) and len(p["scorecard"]) >= 6 for p in m.get("positioning", {}).values())
+    split_ok, hist_ok = True, True
+    for key, p in m.get("positioning", {}).items():
+        for r in p.get("scorecard", []):
+            for part in ("in_sample", "out_of_sample"):
+                x = r.get(part)
+                if not isinstance(x, dict) or x.get("episodes_hit", 0) > x.get("episodes", 0):
+                    split_ok = False
+        h = p.get("history", {})
+        n = len(h.get("dates", []))
+        if n == 0 or any(len(h.get(f, [])) != n for f in ("mm_cot", "mm_z", "spec_cot", "prod_cot", "nonrept_cot")):
+            hist_ok = False
+        if any(len(v) != n for v in h.get("signals", {}).values()) or len(h.get("signals", {})) != len(p.get("scorecard", [])):
+            hist_ok = False
+        # the last history row must agree with the scorecard's "active now"
+        for r in p.get("scorecard", []):
+            if h.get("signals", {}).get(r["key"], [0])[-1] != int(r["active_now"]):
+                hist_ok = False
+    log_test(suite, "Scorecard In/Out-of-Sample Splits Well-Formed", split_ok, "")
+    log_test(suite, "Signal History Aligned with Scorecard (Date Inspector source)", hist_ok, "")
     log_test(suite, "Signal Scorecards Present for Each Positioning Source", sc_ok and len(m.get("positioning", {})) >= 1, "")
 
 

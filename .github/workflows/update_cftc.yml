@@ -45,10 +45,6 @@ jobs:
           test -f data/cftc_processed.json
           test $(wc -c < data/cftc_processed.json) -gt 100000
 
-      - name: Run Quantitative Parity Audit
-        if: steps.pipeline.outputs.new_data == 'true' || github.event_name == 'workflow_dispatch'
-        run: python scripts/run_quantitative_parity_audit.py
-
       # Re-fit the CTA model's $ scale to the new COT report. A Yahoo outage must
       # not block the CFTC commit, and the daily CTA workflow will retry anyway.
       - name: Refresh CTA model
@@ -60,6 +56,12 @@ jobs:
         if: steps.pipeline.outputs.new_data == 'true'
         continue-on-error: true
         run: python scripts/update_cycle_analysis.py
+
+      # Quality gate on EVERY output (COT data, CTA model, cycle analysis) before
+      # anything is committed; runs after the models so it checks fresh files.
+      - name: Run Quantitative Parity Audit
+        if: steps.pipeline.outputs.new_data == 'true' || github.event_name == 'workflow_dispatch'
+        run: python scripts/run_quantitative_parity_audit.py
 
       - name: Commit and push
         if: steps.pipeline.outputs.new_data == 'true'

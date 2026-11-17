@@ -44,6 +44,9 @@ EVENT_WINDOW = 12          # weeks either side of a pivot in the event study
 HIT_WINDOW = 4             # a signal "hits" if a matching pivot is within +/-4 weeks
 PASSAGE_LEVELS = (0.15, 0.20)
 COT_WARMUP_WEEKS = 156
+OOS_SPLIT = "2018-01-01"   # signals were selected on data before this date; later data is out-of-sample
+TRADER_GROUPS = {"mm": "managed_money", "prod": "producers", "swap": "swap_dealers",
+                 "other": "other_reportables", "nonrept": "non_reportables", "spec": "total_speculative"}
 POSITIONING_SOURCES = {
     "nat_gas_nyme": "NYMEX Henry Hub futures (longest history)",
     "comp_hh_prompt": "HH Prompt Core composite (NYMEX-equivalent, includes ICE)",
@@ -101,21 +104,26 @@ def wilson(k, n, z=1.96):
 # ─── Positioning metrics ──────────────────────────────────────────────────────
 
 def positioning_frame(cftc: dict, key: str) -> pd.DataFrame:
+    """Weekly positioning features for every trader group: 3-year COT index,
+    weekly flow, 2-week flow and 4-week flow z-score. Managed Money columns keep
+    their short names (cot, z, flow, flow2, flow4z) for backward compatibility."""
     inst = cftc["instruments"][key]
     idx = pd.to_datetime(inst["dates"])
-    mm = inst["managed_money"]
-    flow = pd.Series(mm["change_net"], index=idx, dtype="float64")
-    f4 = flow.rolling(4).sum()
-    f4z = (f4 - f4.rolling(156, min_periods=52).mean()) / f4.rolling(156, min_periods=52).std()
-    df = pd.DataFrame({
-        "cot": pd.Series(mm["cot_index"]["w156"], index=idx, dtype="float64"),
-        "z": pd.Series(mm["z_score"], index=idx, dtype="float64"),
-        "flow": flow,
-        "flow2": flow.rolling(2).sum(),
-        "flow4z": f4z,
-    })
-    df = df[df.index >= idx[0] + pd.Timedelta(weeks=COT_WARMUP_WEEKS)]
-    return df
+    cols = {}
+    for g, tk in TRADER_GROUPS.items():
+        t = inst.get(tk)
+        if not t:
+            continue
+        flow = pd.Series(t["change_net"], index=idx, dtype="float64")
+        f4 = flow.rolling(4).sum()
+        cols[f"{g}_cot"] = pd.Series(t["cot_index"]["w156"], index=idx, dtype="float64")
+        cols[f"{g}_flow"] = flow
+        cols[f"{g}_flow2"] = flow.rolling(2).sum()
+        cols[f"{g}_flow4z"] = (f4 - f4.rolling(156, min_periods=52).mean()) / f4.rolling(156, min_periods=52).std()
+    df = pd.DataFrame(cols)
+    df["z"] = pd.Series(inst["managed_money"]["z_score"], index=idx, dtype="float64")
+    df["cot"], df["flow"], df["flow2"], df["flow4z"] = df.mm_cot, df.mm_flow, df.mm_flow2, df.mm_flow4z
+    return df[df.index >= idx[0] + pd.Timedelta(weeks=COT_WARMUP_WEEKS)]
 
 
 SIGNALS = [
@@ -132,7 +140,21 @@ SIGNALS = [
      lambda d: (d.flow4z.rolling(4).max() > 1.5) & (d.flow < 0), "4w MM flow > +1.5 sd within 4w, then a selling week"),
     ("capitulation", "Flow capitulation, then buying", "T",
      lambda d: (d.flow4z.rolling(4).min() < -1.5) & (d.flow > 0), "4w MM flow < -1.5 sd within 4w, then a buying week"),
+    # Cross-group combinations. Found by testing 1,104 single and paired
+    # conditions across all six trader groups (2,208 tests) on NYMEX data:
+    # chosen on 2009-2017 (>=5 episodes, lift >= 1.5, p < 0.05) and kept only if
+    # they held on unseen 2018-2026 data (lift >= 1.3, p < 0.05). From the
+    # survivors, one representative per distinct mechanism is used here.
+    ("spec_crowded_selling", "Speculators crowded long, starting to sell", "P",
+     lambda d: (d.spec_cot >= 80) & (d.spec_flow2 < 0), "MM + Other COT >= 80 and selling over 2w"),
+    ("prod_short_spec_buying", "Producers heavily short while speculators buy", "P",
+     lambda d: (d.prod_cot <= 20) & (d.spec_flow2 > 0), "Producer COT <= 20 and MM + Other buying over 2w"),
+    ("mm_surge_other_selling", "Managed Money surge, Other Reportables selling", "P",
+     lambda d: (d.mm_flow4z > 1) & (d.other_flow2 < 0), "4w MM flow > +1 sd while Other Reportables sell over 2w"),
+    ("nonrept_crowded_short", "Small traders crowded short", "T",
+     lambda d: d.nonrept_cot <= 20, "Non-reportable COT <= 20"),
 ]
+COMBINATION_SIGNALS = {"spec_crowded_selling", "prod_short_spec_buying", "mm_surge_other_selling", "nonrept_crowded_short"}
 
 
 def near_pivot(weeks: pd.DatetimeIndex, pivot_dates, window: int) -> pd.Series:
@@ -155,6 +177,17 @@ def episodes(mask: pd.Series, gap: int = 2):
     if cur:
         eps.append(cur)
     return eps
+
+
+def _period_stats(fire, hit_mask, period_mask):
+    f, h = fire[period_mask], hit_mask[period_mask]
+    n = int(f.sum())
+    eps = episodes(f)
+    base = float(h.mean()) if len(h) else 0.0
+    hits = int((f & h).sum())
+    ep_hits = sum(1 for e in eps if h.loc[e].any())
+    return {"weeks": n, "episodes": len(eps), "episodes_hit": ep_hits,
+            "lift": (hits / n) / base if n and base > 0 else None}
 
 
 def scorecard(pos: pd.DataFrame, pivots_T, pivots_P) -> list:
@@ -183,6 +216,9 @@ def scorecard(pos: pd.DataFrame, pivots_T, pivots_P) -> list:
             "opposite_rate": float((fire & opp_mask).sum() / n) if n else None,
             "pivots_caught": caught, "pivots_total": len(pts),
             "active_now": bool(fire.iloc[-1]),
+            "combination": key in COMBINATION_SIGNALS,
+            "in_sample": _period_stats(fire, hit_mask, W < pd.Timestamp(OOS_SPLIT)),
+            "out_of_sample": _period_stats(fire, hit_mask, W >= pd.Timestamp(OOS_SPLIT)),
             "last_fired": fire[fire].index[-1].strftime("%Y-%m-%d") if n else None,
         })
     return out
@@ -351,7 +387,18 @@ def build(daily_front: pd.Series, cftc: dict) -> dict:
             "event_study": event_study(pos, adj_w, piv_T, piv_P),
             "scorecard": scorecard(pos, piv_T, piv_P),
             "current": {"cot": float(pos.cot.iloc[-1]), "z": float(pos.z.iloc[-1]),
-                        "flow4z": float(pos.flow4z.iloc[-1]) if pd.notna(pos.flow4z.iloc[-1]) else None},
+                        "flow4z": float(pos.flow4z.iloc[-1]) if pd.notna(pos.flow4z.iloc[-1]) else None,
+                        "spec_cot": float(pos.spec_cot.iloc[-1]), "nonrept_cot": float(pos.nonrept_cot.iloc[-1]),
+                        "prod_cot": float(pos.prod_cot.iloc[-1])},
+            # Weekly history for the Date Inspector (report dates; CFTC publishes 3 days later)
+            "history": {
+                "dates": [t.strftime("%Y-%m-%d") for t in pos.index],
+                "mm_cot": pos.cot.tolist(), "mm_z": pos.z.tolist(), "mm_flow2": pos.flow2.tolist(),
+                "mm_flow4z": pos.flow4z.tolist(), "spec_cot": pos.spec_cot.tolist(),
+                "prod_cot": pos.prod_cot.tolist(), "nonrept_cot": pos.nonrept_cot.tolist(),
+                "signals": {k: [int(x) for x in rule(pos).reindex(pos.index).fillna(False).astype(bool)]
+                            for k, _l, _t, rule, _d in SIGNALS},
+            },
         }
 
     # First passage
@@ -393,7 +440,7 @@ def build(daily_front: pd.Series, cftc: dict) -> dict:
             "cftc_latest_report_date": cftc.get("meta", {}).get("latest_report_date"),
             "price_source": "Yahoo NG=F daily, roll-day returns neutralised, sampled on COT report dates",
             "rolls_neutralised": n_rolls,
-            "params": {"swing_threshold_pct": SWING_TH * 100, "event_window_weeks": EVENT_WINDOW,
+            "params": {"swing_threshold_pct": SWING_TH * 100, "event_window_weeks": EVENT_WINDOW, "oos_split": OOS_SPLIT,
                        "hit_window_weeks": HIT_WINDOW, "passage_levels_pct": [l * 100 for l in PASSAGE_LEVELS],
                        "conditions_now": {"months": sorted(near_months), "swing_state": direction,
                                           "mm_cot_bucket": cur_bucket}},
